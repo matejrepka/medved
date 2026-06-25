@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "linkedom": "^0.18.12",
     "rss-parser": "^3.13.0"

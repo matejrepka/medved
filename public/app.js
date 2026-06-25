@@ -573,7 +573,6 @@ const refreshBtn = $("refreshBtn");
 refreshBtn.addEventListener("click", async () => {
   refreshBtn.classList.add("loading");
   try {
-    await fetch("/api/refresh", { method: "POST" });
     await loadData();
   } catch (_) {
     /* loadData ošetrí chyby */

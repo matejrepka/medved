@@ -1,26 +1,58 @@
 // Medveď Sledovač — server.
 //
 // Stiahne hlásenia o výskyte medveďov z tumedved.sk a slovenské správy
-// o medveďoch, drží ich v cache a poskytuje ako vlastné JSON API.
+// o medveďoch na serveri, uloží ich do Supabase a poskytuje ako vlastné JSON API.
 // Zároveň servíruje frontend zo zložky /public.
 
+import "dotenv/config";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
-import { TtlCache } from "./src/cache.js";
+import { ScheduledDataStore } from "./src/scheduled-store.js";
+import { isSupabaseConfigured } from "./src/db/supabase.js";
+import {
+  hashIp,
+  loadNewsLogs,
+  loadTumedvedLogs,
+  recordScrapeRun,
+  saveNewsLogs,
+  saveTumedvedLogs,
+  saveWebsiteLog,
+} from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
+const SCRAPE_INTERVAL_MS = readMinutesEnv("SCRAPE_INTERVAL_MINUTES", 60) * 60 * 1000;
 
-// Platnosť cache: hlásenia 15 min, správy 30 min.
-const sightingsCache = new TtlCache(fetchTumedved, 15 * 60 * 1000, "hlasenia");
-const newsCache = new TtlCache(fetchNews, 30 * 60 * 1000, "spravy");
+const sightingsStore = new ScheduledDataStore({
+  name: "tumedved",
+  fetcher: fetchTumedved,
+  loadStored: loadTumedvedLogs,
+  saveFresh: saveTumedvedLogs,
+  recordRun: recordScrapeRun,
+  intervalMs: SCRAPE_INTERVAL_MS,
+});
+
+const newsStore = new ScheduledDataStore({
+  name: "news",
+  fetcher: fetchNews,
+  loadStored: loadNewsLogs,
+  saveFresh: saveNewsLogs,
+  recordRun: recordScrapeRun,
+  intervalMs: SCRAPE_INTERVAL_MS,
+});
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", process.env.TRUST_PROXY === "true");
+
+function readMinutesEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
 
 // Malý logger.
 app.use((req, _res, next) => {
@@ -28,13 +60,41 @@ app.use((req, _res, next) => {
   next();
 });
 
+function shouldLogWebsiteRequest(req) {
+  if (req.path.startsWith("/api")) return true;
+  return req.method === "GET" && ["/", "/privacy", "/terms"].includes(req.path);
+}
+
+app.use((req, res, next) => {
+  const started = process.hrtime.bigint();
+
+  res.on("finish", () => {
+    if (!shouldLogWebsiteRequest(req)) return;
+
+    const responseMs = Number((process.hrtime.bigint() - started) / 1000000n);
+    saveWebsiteLog({
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      responseMs,
+      userAgent: req.get("user-agent")?.slice(0, 1000),
+      referer: req.get("referer")?.slice(0, 2000),
+      ipHash: hashIp(req.ip || req.socket.remoteAddress),
+    }).catch((err) => {
+      console.error("[website_logs] insert failed:", err.message);
+    });
+  });
+
+  next();
+});
+
 // --- API ---
 
 app.get("/api/sightings", async (_req, res) => {
   try {
-    const data = await sightingsCache.get();
+    const data = await sightingsStore.get();
     res.set("Cache-Control", "public, max-age=300");
-    res.json({ updatedAt: sightingsCache.meta.fetchedAt, count: data.length, items: data });
+    res.json({ updatedAt: sightingsStore.meta.fetchedAt, count: data.length, items: data });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť hlásenia z tumedved.sk", detail: err.message });
   }
@@ -42,26 +102,36 @@ app.get("/api/sightings", async (_req, res) => {
 
 app.get("/api/news", async (_req, res) => {
   try {
-    const data = await newsCache.get();
-    res.set("Cache-Control", "no-store");
-    res.json({ updatedAt: newsCache.meta.fetchedAt, count: data.length, items: data });
+    const data = await newsStore.get();
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ updatedAt: newsStore.meta.fetchedAt, count: data.length, items: data });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
   }
 });
 
-// Stav + možnosť vynútiť obnovu.
+// Stav serverového obnovovania dát.
 app.get("/api/status", (_req, res) => {
-  res.json({ sightings: sightingsCache.meta, news: newsCache.meta });
+  res.json({
+    supabaseConfigured: isSupabaseConfigured(),
+    scrapeIntervalMinutes: SCRAPE_INTERVAL_MS / 60 / 1000,
+    sightings: sightingsStore.meta,
+    news: newsStore.meta,
+  });
 });
 
 app.post("/api/refresh", async (_req, res) => {
   try {
-    const [s, n] = await Promise.all([
-      sightingsCache.forceRefresh(),
-      newsCache.forceRefresh(),
+    await Promise.all([
+      sightingsStore.loadFromDatabase(),
+      newsStore.loadFromDatabase(),
     ]);
-    res.json({ ok: true, sightings: s.length, news: n.length });
+    res.status(202).json({
+      ok: true,
+      message: "Dáta sa sťahujú automaticky na serveri podľa hodinového plánu.",
+      sightings: sightingsStore.meta,
+      news: newsStore.meta,
+    });
   } catch (err) {
     res.status(502).json({ ok: false, error: err.message });
   }
@@ -80,7 +150,17 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
-  // Predohrejeme cache, aby prvý návštevník nečakal.
-  sightingsCache.get().catch(() => {});
-  newsCache.get().catch(() => {});
+  console.log(
+    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; scrape interval: ${
+      SCRAPE_INTERVAL_MS / 60 / 1000
+    } min`
+  );
+  sightingsStore.start().catch(() => {});
+  newsStore.start().catch(() => {});
+});
+
+process.on("SIGINT", () => {
+  sightingsStore.stop();
+  newsStore.stop();
+  process.exit(0);
 });
