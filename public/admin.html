@@ -35,7 +35,7 @@
     />
     <style>
       .admin-container {
-        max-width: 600px;
+        max-width: 760px;
         margin: 4rem auto;
         padding: 2rem;
         background: var(--surface);
@@ -48,6 +48,40 @@
         margin-bottom: 1.5rem;
         font-family: 'Newsreader', serif;
         font-size: 2rem;
+      }
+      .admin-lede {
+        margin: 0 0 2rem;
+      }
+      .admin-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin: 0 0 2rem;
+      }
+      .admin-stat {
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: color-mix(in srgb, var(--surface) 88%, var(--bg) 12%);
+      }
+      .admin-stat-value {
+        display: block;
+        font-family: 'Newsreader', serif;
+        font-size: 1.65rem;
+        font-weight: 600;
+        line-height: 1.1;
+        color: var(--accent);
+      }
+      .admin-stat-label {
+        display: block;
+        margin-top: 0.4rem;
+        color: var(--ink-3);
+        font-size: 0.88rem;
+      }
+      .admin-status-line {
+        margin-top: 0.9rem;
+        font-size: 0.92rem;
+        color: var(--ink-3);
       }
       .form-group {
         margin-bottom: 1.5rem;
@@ -112,6 +146,11 @@
       [data-theme="dark"] #statusMessage.error {
         color: #f87171;
       }
+      @media (max-width: 560px) {
+        .admin-stats {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -125,9 +164,30 @@
     <main>
       <div class="admin-container">
         <h1>Administrácia</h1>
-        <p class="muted" style="margin-bottom: 2rem;">
+        <p class="muted admin-lede">
           Manuálne spustenie sťahovania dát zo zdrojov (tumedved.sk a Google News).
         </p>
+
+        <div class="admin-stats" id="adminStats" aria-live="polite">
+          <div class="admin-stat">
+            <span class="admin-stat-value" id="adminSightingsCount">—</span>
+            <span class="admin-stat-label">uložených hlásení</span>
+          </div>
+          <div class="admin-stat">
+            <span class="admin-stat-value" id="adminNewsCount">—</span>
+            <span class="admin-stat-label">uložených správ</span>
+          </div>
+          <div class="admin-stat">
+            <span class="admin-stat-value" id="adminRefreshState">—</span>
+            <span class="admin-stat-label">stav obnovovania</span>
+          </div>
+          <div class="admin-stat">
+            <span class="admin-stat-value" id="adminSupabaseState">—</span>
+            <span class="admin-stat-label">Supabase</span>
+          </div>
+        </div>
+
+        <p class="admin-status-line" id="adminStatsMeta"></p>
 
         <form id="adminForm">
           <button type="submit" class="btn-primary" id="runBtn">
@@ -141,9 +201,65 @@
     </main>
 
     <script>
+      const statsMeta = document.getElementById('adminStatsMeta');
       const form = document.getElementById('adminForm');
       const runBtn = document.getElementById('runBtn');
       const statusMsg = document.getElementById('statusMessage');
+
+      const formatDateTime = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '—';
+        return new Intl.DateTimeFormat('sk-SK', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }).format(date);
+      };
+
+      const formatCount = (value) => {
+        if (!Number.isFinite(value)) return '—';
+        return value.toLocaleString('sk-SK');
+      };
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      const renderStats = (status) => {
+        const sightings = status?.sightings || {};
+        const news = status?.news || {};
+        const refreshState = [sightings.refreshing ? 'hlásenia bežia' : null, news.refreshing ? 'správy bežia' : null]
+          .filter(Boolean)
+          .join(' · ') || 'idle';
+        const latestUpdateCandidates = [sightings.fetchedAt, news.fetchedAt].filter(Boolean).sort();
+        const latestUpdate = latestUpdateCandidates[latestUpdateCandidates.length - 1] || null;
+
+        setText('adminSightingsCount', formatCount(sightings.count));
+        setText('adminNewsCount', formatCount(news.count));
+        setText('adminRefreshState', refreshState);
+        setText('adminSupabaseState', status?.supabaseConfigured ? 'pripojené' : 'nepripojené');
+
+        const details = [];
+        details.push(`Posledná aktualizácia: ${formatDateTime(latestUpdate)}`);
+        if (sightings.error || news.error) {
+          details.push(`Chyba: ${sightings.error || news.error}`);
+        } else {
+          details.push(`Režim: ${status?.refreshMode || '—'}`);
+        }
+
+        if (statsMeta) statsMeta.textContent = details.join(' · ');
+      };
+
+      const loadStats = async () => {
+        try {
+          const res = await fetch('/api/status');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          renderStats(await res.json());
+        } catch (err) {
+          if (statsMeta) statsMeta.textContent = `Statistiky sa nepodarilo načítať: ${err.message}`;
+        }
+      };
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -160,6 +276,7 @@
           if (res.ok && data.ok) {
             statusMsg.textContent = 'Sťahovanie úspešne dokončené.';
             statusMsg.className = 'success';
+            renderStats(data);
           } else {
             statusMsg.textContent = 'Chyba: ' + (data.error || 'Neznáma chyba');
             statusMsg.className = 'error';
@@ -172,6 +289,8 @@
           runBtn.querySelector('span').textContent = 'Spustiť sťahovanie';
         }
       });
+
+      loadStats();
     </script>
   </body>
 </html>
