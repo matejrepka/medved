@@ -1,4 +1,4 @@
-// Medveď Sledovač — frontend.
+// Medvede na Slovensku — frontend.
 // Načíta dáta z vlastného API (/api/sightings, /api/news), vykreslí mapu
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
