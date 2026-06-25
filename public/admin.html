@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administrácia - Medveď Sledovač</title>
+    
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
+    />
+    <style>
+      .admin-container {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+      }
+      .admin-container h1 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-family: 'Newsreader', serif;
+        font-size: 2rem;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--bg);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 1rem;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .btn-primary:hover {
+        opacity: 0.9;
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      #statusMessage {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: var(--radius-md);
+        display: none;
+      }
+      #statusMessage.success {
+        display: block;
+        background: rgba(34, 197, 94, 0.1);
+        color: #15803d;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      #statusMessage.error {
+        display: block;
+        background: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+      [data-theme="dark"] #statusMessage.success {
+        color: #4ade80;
+      }
+      [data-theme="dark"] #statusMessage.error {
+        color: #f87171;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <span class="brand-mark"><i class="ph ph-paw-print"></i></span>
+        <span class="brand-name">Medveď Sledovač</span>
+      </a>
+    </header>
+
+    <main>
+      <div class="admin-container">
+        <h1>Administrácia</h1>
+        <p class="muted" style="margin-bottom: 2rem;">
+          Manuálne spustenie sťahovania dát zo zdrojov (tumedved.sk a Google News).
+        </p>
+
+        <form id="adminForm">
+          <div class="form-group">
+            <label for="cronSecret">Tajný kľúč (Cron Secret)</label>
+            <input type="password" id="cronSecret" required placeholder="Zadajte CRON_REFRESH_SECRET..." />
+          </div>
+          <button type="submit" class="btn-primary" id="runBtn">
+            <i class="ph ph-arrows-clockwise"></i>
+            <span>Spustiť sťahovanie</span>
+          </button>
+        </form>
+
+        <div id="statusMessage"></div>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById('adminForm');
+      const secretInput = document.getElementById('cronSecret');
+      const runBtn = document.getElementById('runBtn');
+      const statusMsg = document.getElementById('statusMessage');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const secret = secretInput.value.trim();
+        if (!secret) return;
+
+        runBtn.disabled = true;
+        runBtn.querySelector('span').textContent = 'Sťahujem...';
+        statusMsg.className = '';
+        statusMsg.style.display = 'none';
+
+        try {
+          const res = await fetch(`/api/cron/refresh?secret=${encodeURIComponent(secret)}`);
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            statusMsg.textContent = 'Sťahovanie úspešne dokončené.';
+            statusMsg.className = 'success';
+          } else {
+            statusMsg.textContent = 'Chyba: ' + (data.error || 'Neznáma chyba');
+            statusMsg.className = 'error';
+          }
+        } catch (err) {
+          statusMsg.textContent = 'Chyba siete: ' + err.message;
+          statusMsg.className = 'error';
+        } finally {
+          runBtn.disabled = false;
+          runBtn.querySelector('span').textContent = 'Spustiť sťahovanie';
+        }
+      });
+    </script>
+  </body>
+</html>
