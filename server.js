@@ -55,7 +55,7 @@ app.use((req, _res, next) => {
 
 function shouldLogWebsiteRequest(req) {
   if (req.path.startsWith("/api")) return true;
-  return req.method === "GET" && ["/", "/privacy", "/terms"].includes(req.path);
+  return req.method === "GET" && ["/", "/privacy", "/terms", "/stats"].includes(req.path);
 }
 
 app.use((req, res, next) => {
@@ -144,6 +144,10 @@ app.get("/privacy", (_req, res) => {
 
 app.get("/terms", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "terms.html"));
+});
+
+app.get("/stats", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "stats.html"));
 });
 
 // --- Basic Auth pre administráciu ---

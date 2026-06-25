@@ -147,6 +147,32 @@ h3 {
   white-space: nowrap;
 }
 
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.main-nav a {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: color 0.16s ease;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.main-nav a:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.main-nav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .header-actions {
   display: flex;
   align-items: center;
