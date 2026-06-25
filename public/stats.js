@@ -3,6 +3,9 @@
 const state = {
   sightings: [],
   news: [],
+  sightingsUpdatedAt: null,
+  newsUpdatedAt: null,
+  updatedAt: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -94,6 +97,60 @@ function isToday(iso) {
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
 }
 
+function fmtDate(iso, withTime = false) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const opts = withTime
+    ? { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }
+    : { day: "numeric", month: "long", year: "numeric" };
+  return d.toLocaleDateString("sk-SK", opts);
+}
+
+function fmtTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
+}
+
+function latestIso(...values) {
+  return values.reduce((latest, iso) => {
+    if (!iso) return latest;
+    const time = new Date(iso).getTime();
+    if (Number.isNaN(time)) return latest;
+    if (!latest || time > latest.time) return { iso, time };
+    return latest;
+  }, null)?.iso || null;
+}
+
+function updatedText(iso) {
+  if (!iso) return "";
+  return isToday(iso) ? `dnes ${fmtTime(iso)}` : fmtDate(iso, true);
+}
+
+function setUpdated(iso) {
+  const el = $("updated");
+  if (!el) return;
+  el.textContent = iso ? `Aktualizované ${updatedText(iso)}` : "";
+}
+
+function setStatus(message, isError = false) {
+  const existing = document.getElementById("statsStatus");
+  if (!message) {
+    if (existing) existing.remove();
+    return;
+  }
+
+  const host = document.querySelector(".stats-page .masthead");
+  if (!host) return;
+  const el = existing || document.createElement("p");
+  el.id = "statsStatus";
+  el.className = `stats-status${isError ? " error" : ""}`;
+  el.textContent = message;
+  if (!existing) host.appendChild(el);
+}
+
 function processStats() {
   // 1. Zohľadniť základné štatistiky
   const totalSightings = state.sightings.length;
@@ -117,9 +174,9 @@ function processStats() {
   
   const topPlace = sortedLocations.length > 0 ? sortedLocations[0][0] : "Neznáma";
   
-  $("statTotalSightings").textContent = totalSightings;
-  $("statTotalNews").textContent = totalNews;
-  $("statTodaySightings").textContent = todaySightings;
+  $("statTotalSightings").textContent = totalSightings.toLocaleString("sk-SK");
+  $("statTotalNews").textContent = totalNews.toLocaleString("sk-SK");
+  $("statTodaySightings").textContent = todaySightings.toLocaleString("sk-SK");
   $("statTopPlace").textContent = topPlace;
 
   // 3. Pripraviť dáta pre časovú os (Zoskupenie po mesiacoch)
@@ -211,7 +268,16 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
         }
       ]
     },
-    options: commonOptions
+    options: {
+      ...commonOptions,
+      plugins: {
+        ...commonOptions.plugins,
+        tooltip: {
+          mode: "index",
+          intersect: false,
+        },
+      },
+    }
   });
 
   // Top Locations graf
@@ -233,6 +299,10 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
     options: {
       ...commonOptions,
       indexAxis: 'y', // horizontálny bar chart
+      scales: {
+        x: { ...commonOptions.scales.x, beginAtZero: true },
+        y: { ...commonOptions.scales.y }
+      },
       plugins: {
         legend: { display: false }
       }
@@ -257,7 +327,7 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
       maintainAspectRatio: false,
       plugins: {
         legend: { 
-          position: 'right',
+          position: window.innerWidth < 900 ? 'bottom' : 'right',
           labels: { color: colors.textColor }
         }
       }
@@ -269,20 +339,42 @@ async function loadData() {
   const cacheBust = Date.now();
   try {
     const [sRes, nRes] = await Promise.all([
-      fetch(`/api/sightings?t=${cacheBust}`).then(r => r.json()),
-      fetch(`/api/news?t=${cacheBust}`).then(r => r.json())
+      fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
+        if (!r.ok) throw new Error(`Hlásenia HTTP ${r.status}`);
+        return r.json();
+      }),
+      fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
+        if (!r.ok) throw new Error(`Správy HTTP ${r.status}`);
+        return r.json();
+      })
     ]);
 
     if (sRes.items) state.sightings = sRes.items;
     if (nRes.items) state.news = nRes.items;
+    state.sightingsUpdatedAt = sRes.updatedAt || null;
+    state.newsUpdatedAt = nRes.updatedAt || null;
+    state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
+    setUpdated(state.updatedAt);
+    setStatus("");
 
     processStats();
 
   } catch (err) {
     console.error("Nepodarilo sa načítať dáta pre štatistiky:", err);
+    setStatus("Nepodarilo sa načítať dáta pre štatistiky. Skúste obnoviť stránku.", true);
   }
 }
 
 // Inicializácia
 syncThemeButton(currentTheme());
+setStatus("Načítavam štatistiky…");
 loadData();
+
+window.addEventListener("resize", () => {
+  if (!timeOfDayChart) return;
+  const nextPos = window.innerWidth < 900 ? "bottom" : "right";
+  if (timeOfDayChart.options.plugins.legend.position !== nextPos) {
+    timeOfDayChart.options.plugins.legend.position = nextPos;
+    timeOfDayChart.update();
+  }
+});

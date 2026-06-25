@@ -324,6 +324,64 @@ main {
   color: var(--ink-3);
 }
 
+/* ---------- Stats page ---------- */
+.stats-page {
+  max-width: var(--maxw);
+  margin: 0 auto;
+}
+
+.stats-page .masthead {
+  max-width: 840px;
+}
+
+.charts-section {
+  display: grid;
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(14px, 2vw, 18px);
+}
+
+.chart-wrapper {
+  position: relative;
+  height: clamp(260px, 36vw, 380px);
+}
+
+.chart-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--ink-3);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 18px;
+}
+
+.stats-status {
+  margin-top: 12px;
+  font-size: 0.86rem;
+  color: var(--ink-3);
+}
+
+.stats-status.error {
+  color: #b4452e;
+}
+
+[data-theme="dark"] .stats-status.error {
+  color: #f0a08c;
+}
+
 /* ---------- Section heads ---------- */
 .section-head {
   display: flex;
@@ -608,6 +666,10 @@ main {
   }
   #map {
     height: 380px;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -971,6 +1033,33 @@ main {
   .footer-inner {
     display: block;
   }
+
+  .stats {
+    gap: 16px 0;
+  }
+
+  .stat {
+    width: 100%;
+    padding-right: 0;
+    margin-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px;
+  }
+
+  .stat:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .chart-container {
+    padding: 12px;
+  }
+
+  .chart-wrapper {
+    height: 250px;
+  }
+
   .footer-links {
     justify-content: flex-start;
     margin-top: 14px;
