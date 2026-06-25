@@ -146,8 +146,40 @@ app.get("/terms", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "terms.html"));
 });
 
-app.get("/admin", (_req, res) => {
+// --- Basic Auth pre administráciu ---
+function adminAuth(req, res, next) {
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    return res.status(500).send("Chyba servera: ADMIN_PASSWORD nie je nastavené v .env súbore.");
+  }
+
+  if (login === 'admin' && password === adminPassword) {
+    return next();
+  }
+
+  res.set('WWW-Authenticate', 'Basic realm="Admin Sledovac"');
+  res.status(401).send('Vyžaduje sa prihlásenie (meno: admin).');
+}
+
+app.get("/admin", adminAuth, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+app.post("/api/admin/refresh", adminAuth, async (req, res) => {
+  try {
+    await Promise.all([sightingsStore.refresh("admin"), newsStore.refresh("admin")]);
+    res.json({
+      ok: true,
+      message: "Admin sťahovanie dokončené.",
+      sightings: sightingsStore.meta,
+      news: newsStore.meta,
+    });
+  } catch (err) {
+    res.status(502).json({ ok: false, error: err.message });
+  }
 });
 
 app.use(express.static(path.join(__dirname, "public")));

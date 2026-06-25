@@ -130,10 +130,6 @@
         </p>
 
         <form id="adminForm">
-          <div class="form-group">
-            <label for="cronSecret">Tajný kľúč (Cron Secret)</label>
-            <input type="password" id="cronSecret" required placeholder="Zadajte CRON_REFRESH_SECRET..." />
-          </div>
           <button type="submit" class="btn-primary" id="runBtn">
             <i class="ph ph-arrows-clockwise"></i>
             <span>Spustiť sťahovanie</span>
@@ -146,14 +142,11 @@
 
     <script>
       const form = document.getElementById('adminForm');
-      const secretInput = document.getElementById('cronSecret');
       const runBtn = document.getElementById('runBtn');
       const statusMsg = document.getElementById('statusMessage');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const secret = secretInput.value.trim();
-        if (!secret) return;
 
         runBtn.disabled = true;
         runBtn.querySelector('span').textContent = 'Sťahujem...';
@@ -161,7 +154,7 @@
         statusMsg.style.display = 'none';
 
         try {
-          const res = await fetch(`/api/cron/refresh?secret=${encodeURIComponent(secret)}`);
+          const res = await fetch('/api/admin/refresh', { method: 'POST' });
           const data = await res.json();
 
           if (res.ok && data.ok) {
