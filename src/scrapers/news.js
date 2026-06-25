@@ -45,6 +45,12 @@ function stripHtml(html) {
     .trim();
 }
 
+function stripTrailingSource(text) {
+  return (text || "")
+    .replace(/\s+[\p{L}\p{N}.-]+\.(?:sk|cz|com|eu|net|org)\s*$/iu, "")
+    .trim();
+}
+
 /**
  * Google News dáva názvy ako "Titulok - Zdroj". Oddelíme názov od zdroja.
  * @returns {{title: string, source: string|null}}
@@ -111,7 +117,7 @@ export async function fetchNews() {
       const { title, source: titleSource } = splitTitleSource(item.title);
       if (!title) continue;
 
-      const snippet = stripHtml(item.contentSnippet || item.content);
+      const snippet = stripTrailingSource(stripHtml(item.contentSnippet || item.content));
       // Odfiltruje články, ktoré medveďa len spomenú/odkazujú naň, ale nie sú o ňom.
       if (!isBearRelated(title, snippet)) continue;
 

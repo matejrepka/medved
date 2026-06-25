@@ -49,9 +49,13 @@ async function resolveGoogleNewsUrl(gnUrl, signal) {
   );
   if (!rpc.ok) return null;
   const txt = await rpc.text();
-  // V odpovedi je cieľová URL ako prvý http(s) odkaz.
-  const m = txt.match(/"(https?:\/\/[^"\\]+)"/);
-  return m ? m[1] : null;
+  // V odpovedi je cieľová URL (escapovaná). Vezmeme prvý ne-googlovský odkaz.
+  const urls = txt.match(/https?:\/\/[^"\\]+/g) || [];
+  return (
+    urls.find(
+      (u) => !/^https?:\/\/(news\.google\.com|www\.gstatic\.com|accounts\.google\.com|policies\.google\.com)/.test(u)
+    ) || null
+  );
 }
 
 /** Stiahne reálnu URL a Readability-om vytiahne čistý text článku. */

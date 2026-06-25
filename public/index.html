@@ -98,6 +98,38 @@
           <h2><i class="ph ph-map-pin" aria-hidden="true"></i> Mapa hlásení</h2>
           <span class="muted" id="mapMeta"></span>
         </div>
+        <div class="map-tools" aria-label="Filtre a nastavenia mapy">
+          <div class="date-filters" aria-label="Filtrovať podľa dátumu">
+            <label class="date-control" for="filterStart">
+              <span><i class="ph ph-calendar-blank" aria-hidden="true"></i> Od</span>
+              <input id="filterStart" type="date" />
+            </label>
+            <label class="date-control" for="filterEnd">
+              <span><i class="ph ph-calendar-check" aria-hidden="true"></i> Do</span>
+              <input id="filterEnd" type="date" />
+            </label>
+            <button class="ghost-btn" id="clearFiltersBtn" type="button">
+              <i class="ph ph-x" aria-hidden="true"></i>
+              <span>Vymazať</span>
+            </button>
+          </div>
+
+          <fieldset class="layer-picker">
+            <legend>Vrstva</legend>
+            <label>
+              <input class="sr-only" type="radio" name="mapLayer" value="standard" checked />
+              <span><i class="ph ph-map-trifold" aria-hidden="true"></i> Štandardná</span>
+            </label>
+            <label>
+              <input class="sr-only" type="radio" name="mapLayer" value="tourist" />
+              <span><i class="ph ph-mountains" aria-hidden="true"></i> Turistická</span>
+            </label>
+            <label>
+              <input class="sr-only" type="radio" name="mapLayer" value="satellite" />
+              <span><i class="ph ph-globe-hemisphere-west" aria-hidden="true"></i> Satelitná</span>
+            </label>
+          </fieldset>
+        </div>
         <div id="map" aria-label="Mapa výskytu medveďov na Slovensku"></div>
         <div class="map-legend" aria-hidden="true">
           <span class="lg"><span class="lg-dot"></span> Hlásenie (tumedved.sk)</span>

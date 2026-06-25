@@ -43,6 +43,36 @@ function isBearWord(w) {
   return w.startsWith("medved") || w.startsWith("grizl") || w.startsWith("ursus");
 }
 
+// Časté slová v správach o medveďoch, ktoré (s veľkým písmenom na začiatku vety)
+// splývajú s názvami obcí: lesník→Lesné, brutálny→Bruty, turista→Turie…
+const STOPWORD_STEMS = [
+  "lesnik", "brutal", "turist", "senior", "horar", "zachranar", "polovn",
+  "obyvatel", "starost", "primator", "hovorky", "riadit", "minist", "zoolog",
+  "hasic", "policia", "ochranar", "zasahovy", "spravca", "rodina", "clovek",
+];
+function isStopword(w) {
+  return STOPWORD_STEMS.some((s) => w.startsWith(s));
+}
+
+// Kmene slov (jednoslovné), ktoré pri OBCI naznačujú skutočný výskyt/incident
+// s medveďom — nie všeobecný článok/rozhovor. Kontrolujú sa LOKÁLNE, v okne
+// okolo názvu obce, aby "letný tábor pri Prešove" neprešlo ako výskyt v Prešove.
+const OCCURRENCE_STEMS = [
+  "napad", "zautoc", "utoc", "utok", "zran", "usmrt", "roztrh", "dolap",
+  "vid", "spozor", "pozor", "zbad", "zazr", "zahliad", "pohyb",
+  "prechadz", "zatul", "vosiel", "vbehol", "vtrhol", "potul", "vyskyt",
+  "stretn", "stret", "naraz", "nahan", "sidlisk", "obydl", "zahrad", "dvor",
+  "kontajner", "ovc", "ulik", "ulic", "vcel", "stado", "mlad", "brloh",
+  "zastrel", "strel", "odstrel", "zabil", "ulov", "zahryz", "dohryz",
+  "vystras", "vydes", "prelak", "spanik", "pobeh", "pribliz", "blizil",
+  "zablud", "objav", "premav", "skod", "napach", "varov", "vystrah",
+  "hroz", "zasah", "odchyt", "usp", "plasil",
+];
+
+function isOccurrenceToken(w) {
+  return OCCURRENCE_STEMS.some((s) => w.startsWith(s));
+}
+
 /**
  * Rozdelí text na slová so zachovaním informácie o veľkom začiatočnom písmene.
  * @returns {Array<{w:string, cap:boolean}>}
@@ -73,9 +103,99 @@ function commonPrefixLen(a, b) {
  */
 function nounMatchLen(gaz, txt) {
   if (txt.length < 4 || gaz.length < 4) return -1;
-  if (Math.abs(txt.length - gaz.length) > 3) return -1;
+  const diff = Math.abs(txt.length - gaz.length);
+  if (diff > 3) return -1;
   const cp = commonPrefixLen(gaz, txt);
-  return cp >= Math.max(4, Math.ceil(gaz.length * 0.75)) ? cp : -1;
+  if (cp < Math.max(4, Math.ceil(gaz.length * 0.75))) return -1;
+  if (txt.endsWith("ak") && txt !== gaz) return -1;
+  // Ak je celý názov len prefixom dlhšieho slova, povoľ len bežné pádové
+  // koncovky. Tým odfiltrujeme zdroje/demonyma typu "Prešovak" -> Prešov.
+  if (cp === gaz.length && txt.length > gaz.length) {
+    const extra = txt.slice(gaz.length);
+    if (
+      !["a", "e", "i", "u", "y", "m", "mi"].includes(extra) &&
+      !/(om|ou|ej|och|ach|iach)$/.test(txt)
+    ) {
+      return -1;
+    }
+  }
+  // Rozdiel dĺžok 3 povolíme len pri množných lokatívoch (-ach/-iach/-och) ako
+  // "Košiciach", "Leviciach" — inak by "Brutálny"→Bruty, "Turistom"→Turie prešli.
+  if (diff === 3 && !/(iach|ach|och)$/.test(txt)) return -1;
+  return cp;
+}
+
+function nounInflectionBonus(gaz, txt) {
+  const variants = new Set([txt]);
+
+  if (txt.endsWith("ovej")) variants.add(`${txt.slice(0, -4)}ova`);
+  if (txt.endsWith("ovou")) variants.add(`${txt.slice(0, -4)}ova`);
+  if (txt.endsWith("ou") && txt.length > 5) variants.add(`${txt.slice(0, -2)}a`);
+  if (txt.endsWith("om") && txt.length > 5) variants.add(txt.slice(0, -1));
+  if (txt.endsWith("ke") && txt.length > 5) variants.add(`${txt.slice(0, -2)}ka`);
+  if (txt.endsWith("ici") && txt.length > 6) variants.add(`${txt.slice(0, -3)}ica`);
+  if (txt.endsWith("ni") && txt.length > 5) variants.add(`${txt.slice(0, -1)}a`);
+  if (txt.endsWith("i") && txt.length > 5) variants.add(txt.slice(0, -1));
+  if (txt.endsWith("e") && txt.length > 5) variants.add(`${txt.slice(0, -1)}a`);
+
+  return variants.has(gaz) ? 24 : 0;
+}
+
+// Obce, ktorých názov je zároveň bežné krstné meno — vyžadujeme cue ("v meste
+// Martin"), inak by "lesníka Martina napadol medveď" pinlo mesto Martin.
+const NAME_TOWNS = new Set(["martin", "michal", "vlasta", "stara"]);
+
+// "v okrese X" a "X okrese" nie je presná obec. Ak článok nemá nič lepšie,
+// radšej ho necháme bez pinu než mapovať stred okresného mesta.
+const REGION_BEFORE = new Set([
+  "okres", "okrese", "okresu", "okresom",
+  "kraj", "kraji", "kraja", "krajom",
+  "region", "regione", "regionu", "vuc",
+]);
+
+// Slová za názvom, ktoré z neho robia prídavné meno kraja/okresu, nie obec.
+const REGION_AFTER = /^(kraj|okres|region|samospr|vuc)/;
+
+// Slabší lokálny signál než "v obci X", ale silnejší než obyčajná zmienka.
+const LOCAL_PREPOSITIONS = new Set([
+  "v", "vo", "na", "pri", "nad", "pod", "za", "medzi",
+  "nedaleko", "blizko", "okolo", "popri",
+]);
+
+const COMMON_FIRST_NAMES = new Set([
+  "jan", "jana", "martin", "michal", "peter", "pavol", "jozef", "juraj",
+  "marek", "lukas", "tomas", "igor", "roman", "andrej", "milan", "miroslav",
+  "frantisek", "maria", "zuzana", "katarina", "eva", "anna", "monika",
+]);
+
+const PERSON_ROLE_STEMS = [
+  "minister", "poslan", "riadit", "hovorc", "policajt", "hasic", "ochranar",
+  "lesnik", "horar", "polovn", "turist", "muz", "zena",
+];
+
+const SPEECH_STEMS = [
+  "poved", "uvied", "dodal", "informov", "vysvetl", "konstat", "pribliz",
+  "reagov", "napisal", "ozrejm", "tvrd",
+];
+
+function hasStem(w, stems) {
+  return stems.some((s) => w.startsWith(s));
+}
+
+function isPersonContext(tokens, start, end, segmentStart, segmentEnd) {
+  const prev = start > segmentStart ? tokens[start - 1] : null;
+  const prev2 = start - 2 >= segmentStart ? tokens[start - 2] : null;
+  const next = end + 1 <= segmentEnd ? tokens[end + 1] : null;
+  const next2 = end + 2 <= segmentEnd ? tokens[end + 2] : null;
+
+  if (prev?.cap && COMMON_FIRST_NAMES.has(prev.w)) return true;
+  if (prev2?.cap && COMMON_FIRST_NAMES.has(prev2.w) && prev?.cap) return true;
+  if (prev && hasStem(prev.w, PERSON_ROLE_STEMS)) return true;
+  if (prev2 && hasStem(prev2.w, PERSON_ROLE_STEMS) && prev?.cap) return true;
+  if (next && hasStem(next.w, SPEECH_STEMS)) return true;
+  if (next2 && hasStem(next2.w, SPEECH_STEMS)) return true;
+  if (prev && hasStem(prev.w, SPEECH_STEMS)) return true;
+  return false;
 }
 
 /** Prídavné meno / prvé slovo viacslovného názvu — stačí zhoda kmeňa. */
@@ -129,11 +249,12 @@ export function findPlace(title, body, gz) {
   const { index } = gz;
   if (!index || index.size === 0) return null;
 
-  // Telo dáme prvé (skoršie pozície = vyššia priorita), nadpis za neho.
-  const bodyTokens = tokenize(body || "");
+  // Nadpis dáme prvý — lokalita v titulku je zvyčajne tá hlavná. Telo nasleduje
+  // a presnejšiu obec presadí cez cue ("v obci X"), ktoré má najvyššiu váhu.
   const titleTokens = tokenize(title || "");
-  const tokens = bodyTokens.concat(titleTokens);
-  const bodyLen = bodyTokens.length;
+  const bodyTokens = tokenize(body || "");
+  const tokens = titleTokens.concat(bodyTokens);
+  const titleLen = titleTokens.length;
 
   let best = null;
   let bestScore = -Infinity;
@@ -141,7 +262,7 @@ export function findPlace(title, body, gz) {
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i];
     if (!tok.cap || tok.w.length < 4) continue; // názov obce je vlastné meno
-    if (isBearWord(tok.w)) continue; // "Medveď" nie je obec Medvedie
+    if (isBearWord(tok.w) || isStopword(tok.w)) continue;
     const candidates = index.get(tok.w.slice(0, 4));
     if (!candidates) continue;
 
@@ -151,9 +272,19 @@ export function findPlace(title, body, gz) {
       const cp = nounMatchLen(noun, tok.w);
       if (cp < 0) continue;
 
+      const inTitle = i < titleLen;
+      const segmentStart = inTitle ? 0 : titleLen;
+      const segmentEnd = inTitle ? titleLen - 1 : tokens.length - 1;
+
+      // "Bystrickom kraji", "Žilinskom okrese" — prídavné meno kraja, nie obec.
+      const next = i + 1 <= segmentEnd ? tokens[i + 1] : null;
+      if (next && REGION_AFTER.test(next.w)) continue;
+
       // Skontroluj prídavné mená pred podstatným menom (viacslovné názvy).
       const start = i - (parts.length - 1);
       if (start < 0) continue;
+      if (start < segmentStart) continue;
+
       let ok = true;
       for (let j = 0; j < parts.length - 1; j++) {
         const t = tokens[start + j];
@@ -164,15 +295,59 @@ export function findPlace(title, body, gz) {
       }
       if (!ok) continue;
 
-      const cueBefore = start > 0 && CUE_WORDS.has(tokens[start - 1].w);
-      const inBody = i < bodyLen;
+      const prev = start > segmentStart ? tokens[start - 1] : null;
+      if (prev && REGION_BEFORE.has(prev.w)) continue;
+
+      const cueBefore = !!prev && CUE_WORDS.has(prev.w);
+      const prepBefore = !!prev && LOCAL_PREPOSITIONS.has(prev.w);
+      if (!cueBefore && isPersonContext(tokens, start, i, segmentStart, segmentEnd))
+        continue;
+
+      // Názov = krstné meno (Martin…) berieme ako obec len s cue pred ním.
+      if (parts.length === 1 && NAME_TOWNS.has(noun) && !cueBefore) continue;
+
+      // Veľmi krátke názvy dedín (≤4 znaky: Háj, Lúka, Brod…) bez cue sú priveľmi
+      // rizikové — berieme ich len s cue ("v obci Háj").
+      if (parts.length === 1 && place.rank === 1 && noun.length < 5 && !cueBefore)
+        continue;
+
+      // LOKÁLNY kontext výskytu: v okne okolo názvu obce musí byť buď cue slovo
+      // ("v obci/meste X"), alebo incidentné slovo (napadol, videli, pohyboval…).
+      // Bez toho je zmienka obce len mimochodom (napr. "tábor pri Prešove").
+      let contextOk = cueBefore;
+      let occurrenceNear = false;
+      let bearBefore = false;
+      if (!contextOk) {
+        const lo = Math.max(segmentStart, start - 5);
+        const hi = Math.min(segmentEnd, i + 8);
+        for (let k = lo; k <= hi; k++) {
+          if (k < start && isBearWord(tokens[k].w)) bearBefore = true;
+          if (isOccurrenceToken(tokens[k].w)) {
+            occurrenceNear = true;
+            contextOk = true;
+            break;
+          }
+          if (CUE_WORDS.has(tokens[k].w)) contextOk = true;
+        }
+        if (!contextOk && inTitle && prepBefore && bearBefore) contextOk = true;
+      }
+      if (!contextOk) continue;
+
       // Presnosť zhody (cp − rozdiel dĺžok) rozhodne medzi podobnými obcami
       // (napr. exaktné "Stráňavy" vs blízke "Stráňany").
-      const exactness = cp * 1.5 - Math.abs(noun.length - tok.w.length) * 2;
+      const exactness =
+        cp * 1.5 -
+        Math.abs(noun.length - tok.w.length) * 2 +
+        nounInflectionBonus(noun, tok.w);
+      // Poradie váh: cue "v obci X" (telo aj titulok) > lokalita v titulku >
+      // presnosť/typ. Titulok tak prebije šum v tele, no explicitné "v obci X"
+      // v tele prebije všeobecný titulok.
       const score =
         (cueBefore ? 1000 : 0) +
+        (prepBefore ? (inTitle ? 60 : 340) : 0) +
+        (inTitle ? 220 : 0) +
+        (occurrenceNear ? 40 : 0) +
         (parts.length > 1 ? 60 : 0) +
-        (inBody ? 120 : 0) +
         exactness +
         place.rank -
         start * 0.02;
@@ -199,8 +374,10 @@ export async function geocodeNews(items) {
 
   return items.map((it) => {
     const body = it.body || it.snippet || "";
+    const noPlace = { ...it, place: null, lat: null, lng: null, hasCoords: false };
+    // findPlace dá výsledok len ak je obec v kontexte skutočného výskytu.
     const hit = findPlace(it.title, body, gz);
-    if (!hit) return { ...it, place: null, lat: null, lng: null, hasCoords: false };
+    if (!hit) return noPlace;
     return { ...it, place: hit.name, lat: hit.lat, lng: hit.lng, hasCoords: true };
   });
 }

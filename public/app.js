@@ -3,10 +3,16 @@
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
+const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
   news: [],
   markers: new Map(), // id -> Leaflet marker
+  filters: {
+    startDate: "",
+    endDate: "",
+  },
+  mapLayer: readStoredMapLayer(),
 };
 
 const $ = (id) => document.getElementById(id);
@@ -20,19 +26,49 @@ const map = L.map("map", { scrollWheelZoom: true, zoomControl: true }).setView(
 );
 
 const TILES = {
-  light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  standard: {
+    urls: {
+      light: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    },
+    options: {
+      maxZoom: 19,
+      subdomains: "abcd",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  tourist: {
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 17,
+      attribution:
+        'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, style &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    },
+  },
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      maxZoom: 19,
+      attribution:
+        "Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+    },
+  },
 };
 let tileLayer = null;
 
-function setTiles(theme) {
+function setTiles(layerId) {
+  const id = TILES[layerId] ? layerId : "standard";
+  const layer = TILES[id];
+  const url = layer.urls ? layer.urls[currentTheme()] || layer.urls.light : layer.url;
+
   if (tileLayer) map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(TILES[theme] || TILES.light, {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
+  tileLayer = L.tileLayer(url, layer.options).addTo(map);
+  state.mapLayer = id;
+  try {
+    localStorage.setItem("mapLayer", id);
+  } catch (e) {}
+  syncMapLayerControls();
 }
 
 // Čisté značky namiesto emoji. Kruhová = hlásenie, hranatá (iná farba) = správa.
@@ -76,7 +112,7 @@ function applyTheme(theme) {
     localStorage.setItem("theme", theme);
   } catch (e) {}
   syncThemeButton(theme);
-  setTiles(theme);
+  setTiles(state.mapLayer);
 }
 
 themeBtn.addEventListener("click", () => {
@@ -113,6 +149,15 @@ function esc(s) {
   return div.innerHTML;
 }
 
+function readStoredMapLayer() {
+  try {
+    const stored = localStorage.getItem("mapLayer");
+    return MAP_LAYER_IDS.includes(stored) ? stored : "standard";
+  } catch (e) {
+    return "standard";
+  }
+}
+
 function skeletons(n) {
   return Array.from({ length: n }, () => '<div class="skeleton"></div>').join("");
 }
@@ -121,20 +166,142 @@ function revealStyle(i) {
   return `--i:${Math.min(i, 14)}`;
 }
 
+// --- Filtre mapy ---
+const filterStart = $("filterStart");
+const filterEnd = $("filterEnd");
+const clearFiltersBtn = $("clearFiltersBtn");
+const layerInputs = Array.from(document.querySelectorAll('input[name="mapLayer"]'));
+
+function dateInputToTime(value, endOfDay = false) {
+  if (!value) return null;
+  const parts = value.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [year, month, day] = parts;
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+    endOfDay ? 23 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 999 : 0
+  );
+  return Number.isNaN(date.getTime()) ? null : date.getTime();
+}
+
+function itemTime(iso) {
+  if (!iso) return null;
+  const time = new Date(iso).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+function hasDateFilter() {
+  return Boolean(state.filters.startDate || state.filters.endDate);
+}
+
+function matchesDateRange(iso) {
+  if (!hasDateFilter()) return true;
+  const time = itemTime(iso);
+  if (time === null) return false;
+
+  const start = dateInputToTime(state.filters.startDate);
+  const end = dateInputToTime(state.filters.endDate, true);
+  if (start !== null && time < start) return false;
+  if (end !== null && time > end) return false;
+  return true;
+}
+
+function filteredSightings() {
+  return state.sightings.filter((s) => matchesDateRange(s.reportedAt));
+}
+
+function filteredNews() {
+  return state.news.filter((n) => matchesDateRange(n.date));
+}
+
+function syncDateFilterLimits() {
+  const datedItems = [
+    ...state.sightings.map((s) => s.reportedAt),
+    ...state.news.map((n) => n.date),
+  ]
+    .map(itemTime)
+    .filter((time) => time !== null);
+
+  if (datedItems.length === 0) return;
+
+  const toInputDate = (time) => {
+    const date = new Date(time);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 10);
+  };
+
+  const min = toInputDate(Math.min(...datedItems));
+  const max = toInputDate(Math.max(...datedItems));
+
+  filterStart.min = min;
+  filterStart.max = state.filters.endDate || max;
+  filterEnd.min = state.filters.startDate || min;
+  filterEnd.max = max;
+}
+
+function updateDateFilters(changedInput) {
+  if (filterStart.value && filterEnd.value && filterStart.value > filterEnd.value) {
+    if (changedInput === "start") {
+      filterEnd.value = filterStart.value;
+    } else {
+      filterStart.value = filterEnd.value;
+    }
+  }
+
+  state.filters.startDate = filterStart.value;
+  state.filters.endDate = filterEnd.value;
+  syncDateFilterLimits();
+  renderFilteredViews();
+}
+
+function renderFilteredViews() {
+  renderMarkers();
+  renderSightings($("sightingSearch").value);
+  renderNews();
+}
+
+function syncMapLayerControls() {
+  for (const input of layerInputs) {
+    input.checked = input.value === state.mapLayer;
+  }
+}
+
+filterStart.addEventListener("change", () => updateDateFilters("start"));
+filterEnd.addEventListener("change", () => updateDateFilters("end"));
+clearFiltersBtn.addEventListener("click", () => {
+  filterStart.value = "";
+  filterEnd.value = "";
+  updateDateFilters();
+});
+
+for (const input of layerInputs) {
+  input.addEventListener("change", () => {
+    if (input.checked) setTiles(input.value);
+  });
+}
+
 // --- Vykreslenie hlásení ---
 function renderSightings(filter = "") {
   const q = filter.trim().toLowerCase();
+  const baseItems = filteredSightings();
   const items = q
-    ? state.sightings.filter(
+    ? baseItems.filter(
         (s) =>
           s.location.toLowerCase().includes(q) ||
           (s.note || "").toLowerCase().includes(q)
       )
-    : state.sightings;
+    : baseItems;
 
   if (items.length === 0) {
     elSightings.innerHTML = `<div class="empty"><i class="ph ph-binoculars"></i>${
-      q ? "Žiadne hlásenia nezodpovedajú hľadaniu." : "Zatiaľ žiadne hlásenia."
+      q || hasDateFilter()
+        ? "Žiadne hlásenia nezodpovedajú filtrom."
+        : "Zatiaľ žiadne hlásenia."
     }</div>`;
     return;
   }
@@ -180,7 +347,7 @@ function renderMarkers() {
   state.markers.clear();
 
   const bounds = [];
-  for (const s of state.sightings) {
+  for (const s of filteredSightings()) {
     if (!s.hasCoords) continue;
     const marker = L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map);
     marker.bindPopup(`
@@ -195,7 +362,7 @@ function renderMarkers() {
 
   // Geokódované správy — hranatá značka inej farby.
   let newsOnMap = 0;
-  for (const n of state.news) {
+  for (const n of filteredNews()) {
     if (!n.hasCoords) continue;
     const marker = L.marker([n.lat, n.lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
@@ -212,21 +379,28 @@ function renderMarkers() {
   const mapMeta = $("mapMeta");
   if (mapMeta) {
     const sightOnMap = bounds.length - newsOnMap;
-    mapMeta.textContent = `${sightOnMap} hlásení · ${newsOnMap} správ na mape`;
+    mapMeta.textContent = `${sightOnMap} hlásení · ${newsOnMap} správ${
+      hasDateFilter() ? " vo vybranom období" : " na mape"
+    }`;
   }
 
   if (bounds.length > 0) {
     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
+  } else if (hasDateFilter()) {
+    map.setView(SK_CENTER, 7);
   }
 }
 
 // --- Vykreslenie správ ---
 function renderNews() {
-  if (state.news.length === 0) {
-    elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>Momentálne žiadne správy.</div>`;
+  const items = filteredNews();
+  if (items.length === 0) {
+    elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>${
+      hasDateFilter() ? "Žiadne správy nezodpovedajú filtrom." : "Momentálne žiadne správy."
+    }</div>`;
     return;
   }
-  elNews.innerHTML = state.news
+  elNews.innerHTML = items
     .map(
       (n, i) => `
       <article class="card news reveal${n.hasCoords ? " has-place" : ""}" style="${revealStyle(i)}" data-id="${esc(n.id)}">
@@ -305,6 +479,7 @@ async function loadData() {
     elNews.innerHTML = `<div class="error-box">Nepodarilo sa načítať správy. Skúste to znova.</div>`;
   }
 
+  syncDateFilterLimits();
   renderStats();
 }
 
@@ -326,7 +501,7 @@ $("sightingSearch").addEventListener("input", (e) => renderSightings(e.target.va
 
 // --- Štart ---
 syncThemeButton(currentTheme());
-setTiles(currentTheme());
+setTiles(state.mapLayer);
 elSightings.innerHTML = skeletons(5);
 elNews.innerHTML = skeletons(5);
 loadData();
