@@ -137,22 +137,24 @@
         </div>
       </section>
 
+      <div class="content-search">
+        <div class="search-wrap">
+          <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+          <input
+            type="search"
+            id="contentSearch"
+            placeholder="Hľadať lokalitu, poznámku alebo článok…"
+            autocomplete="off"
+            aria-label="Hľadať v hláseniach a správach"
+          />
+        </div>
+      </div>
+
       <div class="columns">
         <section class="panel" aria-labelledby="sightingsHead">
           <div class="section-head">
             <h2 id="sightingsHead">Najnovšie hlásenia</h2>
             <span class="src">tumedved.sk</span>
-          </div>
-
-          <div class="search-wrap">
-            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-            <input
-              type="search"
-              id="sightingSearch"
-              placeholder="Hľadať lokalitu alebo poznámku…"
-              autocomplete="off"
-              aria-label="Hľadať v hláseniach"
-            />
           </div>
 
           <div id="sightingsList" class="list" aria-live="polite"></div>
@@ -169,12 +171,18 @@
     </main>
 
     <footer class="site-footer">
-      <p>
-        Dáta sa automaticky sťahujú z verejných zdrojov
-        <a href="https://tumedved.sk" target="_blank" rel="noopener">tumedved.sk</a> a
-        <a href="https://news.google.com" target="_blank" rel="noopener">Google News</a>.
-        Hlásenia pridávajú používatelia a nemusia byť overené. Slúžia ako orientačná informácia.
-      </p>
+      <div class="footer-inner">
+        <p>
+          Dáta sa automaticky sťahujú z verejných zdrojov
+          <a href="https://tumedved.sk" target="_blank" rel="noopener">tumedved.sk</a> a
+          <a href="https://news.google.com" target="_blank" rel="noopener">Google News</a>.
+          Hlásenia pridávajú používatelia a nemusia byť overené. Slúžia ako orientačná informácia.
+        </p>
+        <nav class="footer-links" aria-label="Právne informácie">
+          <a href="/privacy">Ochrana súkromia</a>
+          <a href="/terms">Podmienky používania</a>
+        </nav>
+      </div>
     </footer>
 
     <script

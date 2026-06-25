@@ -9,7 +9,7 @@
 
 import Parser from "rss-parser";
 import { geocodeNews } from "../geo/geocode.js";
-import { fetchArticleBodies } from "./article.js";
+import { fetchArticleBodies, googleNewsWebUrl } from "./article.js";
 
 const parser = new Parser({
   timeout: 15000,
@@ -130,11 +130,14 @@ export async function fetchNews() {
         continue;
       }
 
+      const link = item.link || "";
+
       byKey.set(key, {
         id: `news-${key}`,
-        source: titleSource || item.sourceTag || hostFromLink(item.link),
+        source: titleSource || item.sourceTag || hostFromLink(link),
         title,
-        link: item.link || "",
+        link,
+        googleNewsUrl: googleNewsWebUrl(link),
         snippet,
         date: date ? new Date(date).toISOString() : null,
       });
@@ -154,6 +157,7 @@ export async function fetchNews() {
     if (r) {
       it.body = r.body || "";
       if (r.url) it.articleUrl = r.url; // priama URL článku (mimo Google News)
+      if (r.googleNewsUrl) it.googleNewsUrl = r.googleNewsUrl;
     }
   }
 

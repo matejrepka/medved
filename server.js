@@ -43,7 +43,7 @@ app.get("/api/sightings", async (_req, res) => {
 app.get("/api/news", async (_req, res) => {
   try {
     const data = await newsCache.get();
-    res.set("Cache-Control", "public, max-age=600");
+    res.set("Cache-Control", "no-store");
     res.json({ updatedAt: newsCache.meta.fetchedAt, count: data.length, items: data });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
@@ -68,6 +68,14 @@ app.post("/api/refresh", async (_req, res) => {
 });
 
 // --- Frontend ---
+app.get("/privacy", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "privacy.html"));
+});
+
+app.get("/terms", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "terms.html"));
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.listen(PORT, () => {

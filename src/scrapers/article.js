@@ -11,6 +11,49 @@ import { parseHTML } from "linkedom";
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
+function googleNewsArticleId(gnUrl) {
+  if (!gnUrl) return null;
+  try {
+    const url = new URL(gnUrl);
+    const match = url.pathname.match(/\/(?:rss\/)?articles\/([^/?#]+)/);
+    return match?.[1] || null;
+  } catch {
+    return gnUrl.split("/articles/")[1]?.split(/[?#]/)[0] || null;
+  }
+}
+
+export function googleNewsWebUrl(gnUrl) {
+  const id = googleNewsArticleId(gnUrl);
+  if (!id) return gnUrl || "";
+  return `https://news.google.com/articles/${id}?hl=sk&gl=SK&ceid=SK:sk`;
+}
+
+function firstExternalUrl(text) {
+  const unescaped = text
+    .replace(/\\\//g, "/")
+    .replace(/\\u0026/g, "&")
+    .replace(/\\u003d/g, "=");
+  const urls = unescaped.match(/https?:\/\/[^"'\]<>\s\\]+/g) || [];
+
+  return (
+    urls.find((u) => {
+      try {
+        const host = new URL(u).hostname.replace(/^www\./, "");
+        return (
+          host !== "google.com" &&
+          !host.endsWith(".google.com") &&
+          host !== "gstatic.com" &&
+          !host.endsWith(".gstatic.com") &&
+          host !== "googleusercontent.com" &&
+          !host.endsWith(".googleusercontent.com")
+        );
+      } catch {
+        return false;
+      }
+    }) || null
+  );
+}
+
 /**
  * Rozbalí zakódovaný odkaz Google News na reálnu URL článku.
  * Postup: stiahne stránku článku (kvôli podpisu sg/ts), potom zavolá interné
@@ -18,10 +61,11 @@ const UA =
  * vráti null a volajúci použije nadpis/snippet.
  */
 async function resolveGoogleNewsUrl(gnUrl, signal) {
-  const id = gnUrl.split("/articles/")[1]?.split("?")[0];
+  const id = googleNewsArticleId(gnUrl);
   if (!id) return null;
 
-  const page = await fetch(`https://news.google.com/rss/articles/${id}`, {
+  const pageUrl = `https://news.google.com/rss/articles/${id}?hl=sk&gl=SK&ceid=SK:sk`;
+  const page = await fetch(pageUrl, {
     headers: { "User-Agent": UA },
     signal,
   });
@@ -50,12 +94,7 @@ async function resolveGoogleNewsUrl(gnUrl, signal) {
   if (!rpc.ok) return null;
   const txt = await rpc.text();
   // V odpovedi je cieľová URL (escapovaná). Vezmeme prvý ne-googlovský odkaz.
-  const urls = txt.match(/https?:\/\/[^"\\]+/g) || [];
-  return (
-    urls.find(
-      (u) => !/^https?:\/\/(news\.google\.com|www\.gstatic\.com|accounts\.google\.com|policies\.google\.com)/.test(u)
-    ) || null
-  );
+  return firstExternalUrl(txt);
 }
 
 /** Stiahne reálnu URL a Readability-om vytiahne čistý text článku. */
@@ -82,13 +121,14 @@ async function extractArticleText(url, signal) {
  */
 export async function fetchArticleBody(gnLink, timeoutMs = 12000) {
   const ctrl = AbortSignal.timeout(timeoutMs);
+  const fallbackUrl = googleNewsWebUrl(gnLink);
   try {
     const real = await resolveGoogleNewsUrl(gnLink, ctrl);
-    if (!real) return { url: null, body: "" };
+    if (!real) return { url: null, googleNewsUrl: fallbackUrl, body: "" };
     const body = await extractArticleText(real, ctrl);
-    return { url: real, body };
+    return { url: real, googleNewsUrl: fallbackUrl, body };
   } catch {
-    return { url: null, body: "" };
+    return { url: null, googleNewsUrl: fallbackUrl, body: "" };
   }
 }
 
@@ -96,7 +136,7 @@ export async function fetchArticleBody(gnLink, timeoutMs = 12000) {
  * Stiahne telá viacerých článkov s obmedzenou súbežnosťou (šetrný k zdrojom).
  * @param {Array<{link:string}>} items
  * @param {{concurrency?:number, timeoutMs?:number}} opts
- * @returns {Promise<Map<string,{url:string|null, body:string}>>} link -> výsledok
+ * @returns {Promise<Map<string,{url:string|null, googleNewsUrl:string, body:string}>>} link -> výsledok
  */
 export async function fetchArticleBodies(items, opts = {}) {
   const concurrency = opts.concurrency ?? 6;

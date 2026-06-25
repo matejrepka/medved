@@ -11,6 +11,7 @@ const state = {
   filters: {
     startDate: "",
     endDate: "",
+    query: "",
   },
   mapLayer: readStoredMapLayer(),
 };
@@ -149,6 +150,23 @@ function esc(s) {
   return div.innerHTML;
 }
 
+function normalizeNewsLink(url) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.hostname !== "news.google.com") return url;
+    const match = parsed.pathname.match(/^\/rss\/articles\/([^/?#]+)/);
+    if (!match) return url;
+    return `https://news.google.com/articles/${match[1]}?hl=sk&gl=SK&ceid=SK:sk`;
+  } catch (e) {
+    return url;
+  }
+}
+
+function newsUrl(n) {
+  return n.articleUrl || n.googleNewsUrl || normalizeNewsLink(n.link) || "#";
+}
+
 function readStoredMapLayer() {
   try {
     const stored = localStorage.getItem("mapLayer");
@@ -170,6 +188,7 @@ function revealStyle(i) {
 const filterStart = $("filterStart");
 const filterEnd = $("filterEnd");
 const clearFiltersBtn = $("clearFiltersBtn");
+const contentSearch = $("contentSearch");
 const layerInputs = Array.from(document.querySelectorAll('input[name="mapLayer"]'));
 
 function dateInputToTime(value, endOfDay = false) {
@@ -199,6 +218,23 @@ function hasDateFilter() {
   return Boolean(state.filters.startDate || state.filters.endDate);
 }
 
+function hasSearchFilter() {
+  return Boolean(state.filters.query.trim());
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function matchesSearchQuery(fields) {
+  const q = normalizeSearchText(state.filters.query.trim());
+  if (!q) return true;
+  return fields.some((field) => normalizeSearchText(field).includes(q));
+}
+
 function matchesDateRange(iso) {
   if (!hasDateFilter()) return true;
   const time = itemTime(iso);
@@ -212,11 +248,19 @@ function matchesDateRange(iso) {
 }
 
 function filteredSightings() {
-  return state.sightings.filter((s) => matchesDateRange(s.reportedAt));
+  return state.sightings.filter(
+    (s) =>
+      matchesDateRange(s.reportedAt) &&
+      matchesSearchQuery([s.location, s.note, s.source])
+  );
 }
 
 function filteredNews() {
-  return state.news.filter((n) => matchesDateRange(n.date));
+  return state.news.filter(
+    (n) =>
+      matchesDateRange(n.date) &&
+      matchesSearchQuery([n.title, n.snippet, n.source, n.place])
+  );
 }
 
 function syncDateFilterLimits() {
@@ -261,7 +305,7 @@ function updateDateFilters(changedInput) {
 
 function renderFilteredViews() {
   renderMarkers();
-  renderSightings($("sightingSearch").value);
+  renderSightings();
   renderNews();
 }
 
@@ -286,20 +330,11 @@ for (const input of layerInputs) {
 }
 
 // --- Vykreslenie hlásení ---
-function renderSightings(filter = "") {
-  const q = filter.trim().toLowerCase();
-  const baseItems = filteredSightings();
-  const items = q
-    ? baseItems.filter(
-        (s) =>
-          s.location.toLowerCase().includes(q) ||
-          (s.note || "").toLowerCase().includes(q)
-      )
-    : baseItems;
-
+function renderSightings() {
+  const items = filteredSightings();
   if (items.length === 0) {
     elSightings.innerHTML = `<div class="empty"><i class="ph ph-binoculars"></i>${
-      q || hasDateFilter()
+      hasSearchFilter() || hasDateFilter()
         ? "Žiadne hlásenia nezodpovedajú filtrom."
         : "Zatiaľ žiadne hlásenia."
     }</div>`;
@@ -364,12 +399,13 @@ function renderMarkers() {
   let newsOnMap = 0;
   for (const n of filteredNews()) {
     if (!n.hasCoords) continue;
+    const href = newsUrl(n);
     const marker = L.marker([n.lat, n.lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
       <p class="popup-loc">${esc(n.place || "")}</p>
       <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
       <p class="popup-note">${esc(n.title)}</p>
-      <a class="popup-link" href="${esc(n.link)}" target="_blank" rel="noopener">Čítať článok →</a>
+      <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Čítať článok →</a>
     `);
     state.markers.set(n.id, marker);
     bounds.push([n.lat, n.lng]);
@@ -380,13 +416,13 @@ function renderMarkers() {
   if (mapMeta) {
     const sightOnMap = bounds.length - newsOnMap;
     mapMeta.textContent = `${sightOnMap} hlásení · ${newsOnMap} správ${
-      hasDateFilter() ? " vo vybranom období" : " na mape"
+      hasDateFilter() || hasSearchFilter() ? " podľa filtrov" : " na mape"
     }`;
   }
 
   if (bounds.length > 0) {
     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
-  } else if (hasDateFilter()) {
+  } else if (hasDateFilter() || hasSearchFilter()) {
     map.setView(SK_CENTER, 7);
   }
 }
@@ -396,15 +432,19 @@ function renderNews() {
   const items = filteredNews();
   if (items.length === 0) {
     elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>${
-      hasDateFilter() ? "Žiadne správy nezodpovedajú filtrom." : "Momentálne žiadne správy."
+      hasDateFilter() || hasSearchFilter()
+        ? "Žiadne správy nezodpovedajú filtrom."
+        : "Momentálne žiadne správy."
     }</div>`;
     return;
   }
   elNews.innerHTML = items
     .map(
-      (n, i) => `
+      (n, i) => {
+        const href = newsUrl(n);
+        return `
       <article class="card news reveal${n.hasCoords ? " has-place" : ""}" style="${revealStyle(i)}" data-id="${esc(n.id)}">
-        <p class="card-title"><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}</a></p>
+        <p class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener">${esc(n.title)}</a></p>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
           <span class="meta-date">${esc(fmtDate(n.date))}</span>
@@ -423,6 +463,7 @@ function renderNews() {
             : ""
         }
       </article>`
+      }
     )
     .join("");
 
@@ -457,16 +498,17 @@ function setUpdated(iso) {
 
 // --- Načítanie dát ---
 async function loadData() {
+  const cacheBust = Date.now();
   const [sRes, nRes] = await Promise.allSettled([
-    fetch("/api/sightings").then((r) => r.json()),
-    fetch("/api/news").then((r) => r.json()),
+    fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
+    fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
 
   if (sRes.status === "fulfilled" && sRes.value.items) {
     state.sightings = sRes.value.items;
     setUpdated(sRes.value.updatedAt);
     renderMarkers();
-    renderSightings($("sightingSearch").value);
+    renderSightings();
   } else {
     elSightings.innerHTML = `<div class="error-box">Nepodarilo sa načítať hlásenia. Skúste to znova.</div>`;
   }
@@ -497,7 +539,10 @@ refreshBtn.addEventListener("click", async () => {
   }
 });
 
-$("sightingSearch").addEventListener("input", (e) => renderSightings(e.target.value));
+contentSearch.addEventListener("input", (e) => {
+  state.filters.query = e.target.value;
+  renderFilteredViews();
+});
 
 // --- Štart ---
 syncThemeButton(currentTheme());

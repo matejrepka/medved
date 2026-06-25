@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Podmienky používania | Medveď Sledovač</title>
+    <meta
+      name="description"
+      content="Podmienky používania aplikácie Medveď Sledovač."
+    />
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Medveď Sledovač, domov">
+        <span class="brand-mark"><i class="ph ph-paw-print" aria-hidden="true"></i></span>
+        <span class="brand-name">Medveď Sledovač</span>
+      </a>
+      <a class="ghost-btn legal-back" href="/">
+        <i class="ph ph-arrow-left" aria-hidden="true"></i>
+        <span>Späť na mapu</span>
+      </a>
+    </header>
+
+    <main class="legal-page">
+      <article class="legal-content">
+        <p class="legal-kicker">Právne informácie</p>
+        <h1>Podmienky používania</h1>
+        <p class="legal-updated">Posledná aktualizácia: 25. jún 2026</p>
+
+        <section>
+          <h2>Charakter služby</h2>
+          <p>
+            Medveď Sledovač je informačná aplikácia, ktorá na jednom mieste zobrazuje
+            verejne dostupné hlásenia a správy týkajúce sa výskytu medveďov na Slovensku.
+            Aplikácia nie je oficiálnym varovným systémom, bezpečnostnou službou ani
+            náhradou za informácie od príslušných orgánov.
+          </p>
+        </section>
+
+        <section>
+          <h2>Externé zdroje</h2>
+          <p>
+            Údaje sa automaticky preberajú z externých webov, najmä z tumedved.sk a
+            Google News. Prevádzkovateľ tejto aplikácie nevytvára pôvodný obsah týchto
+            hlásení a správ, nekontroluje ich úplnosť a nevie garantovať ich presnosť,
+            aktuálnosť ani pravdivosť.
+          </p>
+        </section>
+
+        <section>
+          <h2>Bez záruky</h2>
+          <p>
+            Aplikácia sa poskytuje „tak, ako je“, bez akejkoľvek záruky dostupnosti,
+            správnosti, úplnosti alebo vhodnosti údajov na konkrétny účel. Informácie
+            môžu byť oneskorené, nepresné, neúplné, duplicitné alebo nesprávne
+            geokódované.
+          </p>
+        </section>
+
+        <section>
+          <h2>Overenie informácií</h2>
+          <p>
+            Pred tým, ako sa podľa zobrazených údajov rozhodnete alebo podniknete
+            akékoľvek kroky, overte si ich z pôvodného zdroja a podľa okolností aj
+            z oficiálnych zdrojov, napríklad u obce, polície, zásahového tímu,
+            Štátnej ochrany prírody SR alebo iných príslušných orgánov.
+          </p>
+          <p>
+            V prípade bezprostredného nebezpečenstva sa nespoliehajte na túto aplikáciu
+            a kontaktujte tiesňové linky alebo príslušné záchranné zložky.
+          </p>
+        </section>
+
+        <section>
+          <h2>Obmedzenie zodpovednosti</h2>
+          <p>
+            Prevádzkovateľ aplikácie nezodpovedá za škody, straty, rozhodnutia,
+            zásahy, opomenutia ani iné následky, ktoré vzniknú použitím, výpadkom alebo
+            nesprávnym výkladom údajov zobrazených v aplikácii. Používanie aplikácie je
+            na vlastné riziko používateľa.
+          </p>
+        </section>
+
+        <section>
+          <h2>Odkazy na tretie strany</h2>
+          <p>
+            Aplikácia obsahuje odkazy na externé stránky. Za ich obsah, dostupnosť,
+            pravidlá používania a ochranu súkromia zodpovedajú ich vlastníci alebo
+            prevádzkovatelia.
+          </p>
+        </section>
+
+        <section>
+          <h2>Zmeny podmienok</h2>
+          <p>
+            Tieto podmienky môžu byť priebežne upravené. Pokračovaním v používaní
+            aplikácie po ich zverejnení vyjadrujete súhlas s aktuálnym znením.
+          </p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

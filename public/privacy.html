@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ochrana súkromia | Medveď Sledovač</title>
+    <meta
+      name="description"
+      content="Informácie o ochrane súkromia pri používaní aplikácie Medveď Sledovač."
+    />
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Medveď Sledovač, domov">
+        <span class="brand-mark"><i class="ph ph-paw-print" aria-hidden="true"></i></span>
+        <span class="brand-name">Medveď Sledovač</span>
+      </a>
+      <a class="ghost-btn legal-back" href="/">
+        <i class="ph ph-arrow-left" aria-hidden="true"></i>
+        <span>Späť na mapu</span>
+      </a>
+    </header>
+
+    <main class="legal-page">
+      <article class="legal-content">
+        <p class="legal-kicker">Právne informácie</p>
+        <h1>Ochrana súkromia</h1>
+        <p class="legal-updated">Posledná aktualizácia: 25. jún 2026</p>
+
+        <section>
+          <h2>Aké údaje spracúvame</h2>
+          <p>
+            Medveď Sledovač nevyžaduje registráciu, účet ani prihlasovanie. Pri bežnom
+            používaní nám vedome neposkytujete meno, e-mail ani iné kontaktné údaje.
+          </p>
+          <p>
+            Aplikácia zobrazuje verejne dostupné informácie získané z externých zdrojov,
+            najmä z tumedved.sk a Google News. Tieto údaje môžu obsahovať lokality,
+            časové údaje, titulky, úryvky správ, odkazy a ďalšie informácie, ktoré už
+            zverejnili tretie strany.
+          </p>
+        </section>
+
+        <section>
+          <h2>Technické údaje</h2>
+          <p>
+            Server môže pri vybavovaní požiadaviek spracovať bežné technické údaje,
+            napríklad IP adresu, typ prehliadača, čas požiadavky, navštívenú URL alebo
+            chybové hlásenia. Tieto údaje slúžia na prevádzku, bezpečnosť a diagnostiku
+            aplikácie.
+          </p>
+        </section>
+
+        <section>
+          <h2>Lokálne nastavenia</h2>
+          <p>
+            Aplikácia môže v prehliadači uložiť iba jednoduché nastavenia, napríklad
+            zvolený svetlý alebo tmavý režim a vybranú mapovú vrstvu. Tieto údaje sú
+            uložené lokálne vo vašom zariadení a neslúžia na identifikáciu používateľa.
+          </p>
+        </section>
+
+        <section>
+          <h2>Externé služby</h2>
+          <p>
+            Pri používaní aplikácie sa môžu načítavať služby tretích strán, napríklad
+            mapové podklady, písma, ikony, knižnica mapy a odkazy na pôvodné články.
+            Tieto služby môžu spracúvať údaje podľa vlastných pravidiel ochrany súkromia.
+          </p>
+        </section>
+
+        <section>
+          <h2>Zdroje údajov</h2>
+          <p>
+            Nezhromažďujeme ani nevytvárame vlastné hlásenia o výskyte medveďov. Dáta
+            preberáme automatizovane z verejne dostupných externých webov. Za obsah,
+            presnosť, úplnosť a aktuálnosť týchto externých údajov zodpovedajú ich
+            pôvodní autori alebo prevádzkovatelia.
+          </p>
+        </section>
+
+        <section>
+          <h2>Zmeny</h2>
+          <p>
+            Tieto pravidlá môžu byť priebežne upravené, najmä ak sa zmení spôsob
+            fungovania aplikácie, zdroje údajov alebo používané externé služby.
+          </p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>
