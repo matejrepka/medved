@@ -1,8 +1,8 @@
 // Medveď Sledovač — server.
 //
-// Stiahne hlásenia o výskyte medveďov z tumedved.sk a slovenské správy
-// o medveďoch na serveri, uloží ich do Supabase a poskytuje ako vlastné JSON API.
-// Zároveň servíruje frontend zo zložky /public.
+// Dáta sa sťahujú výhradne cez externý cron job (cron-job.org), ktorý volá
+// /api/cron/refresh každú hodinu. Server pri štarte načíta existujúce dáta
+// zo Supabase a servíruje ich cez JSON API + frontend zo zložky /public.
 
 import "dotenv/config";
 import express from "express";
@@ -25,7 +25,6 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
-const SCRAPE_INTERVAL_MS = readMinutesEnv("SCRAPE_INTERVAL_MINUTES", 60) * 60 * 1000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 
 const sightingsStore = new ScheduledDataStore({
@@ -34,7 +33,6 @@ const sightingsStore = new ScheduledDataStore({
   loadStored: loadTumedvedLogs,
   saveFresh: saveTumedvedLogs,
   recordRun: recordScrapeRun,
-  intervalMs: SCRAPE_INTERVAL_MS,
 });
 
 const newsStore = new ScheduledDataStore({
@@ -43,17 +41,11 @@ const newsStore = new ScheduledDataStore({
   loadStored: loadNewsLogs,
   saveFresh: saveNewsLogs,
   recordRun: recordScrapeRun,
-  intervalMs: SCRAPE_INTERVAL_MS,
 });
 
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true");
-
-function readMinutesEnv(name, fallback) {
-  const value = Number(process.env[name]);
-  return Number.isFinite(value) && value > 0 ? value : fallback;
-}
 
 // Malý logger.
 app.use((req, _res, next) => {
@@ -115,7 +107,7 @@ app.get("/api/news", async (_req, res) => {
 app.get("/api/status", (_req, res) => {
   res.json({
     supabaseConfigured: isSupabaseConfigured(),
-    scrapeIntervalMinutes: SCRAPE_INTERVAL_MS / 60 / 1000,
+    refreshMode: "external-cron",
     sightings: sightingsStore.meta,
     news: newsStore.meta,
   });
@@ -145,23 +137,6 @@ app.all("/api/cron/refresh", async (req, res) => {
   }
 });
 
-app.post("/api/refresh", async (_req, res) => {
-  try {
-    await Promise.all([
-      sightingsStore.loadFromDatabase(),
-      newsStore.loadFromDatabase(),
-    ]);
-    res.status(202).json({
-      ok: true,
-      message: "Dáta sa sťahujú automaticky na serveri podľa hodinového plánu.",
-      sightings: sightingsStore.meta,
-      news: newsStore.meta,
-    });
-  } catch (err) {
-    res.status(502).json({ ok: false, error: err.message });
-  }
-});
-
 // --- Frontend ---
 app.get("/privacy", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "privacy.html"));
@@ -176,16 +151,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
   console.log(
-    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; scrape interval: ${
-      SCRAPE_INTERVAL_MS / 60 / 1000
-    } min`
+    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron`
   );
   sightingsStore.start().catch(() => {});
   newsStore.start().catch(() => {});
-});
-
-process.on("SIGINT", () => {
-  sightingsStore.stop();
-  newsStore.stop();
-  process.exit(0);
 });

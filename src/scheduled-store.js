@@ -1,18 +1,15 @@
 export class ScheduledDataStore {
-  constructor({ name, fetcher, loadStored, saveFresh, recordRun, intervalMs }) {
+  constructor({ name, fetcher, loadStored, saveFresh, recordRun }) {
     this.name = name;
     this.fetcher = fetcher;
     this.loadStored = loadStored;
     this.saveFresh = saveFresh;
     this.recordRun = recordRun;
-    this.intervalMs = intervalMs;
 
     this.value = null;
     this.fetchedAt = 0;
     this.loadedAt = 0;
-    this.nextRefreshAt = null;
     this.inFlight = null;
-    this.timer = null;
     this.lastError = null;
   }
 
@@ -20,22 +17,6 @@ export class ScheduledDataStore {
     await this.loadFromDatabase().catch((err) => {
       console.error(`[${this.name}] DB load failed:`, err.message);
     });
-
-    this.refresh("startup").catch(() => {});
-    this.scheduleNext();
-  }
-
-  stop() {
-    if (this.timer) clearTimeout(this.timer);
-    this.timer = null;
-  }
-
-  scheduleNext() {
-    this.nextRefreshAt = Date.now() + this.intervalMs;
-    this.timer = setTimeout(() => {
-      this.refresh("scheduled").catch(() => {}).finally(() => this.scheduleNext());
-    }, this.intervalMs);
-    this.timer.unref?.();
   }
 
   async loadFromDatabase() {
@@ -56,7 +37,7 @@ export class ScheduledDataStore {
     return data;
   }
 
-  async refresh(reason = "manual") {
+  async refresh(reason = "cron") {
     if (this.inFlight) return this.inFlight;
 
     const startedAt = new Date().toISOString();
@@ -122,9 +103,6 @@ export class ScheduledDataStore {
     return {
       fetchedAt: this.fetchedAt ? new Date(this.fetchedAt).toISOString() : null,
       loadedAt: this.loadedAt ? new Date(this.loadedAt).toISOString() : null,
-      nextRefreshAt: this.nextRefreshAt
-        ? new Date(this.nextRefreshAt).toISOString()
-        : null,
       refreshing: Boolean(this.inFlight),
       count: Array.isArray(this.value) ? this.value.length : null,
       error: this.lastError ? this.lastError.message : null,

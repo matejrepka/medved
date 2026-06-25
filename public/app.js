@@ -568,19 +568,6 @@ async function loadData() {
   renderStats();
 }
 
-// --- Obnova ---
-const refreshBtn = $("refreshBtn");
-refreshBtn.addEventListener("click", async () => {
-  refreshBtn.classList.add("loading");
-  try {
-    await loadData();
-  } catch (_) {
-    /* loadData ošetrí chyby */
-  } finally {
-    refreshBtn.classList.remove("loading");
-  }
-});
-
 contentSearch.addEventListener("input", (e) => {
   state.filters.query = e.target.value;
   renderFilteredViews();
@@ -592,5 +579,6 @@ setTiles(state.mapLayer);
 elSightings.innerHTML = skeletons(5);
 elNews.innerHTML = skeletons(5);
 loadData();
-// Obnova zobrazenia každých 15 minút (dáta drží cache na serveri).
+// Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).
 setInterval(loadData, 15 * 60 * 1000);
+

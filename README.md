@@ -30,8 +30,8 @@ mape Slovenska a v prehľadných zoznamoch.
 - **Svetlý a tmavý režim** – prepínač v hlavičke, voľba sa pamätá; dá sa vynútiť aj cez
   URL parameter `?theme=light` / `?theme=dark`. Štandardná mapová vrstva mení dlaždice podľa
   režimu a zvolená vrstva mapy sa pamätá samostatne.
-- **Serverové obnovovanie + Supabase** – scraping beží na serveri každú hodinu, výsledky sa
-  ukladajú do samostatných Supabase tabuliek a používatelia čítajú už pripravené dáta.
+- **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org) každú
+  hodinu, výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
 
 ## Odkiaľ pochádzajú dáta / Data sources
 
@@ -56,7 +56,6 @@ Pred produkčným spustením vyplň `.env`:
 ```bash
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-SCRAPE_INTERVAL_MINUTES=60
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
 ```
@@ -97,7 +96,6 @@ Server poskytuje aj vlastné čisté JSON API:
 | `/api/news` | GET | slovenské správy o medveďoch |
 | `/api/status` | GET | stav serverového obnovovania dát |
 | `/api/cron/refresh?secret=...` | ALL | chránený endpoint pre cron-job.org, spustí fresh scraping |
-| `/api/refresh` | POST | znovu načíta uložené dáta z databázy, nespúšťa scraping |
 
 Príklad odpovede `/api/sightings`:
 
@@ -146,15 +144,13 @@ medved/
 
 ## Ako často sa dáta obnovujú / Refresh interval
 
-- Server spustí scraping pri štarte a potom každých **60 minút**.
-- Interval sa dá zmeniť cez `SCRAPE_INTERVAL_MINUTES`.
+- Scraping spúšťa **externý cron job** (cron-job.org) každú **hodinu** cez `/api/cron/refresh`.
+- Server pri štarte len načíta existujúce dáta zo Supabase — sám nescrapuje.
 - Hlásenia sa ukladajú do `tumedved_logs`, správy do `news_logs`, behy scraperov do
   `scrape_runs` a návštevy/API requesty používateľov do `website_logs`.
-- Frontend si dáta automaticky načíta každých 15 minút; tlačidlo **Načítať** iba znovu načíta
-  dáta zo serverového API, nespúšťa scraping.
+- Frontend si dáta automaticky načíta každých 15 minút z API.
 
-Ak Supabase nie je nastavený, aplikácia stále funguje v pamäti procesu, ale dáta ani logy sa
-neuložia po reštarte servera.
+Supabase je povinný — bez neho server nemá odkiaľ čítať dáta.
 
 ## Poznámka / Disclaimer
 
