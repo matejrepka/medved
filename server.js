@@ -26,6 +26,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 const SCRAPE_INTERVAL_MS = readMinutesEnv("SCRAPE_INTERVAL_MINUTES", 60) * 60 * 1000;
+const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 
 const sightingsStore = new ScheduledDataStore({
   name: "tumedved",
@@ -118,6 +119,30 @@ app.get("/api/status", (_req, res) => {
     sightings: sightingsStore.meta,
     news: newsStore.meta,
   });
+});
+
+function isValidCronRequest(req) {
+  if (!CRON_REFRESH_SECRET) return false;
+  const token = req.query.secret;
+  return typeof token === "string" && token === CRON_REFRESH_SECRET;
+}
+
+app.all("/api/cron/refresh", async (req, res) => {
+  if (!isValidCronRequest(req)) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  try {
+    await Promise.all([sightingsStore.refresh("cron"), newsStore.refresh("cron")]);
+    res.json({
+      ok: true,
+      message: "Cron refresh completed.",
+      sightings: sightingsStore.meta,
+      news: newsStore.meta,
+    });
+  } catch (err) {
+    res.status(502).json({ ok: false, error: err.message });
+  }
 });
 
 app.post("/api/refresh", async (_req, res) => {

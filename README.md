@@ -58,7 +58,18 @@ SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 SCRAPE_INTERVAL_MINUTES=60
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
+CRON_REFRESH_SECRET=replace-with-a-long-random-string
 ```
+
+Ak appku hostuješ na Verceli a chceš pravidelný refresh cez cron-job.org, nastav v cron-job.org
+volanie na:
+
+```text
+https://tvoja-domena.sk/api/cron/refresh?secret=CRON_REFRESH_SECRET
+```
+
+Táto URL spustí fresh scraping tumedved.sk a správ, uloží výsledky do Supabase a vráti JSON
+odpoveď. Secret musí sedieť s hodnotou v `.env`.
 
 Databázové tabuľky vytvoríš jednorazovo SQL skriptom
 [`docs/supabase-schema.sql`](docs/supabase-schema.sql) v Supabase SQL editore.
@@ -85,6 +96,7 @@ Server poskytuje aj vlastné čisté JSON API:
 | `/api/sightings` | GET | hlásenia o výskyte medveďov |
 | `/api/news` | GET | slovenské správy o medveďoch |
 | `/api/status` | GET | stav serverového obnovovania dát |
+| `/api/cron/refresh?secret=...` | ALL | chránený endpoint pre cron-job.org, spustí fresh scraping |
 | `/api/refresh` | POST | znovu načíta uložené dáta z databázy, nespúšťa scraping |
 
 Príklad odpovede `/api/sightings`:
