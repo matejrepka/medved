@@ -189,6 +189,19 @@ app.listen(PORT, () => {
   console.log(
     `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron`
   );
-  sightingsStore.start().catch(() => {});
-  newsStore.start().catch(() => {});
+  sightingsStore.start().catch((err) => {
+    console.error("[tumedved] startup load failed:", err.message);
+  });
+  newsStore.start().catch((err) => {
+    console.error("[news] startup load failed:", err.message);
+  });
+
+  if (isSupabaseConfigured()) {
+    Promise.all([
+      sightingsStore.refresh("startup"),
+      newsStore.refresh("startup"),
+    ]).catch((err) => {
+      console.error("[startup] refresh failed:", err.message);
+    });
+  }
 });

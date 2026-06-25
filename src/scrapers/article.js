@@ -330,6 +330,10 @@ function textDateScore(text, index, raw, titleIndexes) {
     score -= 45;
   }
 
+  // Penalizacia pre zobrazenie aktualneho pocasia a menin v hlavicke (casty widget weboch)
+  if (/°c/.test(around)) score -= 100;
+  if (/meniny ma|dnes ma meniny/.test(around)) score -= 100;
+
   return score;
 }
 
@@ -337,8 +341,20 @@ function addTextDateCandidates(document, candidates) {
   const text = cleanText(document.body?.textContent || document.textContent || "");
   if (!text) return;
 
-  const titleIndexes = Array.from(document.querySelectorAll("h1"))
-    .map((h) => cleanText(h.textContent))
+  const titleTexts = new Set();
+  
+  for (const h of document.querySelectorAll("h1")) {
+    const t = cleanText(h.textContent);
+    if (t.length > 10) titleTexts.add(t);
+  }
+  
+  const pageTitle = document.querySelector("title")?.textContent;
+  if (pageTitle) titleTexts.add(cleanText(pageTitle.split("|")[0]));
+  
+  const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute("content");
+  if (ogTitle) titleTexts.add(cleanText(ogTitle.split("|")[0]));
+
+  const titleIndexes = Array.from(titleTexts)
     .filter(Boolean)
     .map((title) => text.indexOf(title))
     .filter((idx) => idx >= 0);
