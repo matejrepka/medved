@@ -1,0 +1,21 @@
+{
+  "name": "medved-sledovac",
+  "version": "1.0.0",
+  "description": "Web app, ktorá zbiera hlásenia o výskyte medveďov z tumedved.sk a slovenské správy o medveďoch a zobrazuje ich na mape.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build:geo": "node src/geo/build-gazetteer.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "express": "^4.19.2",
+    "linkedom": "^0.18.12",
+    "rss-parser": "^3.13.0"
+  }
+}
