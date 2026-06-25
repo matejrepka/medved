@@ -7,6 +7,9 @@ const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
   news: [],
+  sightingsUpdatedAt: null,
+  newsUpdatedAt: null,
+  updatedAt: null,
   markers: new Map(), // id -> Leaflet marker
   filters: {
     startDate: "",
@@ -129,6 +132,44 @@ function fmtDate(iso, withTime = false) {
     ? { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }
     : { day: "numeric", month: "long", year: "numeric" };
   return d.toLocaleDateString("sk-SK", opts);
+}
+
+function fmtTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
+}
+
+function isSameLocalDate(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  return isSameLocalDate(d, new Date());
+}
+
+function latestIso(...values) {
+  return values.reduce((latest, iso) => {
+    const time = itemTime(iso);
+    if (time === null) return latest;
+    if (!latest || time > latest.time) return { iso, time };
+    return latest;
+  }, null)?.iso || null;
+}
+
+function updatedText(iso) {
+  if (!iso) return "";
+  const time = fmtTime(iso);
+  if (!time) return "";
+  return isToday(iso) ? `dnes ${time}` : fmtDate(iso, true);
 }
 
 function relativeDate(iso) {
@@ -484,16 +525,15 @@ function renderNews() {
 
 // --- Štatistiky ---
 function renderStats() {
-  $("statSightings").textContent = state.sightings.length || "-";
-  $("statNews").textContent = state.news.length || "-";
-  const latest = state.sightings[0];
-  $("statLatest").textContent = latest
-    ? relativeDate(latest.reportedAt) || fmtDate(latest.reportedAt)
-    : "-";
+  $("statSightings").textContent = state.sightings.filter((s) =>
+    isToday(s.reportedAt)
+  ).length;
+  $("statNews").textContent = state.news.filter((n) => isToday(n.date)).length;
+  $("statUpdated").textContent = fmtTime(state.updatedAt) || "-";
 }
 
 function setUpdated(iso) {
-  $("updated").textContent = iso ? "Aktualizované " + relativeDate(iso) : "";
+  $("updated").textContent = iso ? "Aktualizované " + updatedText(iso) : "";
 }
 
 // --- Načítanie dát ---
@@ -506,7 +546,7 @@ async function loadData() {
 
   if (sRes.status === "fulfilled" && sRes.value.items) {
     state.sightings = sRes.value.items;
-    setUpdated(sRes.value.updatedAt);
+    state.sightingsUpdatedAt = sRes.value.updatedAt;
     renderMarkers();
     renderSightings();
   } else {
@@ -515,12 +555,15 @@ async function loadData() {
 
   if (nRes.status === "fulfilled" && nRes.value.items) {
     state.news = nRes.value.items;
+    state.newsUpdatedAt = nRes.value.updatedAt;
     renderNews();
     renderMarkers(); // správy môžu mať súradnice -> značky na mape
   } else {
     elNews.innerHTML = `<div class="error-box">Nepodarilo sa načítať správy. Skúste to znova.</div>`;
   }
 
+  state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
+  setUpdated(state.updatedAt);
   syncDateFilterLimits();
   renderStats();
 }

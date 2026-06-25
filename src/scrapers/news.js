@@ -123,10 +123,12 @@ export async function fetchNews() {
 
       const key = dedupeKey(title);
       const date = item.isoDate || item.pubDate || null;
+      const rssDate = date ? new Date(date).toISOString() : null;
 
       const existing = byKey.get(key);
-      // Ak duplicita existuje, ponecháme novší záznam.
-      if (existing && new Date(existing.date || 0) >= new Date(date || 0)) {
+      // Ak duplicita existuje, ponecháme novší záznam podľa času v Google RSS.
+      // Nie je to dátum článku, len dátum objavenia v agregátore.
+      if (existing && new Date(existing.rssDate || 0) >= new Date(rssDate || 0)) {
         continue;
       }
 
@@ -139,32 +141,35 @@ export async function fetchNews() {
         link,
         googleNewsUrl: googleNewsWebUrl(link),
         snippet,
-        date: date ? new Date(date).toISOString() : null,
+        date: null,
+        rssDate,
       });
     }
   }
 
   const items = [...byKey.values()]
-    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+    .sort((a, b) => new Date(b.rssDate || 0) - new Date(a.rssDate || 0))
     .slice(0, MAX_ITEMS);
 
   // Stiahni telo každého článku (rozbalí Google News odkaz + Readability),
   // aby sme obec hľadali z celého textu článku, nie len z krátkeho popisu.
   // Ak sa článok nepodarí stiahnuť, geokódovanie spadne späť na titulok/snippet.
-  const bodies = await fetchArticleBodies(items, { concurrency: 6, timeoutMs: 12000 });
+  const bodies = await fetchArticleBodies(items, { concurrency: 2, timeoutMs: 15000 });
   for (const it of items) {
     const r = bodies.get(it.link);
     if (r) {
       it.body = r.body || "";
       if (r.url) it.articleUrl = r.url; // priama URL článku (mimo Google News)
       if (r.googleNewsUrl) it.googleNewsUrl = r.googleNewsUrl;
+      if (r.publishedAt) it.date = r.publishedAt; // dátum z originálneho článku má prednosť pred RSS
     }
   }
 
   // Z titulku + tela článku doplní obec a súradnice (pre značku na mape).
   const geocoded = await geocodeNews(items);
+  geocoded.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   // `body` ďalej nepotrebujeme posielať klientovi — zbytočne veľké.
-  return geocoded.map(({ body, ...rest }) => rest);
+  return geocoded.map(({ body, rssDate, ...rest }) => rest);
 }
 
 function hostFromLink(link) {
