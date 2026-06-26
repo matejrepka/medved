@@ -110,8 +110,26 @@ create index if not exists bear_reports_status_idx
 create index if not exists bear_reports_created_at_idx
   on public.bear_reports (created_at desc);
 
+-- Email subscriptions for bear sighting notifications.
+create table if not exists public.email_subscriptions (
+  id bigserial primary key,
+  email text not null,
+  notify_type text not null default 'all'
+    check (notify_type in ('all', 'area')),
+  area_name text,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists email_subscriptions_active_idx
+  on public.email_subscriptions (active);
+
+create unique index if not exists email_subscriptions_email_area_idx
+  on public.email_subscriptions (email, coalesce(area_name, ''));
+
 alter table public.tumedved_logs enable row level security;
 alter table public.news_logs enable row level security;
 alter table public.scrape_runs enable row level security;
 alter table public.website_logs enable row level security;
 alter table public.bear_reports enable row level security;
+alter table public.email_subscriptions enable row level security;

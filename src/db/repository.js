@@ -231,6 +231,55 @@ export async function updateNewsStatus(id, status) {
   if (error) throw error;
 }
 
+// --- Email subscriptions ---
+
+export async function saveEmailSubscription(sub) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const row = {
+    email: sub.email,
+    notify_type: sub.notifyType || "all",
+    area_name: sub.areaName || null,
+    active: true,
+  };
+
+  const { data, error } = await supabase
+    .from("email_subscriptions")
+    .upsert(row, { onConflict: "email,coalesce(area_name, '')" })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function loadEmailSubscriptions() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("email_subscriptions")
+    .select("id,email,notify_type,area_name,active,created_at")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deleteEmailSubscription(id) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from("email_subscriptions")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
 export function hashIp(ip) {
   const salt = process.env.WEBSITE_LOG_IP_SALT;
   if (!ip || !salt) return null;

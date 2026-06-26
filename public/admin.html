@@ -248,6 +248,63 @@
         font-size: 0.9rem;
       }
 
+      .sub-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+      .sub-table th {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 2px solid var(--line-strong);
+        color: var(--ink-3);
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .sub-table td {
+        padding: 10px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      .sub-table tr:last-child td {
+        border-bottom: 0;
+      }
+      .sub-type-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 600;
+      }
+      .sub-type-badge.all {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .sub-type-badge.area {
+        background: rgba(43, 123, 185, 0.1);
+        color: #2b7bb9;
+      }
+      .sub-delete {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-3);
+        cursor: pointer;
+        font-size: 14px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .sub-delete:hover {
+        color: #b91c1c;
+        border-color: rgba(239,68,68,0.4);
+      }
+
       @media (max-width: 560px) {
         .admin-stats {
           grid-template-columns: 1fr;
@@ -325,6 +382,18 @@
           </h2>
           <p class="pending-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
           <div id="pendingNewsList"></div>
+        </div>
+
+        <hr class="admin-divider" />
+
+        <div class="pending-section" id="subscriptionsSection">
+          <h2>
+            <i class="ph ph-bell-ringing" aria-hidden="true"></i>
+            Emailové odbery
+            <span class="badge" id="subscriptionsCount">0</span>
+          </h2>
+          <p class="pending-lede">Registrované emailové adresy na upozornenia o výskyte medveďov.</p>
+          <div id="subscriptionsList"></div>
         </div>
       </div>
     </main>
@@ -553,8 +622,83 @@
         }
       }
 
+      // --- Subscriptions ---
+
+      async function deleteSub(id, row) {
+        if (!confirm('Naozaj chcete odstrániť tento odber?')) return;
+        try {
+          const res = await fetch(`/api/admin/subscriptions/${id}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            row.remove();
+            const rows = document.querySelectorAll('#subscriptionsList tbody tr');
+            setText('subscriptionsCount', rows.length);
+            if (!rows.length) loadSubscriptions();
+          } else {
+            alert('Chyba: ' + (data.error || 'Neznáma chyba'));
+          }
+        } catch (err) {
+          alert('Chyba siete: ' + err.message);
+        }
+      }
+
+      async function loadSubscriptions() {
+        const container = document.getElementById('subscriptionsList');
+        try {
+          const res = await fetch('/api/admin/subscriptions');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const subs = data.subscriptions || [];
+
+          setText('subscriptionsCount', subs.length);
+
+          if (!subs.length) {
+            container.innerHTML = '<p class="empty-pending">Žiadne registrované odbery.</p>';
+            return;
+          }
+
+          const table = document.createElement('table');
+          table.className = 'sub-table';
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Typ</th>
+                <th>Oblasť</th>
+                <th>Dátum</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+
+          const tbody = table.querySelector('tbody');
+          subs.forEach(sub => {
+            const tr = document.createElement('tr');
+            const typeBadge = sub.notify_type === 'area'
+              ? '<span class="sub-type-badge area">oblasť</span>'
+              : '<span class="sub-type-badge all">všetko</span>';
+            tr.innerHTML = `
+              <td>${esc(sub.email)}</td>
+              <td>${typeBadge}</td>
+              <td>${esc(sub.area_name || '—')}</td>
+              <td>${formatDateTime(sub.created_at)}</td>
+              <td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>
+            `;
+            tr.querySelector('.sub-delete').addEventListener('click', () => deleteSub(sub.id, tr));
+            tbody.appendChild(tr);
+          });
+
+          container.innerHTML = '';
+          container.appendChild(table);
+        } catch (err) {
+          console.error('Failed to load subscriptions:', err);
+        }
+      }
+
       loadStats();
       loadPending();
+      loadSubscriptions();
     </script>
   </body>
 </html>

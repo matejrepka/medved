@@ -979,6 +979,149 @@ main {
   max-width: 52ch;
 }
 
+/* ---------- Notify / subscribe section ---------- */
+.notify-section {
+  margin-top: clamp(20px, 3vw, 28px);
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.notify-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 4vw, 40px);
+  align-items: start;
+}
+
+.notify-text h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(1.3rem, 3vw, 1.6rem);
+}
+
+.notify-text h2 i {
+  color: var(--accent);
+  font-size: 1.3em;
+}
+
+.notify-text p {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  max-width: 48ch;
+}
+
+.notify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notify-field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 0.94rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+
+.notify-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.notify-field input::placeholder {
+  color: var(--ink-3);
+}
+
+[data-theme="dark"] .notify-field input {
+  color-scheme: dark;
+}
+
+.notify-type {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notify-radio {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.16s, background 0.16s;
+}
+
+.notify-radio:hover {
+  background: var(--surface-hover);
+  border-color: var(--ink-3);
+}
+
+.notify-radio input {
+  accent-color: var(--accent);
+}
+
+.notify-radio:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.notify-area input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 0.94rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+
+.notify-area input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.notify-area input::placeholder {
+  color: var(--ink-3);
+}
+
+[data-theme="dark"] .notify-area input {
+  color-scheme: dark;
+}
+
+.notify-btn {
+  align-self: flex-start;
+}
+
+.notify-form .form-message {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .notify-inner {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Report form page ---------- */
 .report-container {
   max-width: 660px;

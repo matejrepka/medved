@@ -14,13 +14,16 @@ import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
+  deleteEmailSubscription,
   hashIp,
   loadBearReports,
+  loadEmailSubscriptions,
   loadNewsLogs,
   loadPendingNews,
   loadTumedvedLogs,
   recordScrapeRun,
   saveBearReport,
+  saveEmailSubscription,
   saveNewsLogs,
   saveTumedvedLogs,
   saveWebsiteLog,
@@ -170,6 +173,33 @@ app.post("/api/reports", async (req, res) => {
   }
 });
 
+// --- Email subscriptions (public) ---
+
+app.post("/api/subscriptions", async (req, res) => {
+  const { email, notifyType, areaName } = req.body || {};
+
+  if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ ok: false, error: "Zadajte platnú emailovú adresu." });
+  }
+
+  if (notifyType === "area" && (!areaName || !areaName.trim())) {
+    return res.status(400).json({ ok: false, error: "Zadajte oblasť pre upozornenia." });
+  }
+
+  try {
+    await saveEmailSubscription({
+      email: email.trim().toLowerCase(),
+      notifyType: notifyType === "area" ? "area" : "all",
+      areaName: notifyType === "area" ? areaName.trim() : null,
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[subscriptions] save failed:", err.message);
+    res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť odber." });
+  }
+});
+
 // --- Frontend ---
 app.get("/nahlas", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "nahlas.html"));
@@ -241,6 +271,24 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
   }
   try {
     await updateNewsStatus(req.params.id, status);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get("/api/admin/subscriptions", adminAuth, async (_req, res) => {
+  try {
+    const subs = await loadEmailSubscriptions();
+    res.json({ ok: true, subscriptions: subs });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete("/api/admin/subscriptions/:id", adminAuth, async (req, res) => {
+  try {
+    await deleteEmailSubscription(Number(req.params.id));
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
