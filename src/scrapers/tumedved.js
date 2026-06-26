@@ -15,16 +15,32 @@ const USER_AGENT =
 const MAX_PAGES = 5;
 const PER_PAGE = 100;
 
-/** "20260625" + "20:00" -> ISO reťazec (alebo null). */
+const TIMEZONE = "Europe/Bratislava";
+
+/** "20260625" + "20:00" -> ISO reťazec v UTC (alebo null). */
 function parseDatumCas(datum, cas) {
   if (!datum || datum.length !== 8) return null;
-  const y = datum.slice(0, 4);
-  const m = datum.slice(4, 6);
-  const d = datum.slice(6, 8);
+  const y = Number(datum.slice(0, 4));
+  const m = Number(datum.slice(4, 6));
+  const d = Number(datum.slice(6, 8));
   const time = /^\d{1,2}:\d{2}$/.test(cas || "") ? cas.padStart(5, "0") : "00:00";
-  const iso = `${y}-${m}-${d}T${time}:00`;
-  const dt = new Date(iso);
-  return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+  const [hh, mm] = time.split(":").map(Number);
+
+  // Časy z tumedved.sk sú v slovenskom časovom pásme — prevedieme na UTC.
+  const guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
+  if (Number.isNaN(guess.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIMEZONE,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  }).formatToParts(guess);
+  const g = (t) => Number(parts.find((p) => p.type === t).value);
+  const wall = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour") % 24, g("minute"), g("second"));
+  const offsetMs = wall - guess.getTime();
+
+  return new Date(guess.getTime() - offsetMs).toISOString();
 }
 
 /** Odstráni HTML značky a normalizuje medzery. */
