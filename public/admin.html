@@ -2,7 +2,7 @@
 <html lang="sk" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Administrácia - Medvede na Slovensku</title>
 
     <script>
@@ -305,12 +305,37 @@
         border-color: rgba(239,68,68,0.4);
       }
 
+      /* Tabuľka odberov sa na úzkych displejoch posúva vodorovne */
+      #subscriptionsList {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sub-table {
+        min-width: 460px;
+      }
+
+      @media (max-width: 640px) {
+        .admin-container {
+          margin: 1.5rem auto;
+          padding: 1.25rem;
+          border-radius: var(--radius-sm);
+        }
+      }
+
       @media (max-width: 560px) {
         .admin-stats {
           grid-template-columns: 1fr;
         }
         .review-card-head {
           flex-direction: column;
+        }
+        .review-actions {
+          width: 100%;
+        }
+        .review-btn {
+          flex: 1;
+          justify-content: center;
+          padding: 9px 14px;
         }
       }
     </style>
