@@ -28,6 +28,13 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
+    <!-- Leaflet (mini-mapa pri hláseniach) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
     <link rel="stylesheet" href="/styles.css" />
     <link
       rel="icon"
@@ -241,6 +248,33 @@
         color: #f87171;
       }
 
+      .review-coords {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 8px 0 0;
+        font-size: 0.78rem;
+        color: var(--ink-3);
+      }
+      .review-coords i {
+        color: var(--accent);
+      }
+      .review-coords.no-coords i {
+        color: #d97706;
+      }
+      .review-coords a {
+        color: var(--accent);
+      }
+      .review-map {
+        height: 170px;
+        width: 100%;
+        margin-top: 8px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        z-index: 0;
+      }
+
       .empty-pending {
         text-align: center;
         padding: 2rem 1rem;
@@ -398,6 +432,11 @@
       </div>
     </main>
 
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
     <script>
       const statsMeta = document.getElementById('adminStatsMeta');
       const form = document.getElementById('adminForm');
@@ -537,6 +576,18 @@
       function renderReportCard(report) {
         const card = document.createElement('div');
         card.className = 'review-card';
+
+        const lat = Number(report.lat);
+        const lng = Number(report.lng);
+        const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+        const coordsHtml = hasCoords
+          ? `<p class="review-card-meta review-coords">
+               <i class="ph ph-map-pin"></i> ${lat.toFixed(5)}, ${lng.toFixed(5)}
+               · <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=14/${lat}/${lng}" target="_blank" rel="noopener">Otvoriť v OpenStreetMap</a>
+             </p>
+             <div class="review-map" data-lat="${lat}" data-lng="${lng}"></div>`
+          : `<p class="review-card-meta review-coords no-coords"><i class="ph ph-warning"></i> Hlásenie bez súradníc (staršie hlásenie zadané textom).</p>`;
+
         card.innerHTML = `
           <div class="review-card-head">
             <div>
@@ -550,6 +601,7 @@
           </div>
           ${report.description ? `<p class="review-card-body">${esc(report.description)}</p>` : ''}
           ${report.reporter_name || report.reporter_email ? `<p class="review-card-contact"><i class="ph ph-user"></i> ${esc(report.reporter_name || '')} ${report.reporter_email ? '(' + esc(report.reporter_email) + ')' : ''}</p>` : ''}
+          ${coordsHtml}
         `;
 
         card.querySelectorAll('.review-btn').forEach(btn => {
@@ -559,6 +611,40 @@
         });
 
         return card;
+      }
+
+      // --- Mini-mapy pri hláseniach ---
+      const ADMIN_TILE_URLS = {
+        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      };
+      const ADMIN_TILE_OPTS = {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      };
+      const adminPinIcon = L.divIcon({
+        className: '',
+        html: '<div class="pin"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+
+      function initReviewMaps() {
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.querySelectorAll('.review-map:not([data-init])').forEach((el) => {
+          const lat = parseFloat(el.dataset.lat);
+          const lng = parseFloat(el.dataset.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          el.setAttribute('data-init', '1');
+          const m = L.map(el, {
+            scrollWheelZoom: false,
+            attributionControl: true,
+          }).setView([lat, lng], 12);
+          L.tileLayer(dark ? ADMIN_TILE_URLS.dark : ADMIN_TILE_URLS.light, ADMIN_TILE_OPTS).addTo(m);
+          L.marker([lat, lng], { icon: adminPinIcon }).addTo(m);
+        });
       }
 
       function renderNewsCard(item) {
@@ -605,6 +691,7 @@
 
           if (data.reports && data.reports.length) {
             data.reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
+            initReviewMaps();
           } else {
             reportsList.innerHTML = '<p class="empty-pending">Žiadne hlásenia na schválenie.</p>';
           }
