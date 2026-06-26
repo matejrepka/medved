@@ -61,12 +61,13 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) 
     lat: asNullableNumber(item.lat),
     lng: asNullableNumber(item.lng),
     has_coords: Boolean(item.hasCoords),
+    status: "pending",
     payload: item,
     scraped_at: scrapedAt,
     updated_at: scrapedAt,
   }));
 
-  await upsertChunks("news_logs", rows, { onConflict: "id" });
+  await upsertChunks("news_logs", rows, { onConflict: "id", ignoreDuplicates: true });
 }
 
 export async function loadTumedvedLogs() {
@@ -106,6 +107,7 @@ export async function loadNewsLogs() {
     .select(
       "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,scraped_at"
     )
+    .eq("status", "approved")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(NEWS_LIMIT);
 
@@ -143,6 +145,88 @@ export async function recordScrapeRun(run) {
     started_at: run.startedAt,
     finished_at: run.finishedAt,
   });
+
+  if (error) throw error;
+}
+
+// --- Bear reports (user-submitted, pending moderation) ---
+
+export async function saveBearReport(report) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("bear_reports")
+    .insert({
+      reporter_name: report.reporterName || null,
+      reporter_email: report.reporterEmail || null,
+      location: report.location,
+      description: report.description || null,
+      lat: asNullableNumber(report.lat),
+      lng: asNullableNumber(report.lng),
+      has_coords: Boolean(report.lat && report.lng),
+      reported_date: toIso(report.reportedDate),
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function loadBearReports(status) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("bear_reports")
+    .select("id,reporter_name,reporter_email,location,description,lat,lng,has_coords,reported_date,status,created_at,reviewed_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (status) query = query.eq("status", status);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateBearReportStatus(id, status) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from("bear_reports")
+    .update({ status, reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
+export async function loadPendingNews() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("news_logs")
+    .select("id,source,title,link,snippet,published_at,place,status")
+    .eq("status", "pending")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(100);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateNewsStatus(id, status) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from("news_logs")
+    .update({ status })
+    .eq("id", id);
 
   if (error) throw error;
 }

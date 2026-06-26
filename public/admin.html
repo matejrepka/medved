@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Administrácia - Medvede na Slovensku</title>
-    
+
     <script>
       (function () {
         try {
@@ -35,12 +35,12 @@
     />
     <style>
       .admin-container {
-        max-width: 760px;
+        max-width: 860px;
         margin: 4rem auto;
         padding: 2rem;
         background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
         box-shadow: var(--shadow-sm);
       }
       .admin-container h1 {
@@ -60,8 +60,8 @@
       }
       .admin-stat {
         padding: 1rem 1.1rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
         background: color-mix(in srgb, var(--surface) 88%, var(--bg) 12%);
       }
       .admin-stat-value {
@@ -83,24 +83,6 @@
         font-size: 0.92rem;
         color: var(--ink-3);
       }
-      .form-group {
-        margin-bottom: 1.5rem;
-      }
-      .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-      }
-      .form-group input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background: var(--bg);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 1rem;
-      }
       .btn-primary {
         display: inline-flex;
         align-items: center;
@@ -109,7 +91,7 @@
         color: white;
         border: none;
         padding: 0.75rem 1.5rem;
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-sm);
         font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
@@ -122,33 +104,156 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
-      #statusMessage {
+      .status-msg {
         margin-top: 1rem;
         padding: 1rem;
-        border-radius: var(--radius-md);
+        border-radius: var(--radius-sm);
         display: none;
       }
-      #statusMessage.success {
+      .status-msg.success {
         display: block;
         background: rgba(34, 197, 94, 0.1);
         color: #15803d;
         border: 1px solid rgba(34, 197, 94, 0.2);
       }
-      #statusMessage.error {
+      .status-msg.error {
         display: block;
         background: rgba(239, 68, 68, 0.1);
         color: #b91c1c;
         border: 1px solid rgba(239, 68, 68, 0.2);
       }
-      [data-theme="dark"] #statusMessage.success {
+      [data-theme="dark"] .status-msg.success {
         color: #4ade80;
       }
-      [data-theme="dark"] #statusMessage.error {
+      [data-theme="dark"] .status-msg.error {
         color: #f87171;
       }
+
+      .admin-divider {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 2.5rem 0;
+      }
+
+      .pending-section h2 {
+        font-family: 'Newsreader', serif;
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .pending-section h2 .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+      .pending-section .pending-lede {
+        color: var(--ink-3);
+        font-size: 0.88rem;
+        margin: 0 0 1.2rem;
+      }
+
+      .review-card {
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        margin-bottom: 0.75rem;
+        background: var(--surface);
+      }
+      .review-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .review-card-title {
+        font-family: var(--font-serif);
+        font-weight: 600;
+        font-size: 1.02rem;
+        line-height: 1.3;
+        margin: 0;
+      }
+      .review-card-meta {
+        font-size: 0.78rem;
+        color: var(--ink-3);
+        margin: 4px 0 0;
+      }
+      .review-card-body {
+        margin: 8px 0 0;
+        font-size: 0.88rem;
+        color: var(--ink-2);
+      }
+      .review-card-contact {
+        margin: 6px 0 0;
+        font-size: 0.78rem;
+        color: var(--ink-3);
+      }
+      .review-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+      .review-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 14px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: opacity 0.15s, background 0.15s;
+        background: var(--surface);
+        color: var(--ink-2);
+      }
+      .review-btn:hover {
+        background: var(--surface-hover);
+      }
+      .review-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .review-btn.approve {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: transparent;
+      }
+      .review-btn.approve:hover {
+        opacity: 0.9;
+      }
+      .review-btn.reject {
+        color: #b91c1c;
+        border-color: rgba(239,68,68,0.3);
+      }
+      [data-theme="dark"] .review-btn.reject {
+        color: #f87171;
+      }
+
+      .empty-pending {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--ink-3);
+        font-size: 0.9rem;
+      }
+
       @media (max-width: 560px) {
         .admin-stats {
           grid-template-columns: 1fr;
+        }
+        .review-card-head {
+          flex-direction: column;
         }
       }
     </style>
@@ -196,7 +301,31 @@
           </button>
         </form>
 
-        <div id="statusMessage"></div>
+        <div id="statusMessage" class="status-msg"></div>
+
+        <hr class="admin-divider" />
+
+        <div class="pending-section" id="pendingReportsSection">
+          <h2>
+            <i class="ph ph-paw-print" aria-hidden="true"></i>
+            Hlásenia na schválenie
+            <span class="badge" id="pendingReportsCount">0</span>
+          </h2>
+          <p class="pending-lede">Hlásenia od používateľov z formulára čakajúce na overenie.</p>
+          <div id="pendingReportsList"></div>
+        </div>
+
+        <hr class="admin-divider" />
+
+        <div class="pending-section" id="pendingNewsSection">
+          <h2>
+            <i class="ph ph-newspaper" aria-hidden="true"></i>
+            Správy na schválenie
+            <span class="badge" id="pendingNewsCount">0</span>
+          </h2>
+          <p class="pending-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
+          <div id="pendingNewsList"></div>
+        </div>
       </div>
     </main>
 
@@ -224,6 +353,13 @@
       const setText = (id, value) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value;
+      };
+
+      const esc = (str) => {
+        if (!str) return '';
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
       };
 
       const renderStats = (status) => {
@@ -266,7 +402,7 @@
 
         runBtn.disabled = true;
         runBtn.querySelector('span').textContent = 'Sťahujem...';
-        statusMsg.className = '';
+        statusMsg.className = 'status-msg';
         statusMsg.style.display = 'none';
 
         try {
@@ -275,22 +411,150 @@
 
           if (res.ok && data.ok) {
             statusMsg.textContent = 'Sťahovanie úspešne dokončené.';
-            statusMsg.className = 'success';
+            statusMsg.className = 'status-msg success';
             renderStats(data);
+            loadPending();
           } else {
             statusMsg.textContent = 'Chyba: ' + (data.error || 'Neznáma chyba');
-            statusMsg.className = 'error';
+            statusMsg.className = 'status-msg error';
           }
         } catch (err) {
           statusMsg.textContent = 'Chyba siete: ' + err.message;
-          statusMsg.className = 'error';
+          statusMsg.className = 'status-msg error';
         } finally {
           runBtn.disabled = false;
           runBtn.querySelector('span').textContent = 'Spustiť sťahovanie';
         }
       });
 
+      // --- Pending items ---
+
+      async function updateStatus(type, id, status, cardEl) {
+        const btns = cardEl.querySelectorAll('.review-btn');
+        btns.forEach(b => b.disabled = true);
+
+        try {
+          const res = await fetch(`/api/admin/${type}/${id}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            cardEl.style.opacity = '0.4';
+            cardEl.style.pointerEvents = 'none';
+            setTimeout(() => {
+              cardEl.remove();
+              updateCounts();
+            }, 400);
+          } else {
+            alert('Chyba: ' + (data.error || 'Neznáma chyba'));
+            btns.forEach(b => b.disabled = false);
+          }
+        } catch (err) {
+          alert('Chyba siete: ' + err.message);
+          btns.forEach(b => b.disabled = false);
+        }
+      }
+
+      function updateCounts() {
+        const reportCards = document.querySelectorAll('#pendingReportsList .review-card');
+        const newsCards = document.querySelectorAll('#pendingNewsList .review-card');
+        setText('pendingReportsCount', reportCards.length);
+        setText('pendingNewsCount', newsCards.length);
+      }
+
+      function renderReportCard(report) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.innerHTML = `
+          <div class="review-card-head">
+            <div>
+              <p class="review-card-title">${esc(report.location)}</p>
+              <p class="review-card-meta">${formatDateTime(report.reported_date || report.created_at)}</p>
+            </div>
+            <div class="review-actions">
+              <button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>
+              <button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>
+            </div>
+          </div>
+          ${report.description ? `<p class="review-card-body">${esc(report.description)}</p>` : ''}
+          ${report.reporter_name || report.reporter_email ? `<p class="review-card-contact"><i class="ph ph-user"></i> ${esc(report.reporter_name || '')} ${report.reporter_email ? '(' + esc(report.reporter_email) + ')' : ''}</p>` : ''}
+        `;
+
+        card.querySelectorAll('.review-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            updateStatus('reports', report.id, btn.dataset.action, card);
+          });
+        });
+
+        return card;
+      }
+
+      function renderNewsCard(item) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.innerHTML = `
+          <div class="review-card-head">
+            <div>
+              <p class="review-card-title">${esc(item.title)}</p>
+              <p class="review-card-meta">
+                ${esc(item.source || '')} · ${formatDateTime(item.published_at)}
+                ${item.place ? ' · <i class="ph ph-map-pin"></i> ' + esc(item.place) : ''}
+              </p>
+            </div>
+            <div class="review-actions">
+              <button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>
+              <button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>
+            </div>
+          </div>
+          ${item.snippet ? `<p class="review-card-body">${esc(item.snippet)}</p>` : ''}
+          ${item.link ? `<p class="review-card-meta"><a href="${esc(item.link)}" target="_blank" rel="noopener">${esc(item.link)}</a></p>` : ''}
+        `;
+
+        card.querySelectorAll('.review-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            updateStatus('news', item.id, btn.dataset.action, card);
+          });
+        });
+
+        return card;
+      }
+
+      async function loadPending() {
+        try {
+          const res = await fetch('/api/admin/pending');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          const reportsList = document.getElementById('pendingReportsList');
+          const newsList = document.getElementById('pendingNewsList');
+
+          reportsList.innerHTML = '';
+          newsList.innerHTML = '';
+
+          if (data.reports && data.reports.length) {
+            data.reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
+          } else {
+            reportsList.innerHTML = '<p class="empty-pending">Žiadne hlásenia na schválenie.</p>';
+          }
+
+          if (data.news && data.news.length) {
+            data.news.forEach(n => newsList.appendChild(renderNewsCard(n)));
+          } else {
+            newsList.innerHTML = '<p class="empty-pending">Žiadne správy na schválenie.</p>';
+          }
+
+          setText('pendingReportsCount', (data.reports || []).length);
+          setText('pendingNewsCount', (data.news || []).length);
+        } catch (err) {
+          console.error('Failed to load pending items:', err);
+        }
+      }
+
       loadStats();
+      loadPending();
     </script>
   </body>
 </html>

@@ -15,12 +15,17 @@ import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
   hashIp,
+  loadBearReports,
   loadNewsLogs,
+  loadPendingNews,
   loadTumedvedLogs,
   recordScrapeRun,
+  saveBearReport,
   saveNewsLogs,
   saveTumedvedLogs,
   saveWebsiteLog,
+  updateBearReportStatus,
+  updateNewsStatus,
 } from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -46,6 +51,7 @@ const newsStore = new ScheduledDataStore({
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true");
+app.use(express.json());
 
 // Malý logger.
 app.use((req, _res, next) => {
@@ -55,7 +61,7 @@ app.use((req, _res, next) => {
 
 function shouldLogWebsiteRequest(req) {
   if (req.path.startsWith("/api")) return true;
-  return req.method === "GET" && ["/", "/privacy", "/terms", "/stats"].includes(req.path);
+  return req.method === "GET" && ["/", "/privacy", "/terms", "/stats", "/nahlas"].includes(req.path);
 }
 
 app.use((req, res, next) => {
@@ -137,7 +143,38 @@ app.all("/api/cron/refresh", async (req, res) => {
   }
 });
 
+// --- Bear report (public) ---
+
+app.post("/api/reports", async (req, res) => {
+  const { location, description, reporterName, reporterEmail, lat, lng, reportedDate } = req.body || {};
+
+  if (!location || typeof location !== "string" || !location.trim()) {
+    return res.status(400).json({ ok: false, error: "Lokalita je povinná." });
+  }
+
+  try {
+    const result = await saveBearReport({
+      location: location.trim(),
+      description: description?.trim() || null,
+      reporterName: reporterName?.trim() || null,
+      reporterEmail: reporterEmail?.trim() || null,
+      lat: Number(lat) || null,
+      lng: Number(lng) || null,
+      reportedDate: reportedDate || new Date().toISOString(),
+    });
+
+    res.json({ ok: true, id: result?.id });
+  } catch (err) {
+    console.error("[reports] save failed:", err.message);
+    res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť hlásenie." });
+  }
+});
+
 // --- Frontend ---
+app.get("/nahlas", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "nahlas.html"));
+});
+
 app.get("/privacy", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "privacy.html"));
 });
@@ -170,6 +207,44 @@ function adminAuth(req, res, next) {
 
 app.get("/admin", adminAuth, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
+app.get("/api/admin/pending", adminAuth, async (_req, res) => {
+  try {
+    const [reports, news] = await Promise.all([
+      loadBearReports("pending"),
+      loadPendingNews(),
+    ]);
+    res.json({ ok: true, reports, news });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
+  const { status } = req.body || {};
+  if (!["approved", "rejected"].includes(status)) {
+    return res.status(400).json({ ok: false, error: "Neplatný stav." });
+  }
+  try {
+    await updateBearReportStatus(Number(req.params.id), status);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
+  const { status } = req.body || {};
+  if (!["approved", "rejected"].includes(status)) {
+    return res.status(400).json({ ok: false, error: "Neplatný stav." });
+  }
+  try {
+    await updateNewsStatus(req.params.id, status);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.post("/api/admin/refresh", adminAuth, async (req, res) => {
