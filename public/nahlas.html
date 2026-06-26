@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nahlásiť medveda - Medvede na Slovensku</title>
+    <meta
+      name="description"
+      content="Nahlás výskyt medveda na Slovensku. Vaše hlásenie bude po overení zobrazené na mape."
+    />
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Medvede na Slovensku, domov">
+        <span class="brand-mark"><i class="ph ph-paw-print" aria-hidden="true"></i></span>
+        <span class="brand-name">Medvede na Slovensku</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Hlavné menu">
+        <a href="/">Mapa</a>
+        <a href="/stats">Štatistiky</a>
+        <a href="/nahlas" class="active">Nahlásiť</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
+          <i class="ph ph-moon" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="report-container">
+        <div class="report-header">
+          <a href="/" class="btn report-back">
+            <i class="ph ph-arrow-left"></i>
+            <span>Späť na mapu</span>
+          </a>
+        </div>
+
+        <h1>Nahlásiť výskyt medveda</h1>
+        <p class="lede">
+          Videli ste medveda? Vyplňte formulár a pomôžte nám mapovať ich výskyt na Slovensku.
+          Vaše hlásenie bude po overení administrátorom zobrazené na mape.
+        </p>
+
+        <form id="reportForm" class="report-form" novalidate>
+          <div class="form-field required">
+            <label for="location">
+              <i class="ph ph-map-pin" aria-hidden="true"></i> Lokalita
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              required
+              placeholder="napr. Liptovský Mikuláš, okolie Demänovskej doliny"
+              autocomplete="off"
+            />
+            <span class="field-hint">Uveďte čo najpresnejšie miesto stretnutia.</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="reportedDate">
+                <i class="ph ph-calendar-blank" aria-hidden="true"></i> Dátum a čas
+              </label>
+              <input type="datetime-local" id="reportedDate" name="reportedDate" />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="description">
+              <i class="ph ph-note-pencil" aria-hidden="true"></i> Popis stretnutia
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows="4"
+              placeholder="Popíšte okolnosti - čo ste videli, koľko medveďov, ako sa správali..."
+            ></textarea>
+          </div>
+
+          <div class="form-divider">
+            <span>Kontaktné údaje (nepovinné)</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="reporterName">
+                <i class="ph ph-user" aria-hidden="true"></i> Meno
+              </label>
+              <input type="text" id="reporterName" name="reporterName" placeholder="Vaše meno" autocomplete="name" />
+            </div>
+            <div class="form-field">
+              <label for="reporterEmail">
+                <i class="ph ph-envelope-simple" aria-hidden="true"></i> Email
+              </label>
+              <input type="email" id="reporterEmail" name="reporterEmail" placeholder="vas@email.sk" autocomplete="email" />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+            <span>Odoslať hlásenie</span>
+          </button>
+
+          <div id="formMessage" class="form-message" role="alert"></div>
+        </form>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <p>
+          Dáta sa automaticky sťahujú z verejných zdrojov
+          <a href="https://tumedved.sk" target="_blank" rel="noopener">tumedved.sk</a> a
+          <a href="https://news.google.com" target="_blank" rel="noopener">Google News</a>.
+          Hlásenia pridávajú používatelia a nemusia byť overené. Slúžia ako orientačná informácia.
+        </p>
+        <nav class="footer-links" aria-label="Právne informácie">
+          <a href="/privacy">Ochrana súkromia</a>
+          <a href="/terms">Podmienky používania</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      const themeBtn = document.getElementById('themeBtn');
+      themeBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        themeBtn.querySelector('i').className = next === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
+      });
+      if (document.documentElement.getAttribute('data-theme') === 'dark') {
+        themeBtn.querySelector('i').className = 'ph ph-sun';
+      }
+
+      const form = document.getElementById('reportForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const formMessage = document.getElementById('formMessage');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        formMessage.className = 'form-message';
+        formMessage.textContent = '';
+
+        const location = form.location.value.trim();
+        if (!location) {
+          formMessage.textContent = 'Vyplňte lokalitu stretnutia.';
+          formMessage.className = 'form-message error';
+          form.location.focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.querySelector('span').textContent = 'Odosielam...';
+
+        try {
+          const res = await fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              location,
+              description: form.description.value.trim() || null,
+              reporterName: form.reporterName.value.trim() || null,
+              reporterEmail: form.reporterEmail.value.trim() || null,
+              reportedDate: form.reportedDate.value
+                ? new Date(form.reportedDate.value).toISOString()
+                : null,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            formMessage.textContent =
+              'Hlásenie bolo úspešne odoslané. Po overení administrátorom sa zobrazí na mape.';
+            formMessage.className = 'form-message success';
+            form.reset();
+          } else {
+            formMessage.textContent = data.error || 'Nepodarilo sa odoslať hlásenie.';
+            formMessage.className = 'form-message error';
+          }
+        } catch (err) {
+          formMessage.textContent = 'Chyba siete: ' + err.message;
+          formMessage.className = 'form-message error';
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.querySelector('span').textContent = 'Odoslať hlásenie';
+        }
+      });
+    </script>
+  </body>
+</html>

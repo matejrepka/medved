@@ -60,6 +60,7 @@
       <nav class="main-nav" aria-label="Hlavné menu">
         <a href="/" class="active">Mapa</a>
         <a href="/stats">Štatistiky</a>
+        <a href="/nahlas">Nahlásiť</a>
       </nav>
 
       <div class="header-actions">
@@ -169,6 +170,69 @@
           <div id="newsList" class="list" aria-live="polite"></div>
         </section>
       </div>
+      <section class="report-cta">
+        <div class="report-cta-inner">
+          <div class="report-cta-text">
+            <h2><i class="ph ph-warning-circle" aria-hidden="true"></i> Videli ste medveda?</h2>
+            <p>
+              Pomôžte nám mapovať výskyt medveďov na Slovensku. Nahláste stretnutie a po overení
+              sa zobrazí na mape.
+            </p>
+          </div>
+          <a href="/nahlas" class="btn">
+            <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+            <span>Nahlásiť výskyt</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="notify-section">
+        <div class="notify-inner">
+          <div class="notify-text">
+            <h2><i class="ph ph-bell-ringing" aria-hidden="true"></i> Upozorni ma</h2>
+            <p>
+              Chcete dostávať upozornenia o výskyte medveďov? Zadajte svoj email a vyberte,
+              či chcete sledovať všetky hlásenia alebo konkrétnu oblasť.
+            </p>
+          </div>
+          <form class="notify-form" id="notifyForm" novalidate>
+            <div class="notify-field">
+              <input
+                type="email"
+                id="notifyEmail"
+                name="email"
+                placeholder="vas@email.sk"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="notify-type">
+              <label class="notify-radio">
+                <input type="radio" name="notifyType" value="all" checked />
+                <span>Všetky hlásenia</span>
+              </label>
+              <label class="notify-radio">
+                <input type="radio" name="notifyType" value="area" />
+                <span>Konkrétna oblasť</span>
+              </label>
+            </div>
+            <div class="notify-area" id="notifyAreaWrap" hidden>
+              <input
+                type="text"
+                id="notifyArea"
+                name="areaName"
+                placeholder="napr. Liptovský Mikuláš, Banská Bystrica..."
+                autocomplete="off"
+              />
+            </div>
+            <button type="submit" class="btn notify-btn" id="notifyBtn">
+              <i class="ph ph-bell" aria-hidden="true"></i>
+              <span>Prihlásiť sa na odber</span>
+            </button>
+            <div id="notifyMessage" class="form-message" role="alert"></div>
+          </form>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">

@@ -573,6 +573,78 @@ contentSearch.addEventListener("input", (e) => {
   renderFilteredViews();
 });
 
+// --- Upozorni ma (email subscription) ---
+(function () {
+  const form = document.getElementById("notifyForm");
+  if (!form) return;
+
+  const typeRadios = form.querySelectorAll('input[name="notifyType"]');
+  const areaWrap = document.getElementById("notifyAreaWrap");
+  const areaInput = document.getElementById("notifyArea");
+  const msg = document.getElementById("notifyMessage");
+  const btn = document.getElementById("notifyBtn");
+
+  typeRadios.forEach((r) =>
+    r.addEventListener("change", () => {
+      const isArea = form.notifyType.value === "area";
+      areaWrap.hidden = !isArea;
+      if (isArea) areaInput.focus();
+    })
+  );
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.className = "form-message";
+    msg.textContent = "";
+
+    const email = form.email.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.textContent = "Zadajte platnú emailovú adresu.";
+      msg.className = "form-message error";
+      form.email.focus();
+      return;
+    }
+
+    const notifyType = form.notifyType.value;
+    const areaName = notifyType === "area" ? areaInput.value.trim() : null;
+
+    if (notifyType === "area" && !areaName) {
+      msg.textContent = "Zadajte názov oblasti.";
+      msg.className = "form-message error";
+      areaInput.focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.querySelector("span").textContent = "Odosielam...";
+
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, notifyType, areaName }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        msg.textContent = "Odber bol úspešne zaregistrovaný.";
+        msg.className = "form-message success";
+        form.reset();
+        areaWrap.hidden = true;
+      } else {
+        msg.textContent = data.error || "Nepodarilo sa zaregistrovať odber.";
+        msg.className = "form-message error";
+      }
+    } catch (err) {
+      msg.textContent = "Chyba siete: " + err.message;
+      msg.className = "form-message error";
+    } finally {
+      btn.disabled = false;
+      btn.querySelector("span").textContent = "Prihlásiť sa na odber";
+    }
+  });
+})();
+
 // --- Štart ---
 syncThemeButton(currentTheme());
 setTiles(state.mapLayer);
