@@ -1217,6 +1217,171 @@ main {
   color: var(--ink-3);
 }
 
+/* --- Výber miesta na mape (formulár hlásenia) --- */
+.map-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.map-search input {
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 0.7rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.94rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.16s, box-shadow 0.16s;
+}
+
+.map-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.btn-map-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.7rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.16s, background 0.16s, opacity 0.16s;
+}
+
+.btn-map-action:hover {
+  border-color: var(--accent);
+}
+
+.btn-map-action i {
+  color: var(--accent);
+  font-size: 1.1em;
+}
+
+.btn-map-action.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.pick-map {
+  height: 340px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  z-index: 0;
+}
+
+.pin-pick {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line-strong), 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+
+.location-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.location-status i {
+  margin-top: 1px;
+  color: var(--accent);
+  font-size: 1.1em;
+  flex-shrink: 0;
+}
+
+.location-status.ok {
+  border-color: #16a34a;
+  color: #15803d;
+}
+.location-status.ok i {
+  color: #16a34a;
+}
+[data-theme="dark"] .location-status.ok {
+  color: #4ade80;
+}
+
+.location-status.warn {
+  border-color: #d97706;
+  color: #b45309;
+}
+.location-status.warn i {
+  color: #d97706;
+}
+[data-theme="dark"] .location-status.warn {
+  color: #fbbf24;
+}
+
+.btn-confirm-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 0.7rem 1.4rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s, opacity 0.16s;
+}
+
+.btn-confirm-location i {
+  font-size: 1.15em;
+  color: var(--accent);
+}
+
+.btn-confirm-location:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.btn-confirm-location:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-confirm-location.confirmed {
+  color: var(--accent-ink);
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.btn-confirm-location.confirmed i {
+  color: var(--accent-ink);
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
