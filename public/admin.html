@@ -28,7 +28,6 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <!-- Leaflet (mini-mapa pri hláseniach) -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -41,154 +40,382 @@
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
     />
     <style>
-      .admin-container {
-        max-width: 860px;
-        margin: 4rem auto;
-        padding: 2rem;
+      /* ---- Login ---- */
+      .login-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100dvh - 69px);
+        padding: 2rem 1rem;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 380px;
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: var(--radius);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow);
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
       }
-      .admin-container h1 {
-        margin-top: 0;
-        margin-bottom: 1.5rem;
-        font-family: 'Newsreader', serif;
-        font-size: 2rem;
+      .login-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-size: 28px;
+        margin-bottom: 1.25rem;
       }
-      .admin-lede {
-        margin: 0 0 2rem;
+      .login-card h1 {
+        font-family: var(--font-serif);
+        font-size: 1.6rem;
+        margin: 0 0 0.35rem;
       }
-      .admin-stats {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-        margin: 0 0 2rem;
-      }
-      .admin-stat {
-        padding: 1rem 1.1rem;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: color-mix(in srgb, var(--surface) 88%, var(--bg) 12%);
-      }
-      .admin-stat-value {
-        display: block;
-        font-family: 'Newsreader', serif;
-        font-size: 1.65rem;
-        font-weight: 600;
-        line-height: 1.1;
-        color: var(--accent);
-      }
-      .admin-stat-label {
-        display: block;
-        margin-top: 0.4rem;
+      .login-card .login-sub {
         color: var(--ink-3);
         font-size: 0.88rem;
+        margin: 0 0 1.75rem;
       }
-      .admin-status-line {
-        margin-top: 0.9rem;
+      .login-field {
+        width: 100%;
+        margin-bottom: 0.75rem;
+      }
+      .login-field input {
+        width: 100%;
+        padding: 0.7rem 0.9rem;
+        font-family: var(--font-sans);
         font-size: 0.92rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .login-field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .login-field input::placeholder { color: var(--ink-3); }
+      .login-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .login-btn:hover { background: var(--accent-hover); }
+      .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .login-error {
+        margin-top: 1rem;
+        padding: 0.7rem 0.9rem;
+        border-radius: var(--radius-sm);
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.18);
+        color: #b91c1c;
+        font-size: 0.85rem;
+        display: none;
+      }
+      [data-theme="dark"] .login-error {
+        color: #f87171;
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      /* ---- Dashboard shell ---- */
+      .admin-dashboard { display: none; }
+
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.25rem clamp(16px, 4vw, 36px) 0;
+      }
+      .admin-toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .admin-toolbar-left h1 {
+        font-family: var(--font-serif);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      .toolbar-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
         color: var(--ink-3);
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .logout-btn:hover {
+        color: var(--ink);
+        border-color: var(--ink-3);
+      }
+
+      /* ---- Tab navigation ---- */
+      .admin-tabs {
+        display: flex;
+        gap: 2px;
+        max-width: 960px;
+        margin: 1.25rem auto 0;
+        padding: 0 clamp(16px, 4vw, 36px);
+        border-bottom: 1px solid var(--line);
+      }
+      .admin-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 16px 12px;
+        font-family: var(--font-sans);
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+        white-space: nowrap;
+      }
+      .admin-tab:hover { color: var(--ink-2); }
+      .admin-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .admin-tab .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: var(--radius-pill);
+        background: var(--line);
+        color: var(--ink-3);
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .admin-tab.active .tab-count {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .admin-tab .tab-count.has-items {
+        background: #d97706;
+        color: #fff;
+      }
+      .admin-tab.active .tab-count.has-items {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      /* ---- Tab panels ---- */
+      .admin-body {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.5rem clamp(16px, 4vw, 36px) 3rem;
+      }
+      .tab-panel {
+        display: none;
+        animation: fadePanel 0.2s ease;
+      }
+      .tab-panel.active { display: block; }
+      @keyframes fadePanel {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ---- Overview panel ---- */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 1.5rem;
+      }
+      .stat-card {
+        padding: 1.1rem 1.2rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        transition: border-color 0.15s;
+      }
+      .stat-card:hover { border-color: var(--line-strong); }
+      .stat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .stat-value {
+        display: block;
+        font-family: var(--font-serif);
+        font-size: 1.6rem;
+        font-weight: 600;
+        line-height: 1.1;
+        color: var(--ink);
+      }
+      .stat-label {
+        display: block;
+        margin-top: 4px;
+        color: var(--ink-3);
+        font-size: 0.82rem;
+      }
+
+      .overview-meta {
+        font-size: 0.85rem;
+        color: var(--ink-3);
+        margin-bottom: 1.5rem;
+      }
+
+      .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
       }
       .btn-primary {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 7px;
         background: var(--accent);
-        color: white;
+        color: var(--accent-ink);
         border: none;
-        padding: 0.75rem 1.5rem;
+        padding: 10px 20px;
         border-radius: var(--radius-sm);
-        font-size: 1rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
         font-weight: 600;
         cursor: pointer;
-        transition: opacity 0.2s;
+        transition: background 0.15s;
       }
-      .btn-primary:hover {
-        opacity: 0.9;
-      }
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
+      .btn-primary:hover { background: var(--accent-hover); }
+      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      .btn-primary i { font-size: 1.1em; }
+
       .status-msg {
-        margin-top: 1rem;
-        padding: 1rem;
+        padding: 10px 14px;
         border-radius: var(--radius-sm);
+        font-size: 0.88rem;
         display: none;
       }
       .status-msg.success {
-        display: block;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         background: rgba(34, 197, 94, 0.1);
         color: #15803d;
         border: 1px solid rgba(34, 197, 94, 0.2);
       }
       .status-msg.error {
-        display: block;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         background: rgba(239, 68, 68, 0.1);
         color: #b91c1c;
         border: 1px solid rgba(239, 68, 68, 0.2);
       }
-      [data-theme="dark"] .status-msg.success {
-        color: #4ade80;
-      }
-      [data-theme="dark"] .status-msg.error {
-        color: #f87171;
-      }
+      [data-theme="dark"] .status-msg.success { color: #4ade80; }
+      [data-theme="dark"] .status-msg.error { color: #f87171; }
 
-      .admin-divider {
-        border: 0;
-        border-top: 1px solid var(--line);
-        margin: 2.5rem 0;
-      }
-
-      .pending-section h2 {
-        font-family: 'Newsreader', serif;
-        font-size: 1.5rem;
-        margin: 0 0 0.5rem;
+      /* ---- Section header ---- */
+      .section-header {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 1rem;
       }
-      .pending-section h2 .badge {
+      .section-header h2 {
+        font-family: var(--font-serif);
+        font-size: 1.3rem;
+        font-weight: 500;
+        margin: 0;
+      }
+      .section-header .section-count {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        min-width: 24px;
-        height: 24px;
-        padding: 0 7px;
-        border-radius: 999px;
-        background: var(--accent);
-        color: var(--accent-ink);
-        font-family: var(--font-sans);
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--accent-soft);
+        color: var(--accent);
         font-size: 0.78rem;
         font-weight: 700;
       }
-      .pending-section .pending-lede {
+      .section-lede {
         color: var(--ink-3);
-        font-size: 0.88rem;
-        margin: 0 0 1.2rem;
+        font-size: 0.85rem;
+        margin: -0.5rem 0 1.2rem;
       }
 
+      /* ---- Review cards ---- */
       .review-card {
-        padding: 1rem 1.1rem;
+        padding: 1rem 1.25rem;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        margin-bottom: 0.75rem;
+        margin-bottom: 10px;
         background: var(--surface);
+        transition: border-color 0.15s, opacity 0.3s, transform 0.3s;
       }
+      .review-card:hover { border-color: var(--line-strong); }
       .review-card-head {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 0.75rem;
+        gap: 12px;
       }
       .review-card-title {
         font-family: var(--font-serif);
         font-weight: 600;
-        font-size: 1.02rem;
-        line-height: 1.3;
+        font-size: 1rem;
+        line-height: 1.35;
         margin: 0;
+        color: var(--ink);
       }
       .review-card-meta {
         font-size: 0.78rem;
@@ -196,77 +423,64 @@
         margin: 4px 0 0;
       }
       .review-card-body {
-        margin: 8px 0 0;
+        margin: 10px 0 0;
         font-size: 0.88rem;
         color: var(--ink-2);
+        line-height: 1.5;
       }
       .review-card-contact {
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         font-size: 0.78rem;
         color: var(--ink-3);
       }
       .review-actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 6px;
         flex-shrink: 0;
       }
       .review-btn {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 6px 14px;
-        font-family: inherit;
+        gap: 5px;
+        padding: 7px 14px;
+        font-family: var(--font-sans);
         font-size: 0.82rem;
         font-weight: 600;
         border: 1px solid var(--line-strong);
         border-radius: var(--radius-sm);
         cursor: pointer;
-        transition: opacity 0.15s, background 0.15s;
+        transition: all 0.15s;
         background: var(--surface);
         color: var(--ink-2);
       }
-      .review-btn:hover {
-        background: var(--surface-hover);
-      }
-      .review-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
+      .review-btn:hover { background: var(--surface-hover); }
+      .review-btn:disabled { opacity: 0.4; cursor: not-allowed; }
       .review-btn.approve {
         background: var(--accent);
         color: var(--accent-ink);
         border-color: transparent;
       }
-      .review-btn.approve:hover {
-        opacity: 0.9;
-      }
+      .review-btn.approve:hover { opacity: 0.9; }
       .review-btn.reject {
         color: #b91c1c;
-        border-color: rgba(239,68,68,0.3);
+        border-color: rgba(239,68,68,0.25);
       }
-      [data-theme="dark"] .review-btn.reject {
-        color: #f87171;
-      }
+      .review-btn.reject:hover { background: rgba(239,68,68,0.06); }
+      [data-theme="dark"] .review-btn.reject { color: #f87171; }
 
       .review-coords {
         display: flex;
         align-items: center;
         gap: 5px;
-        margin: 8px 0 0;
+        margin: 10px 0 0;
         font-size: 0.78rem;
         color: var(--ink-3);
       }
-      .review-coords i {
-        color: var(--accent);
-      }
-      .review-coords.no-coords i {
-        color: #d97706;
-      }
-      .review-coords a {
-        color: var(--accent);
-      }
+      .review-coords i { color: var(--accent); }
+      .review-coords.no-coords i { color: #d97706; }
+      .review-coords a { color: var(--accent); }
       .review-map {
-        height: 170px;
+        height: 160px;
         width: 100%;
         margin-top: 8px;
         border: 1px solid var(--line);
@@ -275,40 +489,61 @@
         z-index: 0;
       }
 
-      .empty-pending {
+      .empty-state {
         text-align: center;
-        padding: 2rem 1rem;
+        padding: 3rem 1.5rem;
         color: var(--ink-3);
+      }
+      .empty-state-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 22px;
+        margin-bottom: 12px;
+      }
+      .empty-state p {
+        margin: 0;
         font-size: 0.9rem;
       }
 
+      /* ---- Subscriptions table ---- */
+      #subscriptionsList {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       .sub-table {
         width: 100%;
+        min-width: 460px;
         border-collapse: collapse;
         font-size: 0.88rem;
       }
       .sub-table th {
         text-align: left;
-        padding: 8px 10px;
+        padding: 10px 12px;
         border-bottom: 2px solid var(--line-strong);
         color: var(--ink-3);
         font-weight: 600;
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.04em;
       }
       .sub-table td {
-        padding: 10px 10px;
+        padding: 12px 12px;
         border-bottom: 1px solid var(--line);
         vertical-align: middle;
       }
-      .sub-table tr:last-child td {
-        border-bottom: 0;
-      }
+      .sub-table tr:last-child td { border-bottom: 0; }
+      .sub-table tbody tr { transition: background 0.12s; }
+      .sub-table tbody tr:hover { background: var(--surface-hover); }
       .sub-type-badge {
         display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
+        padding: 3px 9px;
+        border-radius: var(--radius-pill);
         font-size: 0.74rem;
         font-weight: 600;
       }
@@ -326,51 +561,36 @@
         justify-content: center;
         width: 30px;
         height: 30px;
-        border: 1px solid var(--line-strong);
+        border: 1px solid var(--line);
         border-radius: var(--radius-sm);
         background: var(--surface);
         color: var(--ink-3);
         cursor: pointer;
         font-size: 14px;
-        transition: color 0.15s, border-color 0.15s;
+        transition: all 0.15s;
       }
       .sub-delete:hover {
         color: #b91c1c;
         border-color: rgba(239,68,68,0.4);
+        background: rgba(239,68,68,0.05);
       }
 
-      /* Tabuľka odberov sa na úzkych displejoch posúva vodorovne */
-      #subscriptionsList {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .sub-table {
-        min-width: 460px;
-      }
-
+      /* ---- Responsive ---- */
       @media (max-width: 640px) {
-        .admin-container {
-          margin: 1.5rem auto;
-          padding: 1.25rem;
-          border-radius: var(--radius-sm);
-        }
+        .admin-toolbar { padding-top: 1rem; }
+        .admin-toolbar-left h1 { font-size: 1.25rem; }
+        .admin-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .admin-tab { padding: 10px 12px 12px; font-size: 0.82rem; }
+        .admin-body { padding: 1.25rem clamp(12px, 4vw, 36px) 2rem; }
       }
-
       @media (max-width: 560px) {
-        .admin-stats {
-          grid-template-columns: 1fr;
-        }
-        .review-card-head {
-          flex-direction: column;
-        }
-        .review-actions {
-          width: 100%;
-        }
-        .review-btn {
-          flex: 1;
-          justify-content: center;
-          padding: 9px 14px;
-        }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .review-card-head { flex-direction: column; }
+        .review-actions { width: 100%; }
+        .review-btn { flex: 1; justify-content: center; padding: 10px 14px; }
+      }
+      @media (max-width: 400px) {
+        .stats-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -383,76 +603,128 @@
     </header>
 
     <main>
-      <div class="admin-container">
-        <h1>Administrácia</h1>
-        <p class="muted admin-lede">
-          Manuálne spustenie sťahovania dát zo zdrojov (tumedved.sk a Google News).
-        </p>
-
-        <div class="admin-stats" id="adminStats" aria-live="polite">
-          <div class="admin-stat">
-            <span class="admin-stat-value" id="adminSightingsCount">—</span>
-            <span class="admin-stat-label">uložených hlásení</span>
-          </div>
-          <div class="admin-stat">
-            <span class="admin-stat-value" id="adminNewsCount">—</span>
-            <span class="admin-stat-label">uložených správ</span>
-          </div>
-          <div class="admin-stat">
-            <span class="admin-stat-value" id="adminRefreshState">—</span>
-            <span class="admin-stat-label">stav obnovovania</span>
-          </div>
-          <div class="admin-stat">
-            <span class="admin-stat-value" id="adminSupabaseState">—</span>
-            <span class="admin-stat-label">Supabase</span>
-          </div>
+      <!-- Login -->
+      <div class="login-wrapper" id="loginScreen">
+        <div class="login-card">
+          <div class="login-icon"><i class="ph ph-paw-print"></i></div>
+          <h1>Administrácia</h1>
+          <p class="login-sub">Prihláste sa pre prístup k správe obsahu.</p>
+          <form id="loginForm" autocomplete="on">
+            <div class="login-field">
+              <input type="text" id="loginUser" name="username" placeholder="Meno" autocomplete="username" required />
+            </div>
+            <div class="login-field">
+              <input type="password" id="loginPass" name="password" placeholder="Heslo" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">
+              <i class="ph ph-sign-in"></i> Prihlásiť sa
+            </button>
+          </form>
+          <div class="login-error" id="loginError"></div>
         </div>
+      </div>
 
-        <p class="admin-status-line" id="adminStatsMeta"></p>
+      <!-- Dashboard -->
+      <div class="admin-dashboard" id="adminDashboard">
 
-        <form id="adminForm">
-          <button type="submit" class="btn-primary" id="runBtn">
-            <i class="ph ph-arrows-clockwise"></i>
-            <span>Spustiť sťahovanie</span>
+        <div class="admin-toolbar">
+          <div class="admin-toolbar-left">
+            <h1>Administrácia</h1>
+            <span class="toolbar-badge">Admin</span>
+          </div>
+          <button class="logout-btn" id="logoutBtn">
+            <i class="ph ph-sign-out"></i> Odhlásiť
           </button>
-        </form>
-
-        <div id="statusMessage" class="status-msg"></div>
-
-        <hr class="admin-divider" />
-
-        <div class="pending-section" id="pendingReportsSection">
-          <h2>
-            <i class="ph ph-paw-print" aria-hidden="true"></i>
-            Hlásenia na schválenie
-            <span class="badge" id="pendingReportsCount">0</span>
-          </h2>
-          <p class="pending-lede">Hlásenia od používateľov z formulára čakajúce na overenie.</p>
-          <div id="pendingReportsList"></div>
         </div>
 
-        <hr class="admin-divider" />
+        <nav class="admin-tabs" id="adminTabs">
+          <button class="admin-tab active" data-tab="overview">
+            <i class="ph ph-chart-bar"></i> Prehľad
+          </button>
+          <button class="admin-tab" data-tab="reports">
+            <i class="ph ph-paw-print"></i> Hlásenia
+            <span class="tab-count" id="tabReportsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="news">
+            <i class="ph ph-newspaper"></i> Správy
+            <span class="tab-count" id="tabNewsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="subscriptions">
+            <i class="ph ph-bell-ringing"></i> Odbery
+            <span class="tab-count" id="tabSubsCount">0</span>
+          </button>
+        </nav>
 
-        <div class="pending-section" id="pendingNewsSection">
-          <h2>
-            <i class="ph ph-newspaper" aria-hidden="true"></i>
-            Správy na schválenie
-            <span class="badge" id="pendingNewsCount">0</span>
-          </h2>
-          <p class="pending-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
-          <div id="pendingNewsList"></div>
-        </div>
+        <div class="admin-body">
 
-        <hr class="admin-divider" />
+          <!-- Overview -->
+          <div class="tab-panel active" id="panel-overview">
+            <div class="stats-grid" id="adminStats">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-paw-print"></i></div>
+                <span class="stat-value" id="adminSightingsCount">&mdash;</span>
+                <span class="stat-label">Hlásení (tumedved)</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-newspaper"></i></div>
+                <span class="stat-value" id="adminNewsCount">&mdash;</span>
+                <span class="stat-label">Uložených správ</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-arrows-clockwise"></i></div>
+                <span class="stat-value" id="adminRefreshState">&mdash;</span>
+                <span class="stat-label">Stav obnovovania</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-database"></i></div>
+                <span class="stat-value" id="adminSupabaseState">&mdash;</span>
+                <span class="stat-label">Supabase</span>
+              </div>
+            </div>
 
-        <div class="pending-section" id="subscriptionsSection">
-          <h2>
-            <i class="ph ph-bell-ringing" aria-hidden="true"></i>
-            Emailové odbery
-            <span class="badge" id="subscriptionsCount">0</span>
-          </h2>
-          <p class="pending-lede">Registrované emailové adresy na upozornenia o výskyte medveďov.</p>
-          <div id="subscriptionsList"></div>
+            <p class="overview-meta" id="adminStatsMeta"></p>
+
+            <div class="action-bar">
+              <form id="adminForm" style="display:contents">
+                <button type="submit" class="btn-primary" id="runBtn">
+                  <i class="ph ph-arrows-clockwise"></i>
+                  <span>Spustiť sťahovanie</span>
+                </button>
+              </form>
+              <div id="statusMessage" class="status-msg"></div>
+            </div>
+          </div>
+
+          <!-- Reports -->
+          <div class="tab-panel" id="panel-reports">
+            <div class="section-header">
+              <h2>Hlásenia na schválenie</h2>
+              <span class="section-count" id="pendingReportsCount">0</span>
+            </div>
+            <p class="section-lede">Hlásenia od používateľov z formulára čakajúce na overenie.</p>
+            <div id="pendingReportsList"></div>
+          </div>
+
+          <!-- News -->
+          <div class="tab-panel" id="panel-news">
+            <div class="section-header">
+              <h2>Správy na schválenie</h2>
+              <span class="section-count" id="pendingNewsCount">0</span>
+            </div>
+            <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
+            <div id="pendingNewsList"></div>
+          </div>
+
+          <!-- Subscriptions -->
+          <div class="tab-panel" id="panel-subscriptions">
+            <div class="section-header">
+              <h2>Emailové odbery</h2>
+              <span class="section-count" id="subscriptionsCount">0</span>
+            </div>
+            <p class="section-lede">Registrované emailové adresy na upozornenia o výskyte medveďov.</p>
+            <div id="subscriptionsList"></div>
+          </div>
+
         </div>
       </div>
     </main>
@@ -463,6 +735,97 @@
       crossorigin=""
     ></script>
     <script>
+      // --- Tabs ---
+      const tabs = document.querySelectorAll('.admin-tab');
+      const panels = document.querySelectorAll('.tab-panel');
+
+      function switchTab(tabName) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+        panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+      }
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+
+      // --- Auth ---
+      const loginScreen = document.getElementById('loginScreen');
+      const dashboard = document.getElementById('adminDashboard');
+      const loginForm = document.getElementById('loginForm');
+      const loginError = document.getElementById('loginError');
+      const loginBtn = document.getElementById('loginBtn');
+
+      let authHeader = sessionStorage.getItem('adminAuth') || '';
+
+      function authFetch(url, opts = {}) {
+        opts.headers = Object.assign({ 'Authorization': authHeader }, opts.headers || {});
+        return fetch(url, opts);
+      }
+
+      function showDashboard() {
+        loginScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        loadStats();
+        loadPending();
+        loadSubscriptions();
+      }
+
+      function showLogin(msg) {
+        loginScreen.style.display = '';
+        dashboard.style.display = 'none';
+        if (msg) {
+          loginError.textContent = msg;
+          loginError.style.display = 'block';
+        }
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        authHeader = '';
+        sessionStorage.removeItem('adminAuth');
+        showLogin();
+      });
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = document.getElementById('loginUser').value;
+        const pass = document.getElementById('loginPass').value;
+        loginBtn.disabled = true;
+        loginError.style.display = 'none';
+
+        authHeader = 'Basic ' + btoa(user + ':' + pass);
+
+        try {
+          const res = await authFetch('/api/admin/pending');
+          if (res.ok) {
+            sessionStorage.setItem('adminAuth', authHeader);
+            showDashboard();
+          } else {
+            authHeader = '';
+            sessionStorage.removeItem('adminAuth');
+            showLogin('Nesprávne meno alebo heslo.');
+          }
+        } catch (err) {
+          authHeader = '';
+          showLogin('Chyba pripojenia: ' + err.message);
+        } finally {
+          loginBtn.disabled = false;
+        }
+      });
+
+      (async () => {
+        if (!authHeader) return;
+        try {
+          const res = await authFetch('/api/admin/pending');
+          if (res.ok) {
+            showDashboard();
+          } else {
+            sessionStorage.removeItem('adminAuth');
+            authHeader = '';
+          }
+        } catch (_) {}
+      })();
+
+      // --- Helpers ---
       const statsMeta = document.getElementById('adminStatsMeta');
       const form = document.getElementById('adminForm');
       const runBtn = document.getElementById('runBtn');
@@ -472,10 +835,7 @@
         if (!value) return '—';
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return '—';
-        return new Intl.DateTimeFormat('sk-SK', {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        }).format(date);
+        return new Intl.DateTimeFormat('sk-SK', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
       };
 
       const formatCount = (value) => {
@@ -495,12 +855,19 @@
         return d.innerHTML;
       };
 
+      function updateTabCount(id, count) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = count;
+        el.classList.toggle('has-items', count > 0);
+      }
+
+      // --- Stats ---
       const renderStats = (status) => {
         const sightings = status?.sightings || {};
         const news = status?.news || {};
-        const refreshState = [sightings.refreshing ? 'hlásenia bežia' : null, news.refreshing ? 'správy bežia' : null]
-          .filter(Boolean)
-          .join(' · ') || 'idle';
+        const refreshState = [sightings.refreshing ? 'hlásenia' : null, news.refreshing ? 'správy' : null]
+          .filter(Boolean).join(' + ') || 'idle';
         const latestUpdateCandidates = [sightings.fetchedAt, news.fetchedAt].filter(Boolean).sort();
         const latestUpdate = latestUpdateCandidates[latestUpdateCandidates.length - 1] || null;
 
@@ -510,36 +877,34 @@
         setText('adminSupabaseState', status?.supabaseConfigured ? 'pripojené' : 'nepripojené');
 
         const details = [];
-        details.push(`Posledná aktualizácia: ${formatDateTime(latestUpdate)}`);
+        details.push('Posledná aktualizácia: ' + formatDateTime(latestUpdate));
         if (sightings.error || news.error) {
-          details.push(`Chyba: ${sightings.error || news.error}`);
+          details.push('Chyba: ' + (sightings.error || news.error));
         } else {
-          details.push(`Režim: ${status?.refreshMode || '—'}`);
+          details.push('Režim: ' + (status?.refreshMode || '—'));
         }
-
-        if (statsMeta) statsMeta.textContent = details.join(' · ');
+        if (statsMeta) statsMeta.textContent = details.join('  ·  ');
       };
 
       const loadStats = async () => {
         try {
           const res = await fetch('/api/status');
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           renderStats(await res.json());
         } catch (err) {
-          if (statsMeta) statsMeta.textContent = `Statistiky sa nepodarilo načítať: ${err.message}`;
+          if (statsMeta) statsMeta.textContent = 'Statistiky sa nepodarilo načítať: ' + err.message;
         }
       };
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-
         runBtn.disabled = true;
-        runBtn.querySelector('span').textContent = 'Sťahujem...';
+        runBtn.querySelector('span').textContent = 'Sťahujem…';
         statusMsg.className = 'status-msg';
         statusMsg.style.display = 'none';
 
         try {
-          const res = await fetch('/api/admin/refresh', { method: 'POST' });
+          const res = await authFetch('/api/admin/refresh', { method: 'POST' });
           const data = await res.json();
 
           if (res.ok && data.ok) {
@@ -550,7 +915,7 @@
             loadPending();
           } else {
             const detail = data.errors
-              ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join(' · ')
+              ? Object.entries(data.errors).map(([k, v]) => k + ': ' + v).join(' · ')
               : (data.error || 'Neznáma chyba');
             statusMsg.textContent = 'Chyba: ' + detail;
             statusMsg.className = 'status-msg error';
@@ -565,13 +930,12 @@
       });
 
       // --- Pending items ---
-
       async function updateStatus(type, id, status, cardEl) {
         const btns = cardEl.querySelectorAll('.review-btn');
         btns.forEach(b => b.disabled = true);
 
         try {
-          const res = await fetch(`/api/admin/${type}/${id}/status`, {
+          const res = await authFetch('/api/admin/' + type + '/' + id + '/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status }),
@@ -579,12 +943,12 @@
           const data = await res.json();
 
           if (res.ok && data.ok) {
-            cardEl.style.opacity = '0.4';
-            cardEl.style.pointerEvents = 'none';
+            cardEl.style.opacity = '0';
+            cardEl.style.transform = 'translateY(-4px)';
             setTimeout(() => {
               cardEl.remove();
               updateCounts();
-            }, 400);
+            }, 300);
           } else {
             alert('Chyba: ' + (data.error || 'Neznáma chyba'));
             btns.forEach(b => b.disabled = false);
@@ -596,10 +960,12 @@
       }
 
       function updateCounts() {
-        const reportCards = document.querySelectorAll('#pendingReportsList .review-card');
-        const newsCards = document.querySelectorAll('#pendingNewsList .review-card');
-        setText('pendingReportsCount', reportCards.length);
-        setText('pendingNewsCount', newsCards.length);
+        const rc = document.querySelectorAll('#pendingReportsList .review-card').length;
+        const nc = document.querySelectorAll('#pendingNewsList .review-card').length;
+        setText('pendingReportsCount', rc);
+        setText('pendingNewsCount', nc);
+        updateTabCount('tabReportsCount', rc);
+        updateTabCount('tabNewsCount', nc);
       }
 
       function renderReportCard(report) {
@@ -610,39 +976,38 @@
         const lng = Number(report.lng);
         const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
         const coordsHtml = hasCoords
-          ? `<p class="review-card-meta review-coords">
-               <i class="ph ph-map-pin"></i> ${lat.toFixed(5)}, ${lng.toFixed(5)}
-               · <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=14/${lat}/${lng}" target="_blank" rel="noopener">Otvoriť v OpenStreetMap</a>
-             </p>
-             <div class="review-map" data-lat="${lat}" data-lng="${lng}"></div>`
-          : `<p class="review-card-meta review-coords no-coords"><i class="ph ph-warning"></i> Hlásenie bez súradníc (staršie hlásenie zadané textom).</p>`;
+          ? '<p class="review-card-meta review-coords">' +
+              '<i class="ph ph-map-pin"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5) +
+              ' · <a href="https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=14/' + lat + '/' + lng + '" target="_blank" rel="noopener">OpenStreetMap</a>' +
+            '</p>' +
+            '<div class="review-map" data-lat="' + lat + '" data-lng="' + lng + '"></div>'
+          : '<p class="review-card-meta review-coords no-coords"><i class="ph ph-warning"></i> Hlásenie bez súradníc.</p>';
 
-        card.innerHTML = `
-          <div class="review-card-head">
-            <div>
-              <p class="review-card-title">${esc(report.location)}</p>
-              <p class="review-card-meta">${formatDateTime(report.reported_date || report.created_at)}</p>
-            </div>
-            <div class="review-actions">
-              <button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>
-              <button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>
-            </div>
-          </div>
-          ${report.description ? `<p class="review-card-body">${esc(report.description)}</p>` : ''}
-          ${report.reporter_name || report.reporter_email ? `<p class="review-card-contact"><i class="ph ph-user"></i> ${esc(report.reporter_name || '')} ${report.reporter_email ? '(' + esc(report.reporter_email) + ')' : ''}</p>` : ''}
-          ${coordsHtml}
-        `;
+        card.innerHTML =
+          '<div class="review-card-head">' +
+            '<div>' +
+              '<p class="review-card-title">' + esc(report.location) + '</p>' +
+              '<p class="review-card-meta">' + formatDateTime(report.reported_date || report.created_at) + '</p>' +
+            '</div>' +
+            '<div class="review-actions">' +
+              '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
+              '<button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>' +
+            '</div>' +
+          '</div>' +
+          (report.description ? '<p class="review-card-body">' + esc(report.description) + '</p>' : '') +
+          (report.reporter_name || report.reporter_email
+            ? '<p class="review-card-contact"><i class="ph ph-user"></i> ' + esc(report.reporter_name || '') + (report.reporter_email ? ' (' + esc(report.reporter_email) + ')' : '') + '</p>'
+            : '') +
+          coordsHtml;
 
         card.querySelectorAll('.review-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            updateStatus('reports', report.id, btn.dataset.action, card);
-          });
+          btn.addEventListener('click', () => updateStatus('reports', report.id, btn.dataset.action, card));
         });
 
         return card;
       }
 
-      // --- Mini-mapy pri hláseniach ---
+      // --- Mini maps ---
       const ADMIN_TILE_URLS = {
         light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
         dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -650,8 +1015,7 @@
       const ADMIN_TILE_OPTS = {
         maxZoom: 19,
         subdomains: 'abcd',
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       };
       const adminPinIcon = L.divIcon({
         className: '',
@@ -662,15 +1026,12 @@
 
       function initReviewMaps() {
         const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-        document.querySelectorAll('.review-map:not([data-init])').forEach((el) => {
+        document.querySelectorAll('.review-map:not([data-init])').forEach(el => {
           const lat = parseFloat(el.dataset.lat);
           const lng = parseFloat(el.dataset.lng);
           if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
           el.setAttribute('data-init', '1');
-          const m = L.map(el, {
-            scrollWheelZoom: false,
-            attributionControl: true,
-          }).setView([lat, lng], 12);
+          const m = L.map(el, { scrollWheelZoom: false, attributionControl: true }).setView([lat, lng], 12);
           L.tileLayer(dark ? ADMIN_TILE_URLS.dark : ADMIN_TILE_URLS.light, ADMIN_TILE_OPTS).addTo(m);
           L.marker([lat, lng], { icon: adminPinIcon }).addTo(m);
         });
@@ -679,42 +1040,42 @@
       function renderNewsCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
-        card.innerHTML = `
-          <div class="review-card-head">
-            <div>
-              <p class="review-card-title">${esc(item.title)}</p>
-              <p class="review-card-meta">
-                ${esc(item.source || '')} · ${formatDateTime(item.published_at)}
-                ${item.place ? ' · <i class="ph ph-map-pin"></i> ' + esc(item.place) : ''}
-              </p>
-            </div>
-            <div class="review-actions">
-              <button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>
-              <button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>
-            </div>
-          </div>
-          ${item.snippet ? `<p class="review-card-body">${esc(item.snippet)}</p>` : ''}
-          ${item.link ? `<p class="review-card-meta"><a href="${esc(item.link)}" target="_blank" rel="noopener">${esc(item.link)}</a></p>` : ''}
-        `;
+        card.innerHTML =
+          '<div class="review-card-head">' +
+            '<div>' +
+              '<p class="review-card-title">' + esc(item.title) + '</p>' +
+              '<p class="review-card-meta">' +
+                esc(item.source || '') + ' · ' + formatDateTime(item.published_at) +
+                (item.place ? ' · <i class="ph ph-map-pin"></i> ' + esc(item.place) : '') +
+              '</p>' +
+            '</div>' +
+            '<div class="review-actions">' +
+              '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
+              '<button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>' +
+            '</div>' +
+          '</div>' +
+          (item.snippet ? '<p class="review-card-body">' + esc(item.snippet) + '</p>' : '') +
+          (item.link ? '<p class="review-card-meta"><a href="' + esc(item.link) + '" target="_blank" rel="noopener">' + esc(item.link) + '</a></p>' : '');
 
         card.querySelectorAll('.review-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            updateStatus('news', item.id, btn.dataset.action, card);
-          });
+          btn.addEventListener('click', () => updateStatus('news', item.id, btn.dataset.action, card));
         });
 
         return card;
       }
 
+      function renderEmptyState(icon, text) {
+        return '<div class="empty-state"><div class="empty-state-icon"><i class="ph ph-' + icon + '"></i></div><p>' + text + '</p></div>';
+      }
+
       async function loadPending() {
         try {
-          const res = await fetch('/api/admin/pending');
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const res = await authFetch('/api/admin/pending');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
 
           const reportsList = document.getElementById('pendingReportsList');
           const newsList = document.getElementById('pendingNewsList');
-
           reportsList.innerHTML = '';
           newsList.innerHTML = '';
 
@@ -722,34 +1083,39 @@
             data.reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
             initReviewMaps();
           } else {
-            reportsList.innerHTML = '<p class="empty-pending">Žiadne hlásenia na schválenie.</p>';
+            reportsList.innerHTML = renderEmptyState('check-circle', 'Žiadne hlásenia na schválenie.');
           }
 
           if (data.news && data.news.length) {
             data.news.forEach(n => newsList.appendChild(renderNewsCard(n)));
           } else {
-            newsList.innerHTML = '<p class="empty-pending">Žiadne správy na schválenie.</p>';
+            newsList.innerHTML = renderEmptyState('check-circle', 'Žiadne správy na schválenie.');
           }
 
-          setText('pendingReportsCount', (data.reports || []).length);
-          setText('pendingNewsCount', (data.news || []).length);
+          const rc = (data.reports || []).length;
+          const nc = (data.news || []).length;
+          setText('pendingReportsCount', rc);
+          setText('pendingNewsCount', nc);
+          updateTabCount('tabReportsCount', rc);
+          updateTabCount('tabNewsCount', nc);
         } catch (err) {
           console.error('Failed to load pending items:', err);
         }
       }
 
       // --- Subscriptions ---
-
       async function deleteSub(id, row) {
         if (!confirm('Naozaj chcete odstrániť tento odber?')) return;
         try {
-          const res = await fetch(`/api/admin/subscriptions/${id}`, { method: 'DELETE' });
+          const res = await authFetch('/api/admin/subscriptions/' + id, { method: 'DELETE' });
           const data = await res.json();
           if (res.ok && data.ok) {
             row.remove();
             const rows = document.querySelectorAll('#subscriptionsList tbody tr');
-            setText('subscriptionsCount', rows.length);
-            if (!rows.length) loadSubscriptions();
+            const count = rows.length;
+            setText('subscriptionsCount', count);
+            updateTabCount('tabSubsCount', count);
+            if (!count) loadSubscriptions();
           } else {
             alert('Chyba: ' + (data.error || 'Neznáma chyba'));
           }
@@ -761,32 +1127,25 @@
       async function loadSubscriptions() {
         const container = document.getElementById('subscriptionsList');
         try {
-          const res = await fetch('/api/admin/subscriptions');
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const res = await authFetch('/api/admin/subscriptions');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
           const subs = data.subscriptions || [];
 
           setText('subscriptionsCount', subs.length);
+          updateTabCount('tabSubsCount', subs.length);
 
           if (!subs.length) {
-            container.innerHTML = '<p class="empty-pending">Žiadne registrované odbery.</p>';
+            container.innerHTML = renderEmptyState('bell-slash', 'Žiadne registrované odbery.');
             return;
           }
 
           const table = document.createElement('table');
           table.className = 'sub-table';
-          table.innerHTML = `
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Typ</th>
-                <th>Oblasť</th>
-                <th>Dátum</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          `;
+          table.innerHTML =
+            '<thead><tr>' +
+              '<th>Email</th><th>Typ</th><th>Oblasť</th><th>Dátum</th><th></th>' +
+            '</tr></thead><tbody></tbody>';
 
           const tbody = table.querySelector('tbody');
           subs.forEach(sub => {
@@ -794,13 +1153,12 @@
             const typeBadge = sub.notify_type === 'area'
               ? '<span class="sub-type-badge area">oblasť</span>'
               : '<span class="sub-type-badge all">všetko</span>';
-            tr.innerHTML = `
-              <td>${esc(sub.email)}</td>
-              <td>${typeBadge}</td>
-              <td>${esc(sub.area_name || '—')}</td>
-              <td>${formatDateTime(sub.created_at)}</td>
-              <td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>
-            `;
+            tr.innerHTML =
+              '<td>' + esc(sub.email) + '</td>' +
+              '<td>' + typeBadge + '</td>' +
+              '<td>' + esc(sub.area_name || '—') + '</td>' +
+              '<td>' + formatDateTime(sub.created_at) + '</td>' +
+              '<td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>';
             tr.querySelector('.sub-delete').addEventListener('click', () => deleteSub(sub.id, tr));
             tbody.appendChild(tr);
           });
@@ -811,10 +1169,6 @@
           console.error('Failed to load subscriptions:', err);
         }
       }
-
-      loadStats();
-      loadPending();
-      loadSubscriptions();
     </script>
   </body>
 </html>
