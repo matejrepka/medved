@@ -35,10 +35,7 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
-    />
+    <link rel="icon" type="image/png" href="/assets/mascot/bear-head-mark.png" />
     <style>
       /* ---- Login ---- */
       .login-wrapper {
@@ -63,11 +60,18 @@
         place-items: center;
         width: 56px;
         height: 56px;
-        border-radius: 16px;
-        background: var(--accent);
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid var(--line);
         color: var(--accent-ink);
         font-size: 28px;
         margin-bottom: 1.25rem;
+        overflow: hidden;
+      }
+      .login-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       .login-card h1 {
         font-family: var(--font-serif);
@@ -387,6 +391,28 @@
         font-size: 0.78rem;
         font-weight: 700;
       }
+      .section-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn-approve-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+      }
+      .btn-approve-all:hover { background: var(--accent-hover); }
+      .btn-approve-all:disabled { opacity: 0.5; cursor: not-allowed; }
       .section-lede {
         color: var(--ink-3);
         font-size: 0.85rem;
@@ -596,8 +622,10 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/">
-        <span class="brand-mark"><i class="ph ph-paw-print"></i></span>
+      <a class="brand" href="/" aria-label="Medvede na Slovensku, domov">
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png" alt="" aria-hidden="true" />
+        </span>
         <span class="brand-name">Medvede na Slovensku</span>
       </a>
     </header>
@@ -606,7 +634,9 @@
       <!-- Login -->
       <div class="login-wrapper" id="loginScreen">
         <div class="login-card">
-          <div class="login-icon"><i class="ph ph-paw-print"></i></div>
+          <div class="login-icon">
+            <img src="/assets/mascot/bear-head-mark.png" alt="" aria-hidden="true" />
+          </div>
           <h1>Administrácia</h1>
           <p class="login-sub">Prihláste sa pre prístup k správe obsahu.</p>
           <form id="loginForm" autocomplete="on">
@@ -698,8 +728,13 @@
           <!-- Reports -->
           <div class="tab-panel" id="panel-reports">
             <div class="section-header">
-              <h2>Hlásenia na schválenie</h2>
-              <span class="section-count" id="pendingReportsCount">0</span>
+              <div class="section-header-left">
+                <h2>Hlásenia na schválenie</h2>
+                <span class="section-count" id="pendingReportsCount">0</span>
+              </div>
+              <button class="btn-approve-all" id="approveAllReports" style="display:none">
+                <i class="ph ph-checks"></i> Schváliť všetky
+              </button>
             </div>
             <p class="section-lede">Hlásenia od používateľov z formulára čakajúce na overenie.</p>
             <div id="pendingReportsList"></div>
@@ -708,8 +743,13 @@
           <!-- News -->
           <div class="tab-panel" id="panel-news">
             <div class="section-header">
-              <h2>Správy na schválenie</h2>
-              <span class="section-count" id="pendingNewsCount">0</span>
+              <div class="section-header-left">
+                <h2>Správy na schválenie</h2>
+                <span class="section-count" id="pendingNewsCount">0</span>
+              </div>
+              <button class="btn-approve-all" id="approveAllNews" style="display:none">
+                <i class="ph ph-checks"></i> Schváliť všetky
+              </button>
             </div>
             <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
             <div id="pendingNewsList"></div>
@@ -899,6 +939,7 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         runBtn.disabled = true;
+        runBtn.querySelector('i').classList.add('spin');
         runBtn.querySelector('span').textContent = 'Sťahujem…';
         statusMsg.className = 'status-msg';
         statusMsg.style.display = 'none';
@@ -925,6 +966,7 @@
           statusMsg.className = 'status-msg error';
         } finally {
           runBtn.disabled = false;
+          runBtn.querySelector('i').classList.remove('spin');
           runBtn.querySelector('span').textContent = 'Spustiť sťahovanie';
         }
       });
@@ -966,11 +1008,13 @@
         setText('pendingNewsCount', nc);
         updateTabCount('tabReportsCount', rc);
         updateTabCount('tabNewsCount', nc);
+        toggleApproveAllButtons();
       }
 
       function renderReportCard(report) {
         const card = document.createElement('div');
         card.className = 'review-card';
+        card.dataset.itemId = report.id;
 
         const lat = Number(report.lat);
         const lng = Number(report.lng);
@@ -1040,6 +1084,7 @@
       function renderNewsCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
+        card.dataset.itemId = item.id;
         card.innerHTML =
           '<div class="review-card-head">' +
             '<div>' +
@@ -1098,10 +1143,67 @@
           setText('pendingNewsCount', nc);
           updateTabCount('tabReportsCount', rc);
           updateTabCount('tabNewsCount', nc);
+          toggleApproveAllButtons();
         } catch (err) {
           console.error('Failed to load pending items:', err);
         }
       }
+
+      // --- Approve all ---
+      function toggleApproveAllButtons() {
+        const rc = document.querySelectorAll('#pendingReportsList .review-card').length;
+        const nc = document.querySelectorAll('#pendingNewsList .review-card').length;
+        document.getElementById('approveAllReports').style.display = rc > 1 ? '' : 'none';
+        document.getElementById('approveAllNews').style.display = nc > 1 ? '' : 'none';
+      }
+
+      async function approveAll(type, listId, btn) {
+        const cards = Array.from(document.querySelectorAll('#' + listId + ' .review-card'));
+        if (!cards.length) return;
+        if (!confirm('Schváliť ' + cards.length + ' položiek?')) return;
+
+        btn.disabled = true;
+        const origText = btn.innerHTML;
+        let approved = 0;
+
+        for (const card of cards) {
+          const itemId = card.dataset.itemId;
+          if (!itemId) continue;
+
+          const cardBtns = card.querySelectorAll('.review-btn');
+          cardBtns.forEach(b => b.disabled = true);
+
+          try {
+            const res = await authFetch('/api/admin/' + type + '/' + itemId + '/status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'approved' }),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+              approved++;
+              card.style.opacity = '0';
+              card.style.transform = 'translateY(-4px)';
+              await new Promise(r => setTimeout(r, 150));
+              card.remove();
+            }
+          } catch (_) {}
+
+          btn.innerHTML = '<i class="ph ph-spinner spin"></i> ' + approved + '/' + cards.length;
+        }
+
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        updateCounts();
+        toggleApproveAllButtons();
+      }
+
+      document.getElementById('approveAllReports').addEventListener('click', function() {
+        approveAll('reports', 'pendingReportsList', this);
+      });
+      document.getElementById('approveAllNews').addEventListener('click', function() {
+        approveAll('news', 'pendingNewsList', this);
+      });
 
       // --- Subscriptions ---
       async function deleteSub(id, row) {
