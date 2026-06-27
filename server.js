@@ -132,9 +132,8 @@ function isValidCronRequest(req) {
 // Cloudflare výzvou), druhý sa aj tak obnoví a uloží — a v odpovedi vidíme,
 // ktorý zdroj zlyhal a prečo.
 async function refreshAll(reason) {
-  const [sightingsResult, pozormedvedResult, newsResult] = await Promise.allSettled([
+  const [sightingsResult, newsResult] = await Promise.allSettled([
     sightingsStore.refresh(reason),
-    pozormedvedStore.refresh(reason),
     newsStore.refresh(reason),
   ]);
 
@@ -142,19 +141,15 @@ async function refreshAll(reason) {
   if (sightingsResult.status === "rejected") {
     errors.sightings = sightingsResult.reason?.message || String(sightingsResult.reason);
   }
-  if (pozormedvedResult.status === "rejected") {
-    errors.pozormedved = pozormedvedResult.reason?.message || String(pozormedvedResult.reason);
-  }
   if (newsResult.status === "rejected") {
     errors.news = newsResult.reason?.message || String(newsResult.reason);
   }
 
   return {
-    ok: sightingsResult.status === "fulfilled" || pozormedvedResult.status === "fulfilled" || newsResult.status === "fulfilled",
+    ok: sightingsResult.status === "fulfilled" || newsResult.status === "fulfilled",
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
     sightings: sightingsStore.meta,
-    pozormedved: pozormedvedStore.meta,
     news: newsStore.meta,
     errors: Object.keys(errors).length ? errors : null,
   };
@@ -349,9 +344,6 @@ app.listen(PORT, () => {
   sightingsStore.start().catch((err) => {
     console.error("[tumedved] startup load failed:", err.message);
   });
-  pozormedvedStore.start().catch((err) => {
-    console.error("[pozormedved] startup load failed:", err.message);
-  });
   newsStore.start().catch((err) => {
     console.error("[news] startup load failed:", err.message);
   });
@@ -359,7 +351,6 @@ app.listen(PORT, () => {
   if (isSupabaseConfigured()) {
     Promise.all([
       sightingsStore.refresh("startup"),
-      pozormedvedStore.refresh("startup"),
       newsStore.refresh("startup"),
     ]).catch((err) => {
       console.error("[startup] refresh failed:", err.message);

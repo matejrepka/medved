@@ -338,13 +338,9 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
 async function loadData() {
   const cacheBust = Date.now();
   try {
-    const [sRes, pmRes, nRes] = await Promise.all([
+    const [sRes, nRes] = await Promise.all([
       fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
         if (!r.ok) throw new Error(`Hlásenia HTTP ${r.status}`);
-        return r.json();
-      }),
-      fetch(`/api/pozormedved?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
-        if (!r.ok) throw new Error(`Pozormedved HTTP ${r.status}`);
         return r.json();
       }),
       fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
@@ -353,12 +349,9 @@ async function loadData() {
       })
     ]);
 
-    const tumedvedItems = sRes.items || [];
-    const pozormedvedItems = pmRes.items || [];
-    state.sightings = tumedvedItems.concat(pozormedvedItems)
-      .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
+    if (sRes.items) state.sightings = sRes.items;
     if (nRes.items) state.news = nRes.items;
-    state.sightingsUpdatedAt = latestIso(sRes.updatedAt, pmRes.updatedAt);
+    state.sightingsUpdatedAt = sRes.updatedAt || null;
     state.newsUpdatedAt = nRes.updatedAt || null;
     state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
     setUpdated(state.updatedAt);

@@ -4,7 +4,6 @@ import { getSupabase, isSupabaseConfigured } from "./supabase.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
-const POZORMEDVED_LIMIT = 500;
 const NEWS_LIMIT = 200;
 
 function toIso(value) {
@@ -80,53 +79,6 @@ export async function loadTumedvedLogs() {
     .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at")
     .order("reported_at", { ascending: false, nullsFirst: false })
     .limit(SIGHTINGS_LIMIT);
-
-  if (error) throw error;
-
-  return (data || [])
-    .map((row) => ({
-      id: row.id,
-      source: row.source,
-      location: row.location,
-      note: row.note || "",
-      lat: row.lat,
-      lng: row.lng,
-      hasCoords: Boolean(row.has_coords),
-      reportedAt: row.reported_at,
-      url: row.url,
-      _scrapedAt: row.scraped_at,
-    }))
-    .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
-}
-
-export async function savePozormedvedLogs(items, scrapedAt = new Date().toISOString()) {
-  const rows = items.map((item) => ({
-    id: item.id,
-    source: item.source || "pozormedved.sk",
-    location: item.location || null,
-    note: item.note || null,
-    lat: asNullableNumber(item.lat),
-    lng: asNullableNumber(item.lng),
-    has_coords: Boolean(item.hasCoords),
-    reported_at: toIso(item.reportedAt),
-    url: item.url || null,
-    payload: item,
-    scraped_at: scrapedAt,
-    updated_at: scrapedAt,
-  }));
-
-  await upsertChunks("pozormedved_logs", rows, { onConflict: "id" });
-}
-
-export async function loadPozormedvedLogs() {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from("pozormedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at")
-    .order("reported_at", { ascending: false, nullsFirst: false })
-    .limit(POZORMEDVED_LIMIT);
 
   if (error) throw error;
 

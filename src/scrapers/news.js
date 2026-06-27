@@ -1,11 +1,10 @@
 // Scraper slovenských správ o medveďoch.
 //
-// Namiesto scrapovania desiatok spravodajských webov (každý s iným HTML
-// a anti-bot ochranou) využívame agregátor Google News a jeho RSS výstup.
-// Pre slovenské výsledky používame hl=sk, gl=SK, ceid=SK:sk.
+// Dva zdroje:
+//  1. Google News RSS — agregátor spravodajských webov (výskyt, útok, stretnutie…)
+//  2. pozormedved.sk — oficiálne upozornenia ŠOP SR (WordPress REST API)
 //
-// Spustíme viacero hľadaní (výskyt, útok, stretnutie...), výsledky zlúčime
-// a odstránime duplicity podľa normalizovaného názvu.
+// Výsledky z oboch zdrojov zlúčime, geokódujeme a odstránime duplicity.
 
 import Parser from "rss-parser";
 import { geocodeNews } from "../geo/geocode.js";
@@ -100,11 +99,65 @@ function isBearRelated(title, snippet) {
   return BEAR_TERMS.some((term) => haystack.includes(term));
 }
 
+// --- pozormedved.sk (ŠOP SR) ---
+
+const PM_BASE = "https://pozormedved.sk/wp-json/wp/v2/posts";
+const PM_PER_PAGE = 50;
+const PM_MAX_PAGES = 3;
+
+async function fetchPozormedvedPosts() {
+  const items = [];
+
+  for (let page = 1; page <= PM_MAX_PAGES; page++) {
+    const url = `${PM_BASE}?per_page=${PM_PER_PAGE}&page=${page}&orderby=date&order=desc&_fields=id,date_gmt,link,title,content,excerpt`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (medved-sledovac news reader)", Accept: "application/json" },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.status === 400) break;
+    if (!res.ok) break;
+
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+
+    for (const post of batch) {
+      const title = stripHtml(post.title?.rendered);
+      if (!title) continue;
+
+      const body = stripHtml(post.content?.rendered || "");
+      const snippet = stripHtml(post.excerpt?.rendered || "").slice(0, 500) || body.slice(0, 500);
+      const dateGmt = post.date_gmt ? new Date(post.date_gmt + "Z").toISOString() : null;
+
+      items.push({
+        id: `news-pm${post.id}`,
+        source: "pozormedved.sk",
+        title,
+        link: post.link || `https://pozormedved.sk/?p=${post.id}`,
+        articleUrl: post.link || null,
+        googleNewsUrl: null,
+        snippet,
+        body,
+        date: dateGmt,
+        rssDate: dateGmt,
+      });
+    }
+
+    const totalPages = Number(res.headers.get("x-wp-totalpages")) || 1;
+    if (page >= totalPages) break;
+  }
+
+  return items;
+}
+
+// --- Zlúčenie oboch zdrojov ---
+
 /**
- * Stiahne a zlúči slovenské správy o medveďoch.
+ * Stiahne a zlúči slovenské správy o medveďoch z Google News a pozormedved.sk.
  * @returns {Promise<Array>} zoznam článkov (najnovšie prvé)
  */
 export async function fetchNews() {
+  // 1. Google News RSS
   const settled = await Promise.allSettled(
     QUERIES.map((q) => parser.parseURL(FEED_URL(q)))
   );
@@ -118,7 +171,6 @@ export async function fetchNews() {
       if (!title) continue;
 
       const snippet = stripTrailingSource(stripHtml(item.contentSnippet || item.content));
-      // Odfiltruje články, ktoré medveďa len spomenú/odkazujú naň, ale nie sú o ňom.
       if (!isBearRelated(title, snippet)) continue;
 
       const key = dedupeKey(title);
@@ -126,8 +178,6 @@ export async function fetchNews() {
       const rssDate = date ? new Date(date).toISOString() : null;
 
       const existing = byKey.get(key);
-      // Ak duplicita existuje, ponecháme novší záznam podľa času v Google RSS.
-      // Nie je to dátum článku, len dátum objavenia v agregátore.
       if (existing && new Date(existing.rssDate || 0) >= new Date(rssDate || 0)) {
         continue;
       }
@@ -147,28 +197,34 @@ export async function fetchNews() {
     }
   }
 
-  const items = [...byKey.values()]
+  const gnItems = [...byKey.values()]
     .sort((a, b) => new Date(b.rssDate || 0) - new Date(a.rssDate || 0))
     .slice(0, MAX_ITEMS);
 
-  // Stiahni telo každého článku (rozbalí Google News odkaz + Readability),
-  // aby sme obec hľadali z celého textu článku, nie len z krátkeho popisu.
-  // Ak sa článok nepodarí stiahnuť, geokódovanie spadne späť na titulok/snippet.
-  const bodies = await fetchArticleBodies(items, { concurrency: 2, timeoutMs: 15000 });
-  for (const it of items) {
+  // 2. Stiahni telá článkov z Google News
+  const bodies = await fetchArticleBodies(gnItems, { concurrency: 2, timeoutMs: 15000 });
+  for (const it of gnItems) {
     const r = bodies.get(it.link);
     if (r) {
       it.body = r.body || "";
-      if (r.url) it.articleUrl = r.url; // priama URL článku (mimo Google News)
+      if (r.url) it.articleUrl = r.url;
       if (r.googleNewsUrl) it.googleNewsUrl = r.googleNewsUrl;
-      if (r.publishedAt) it.date = r.publishedAt; // dátum z originálneho článku má prednosť pred RSS
+      if (r.publishedAt) it.date = r.publishedAt;
     }
   }
 
-  // Z titulku + tela článku doplní obec a súradnice (pre značku na mape).
-  const geocoded = await geocodeNews(items);
+  // 3. pozormedved.sk — príspevky už majú telo z WP API, sťahovať netreba
+  let pmItems = [];
+  try {
+    pmItems = await fetchPozormedvedPosts();
+  } catch (err) {
+    console.warn(`[pozormedved] fetch failed: ${err.message}`);
+  }
+
+  // 4. Zlúčenie a geokódovanie
+  const allItems = gnItems.concat(pmItems);
+  const geocoded = await geocodeNews(allItems);
   geocoded.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  // `body` ďalej nepotrebujeme posielať klientovi — zbytočne veľké.
   return geocoded.map(({ body, rssDate, ...rest }) => rest);
 }
 

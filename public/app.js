@@ -539,23 +539,14 @@ function setUpdated(iso) {
 // --- Načítanie dát ---
 async function loadData() {
   const cacheBust = Date.now();
-  const [sRes, pmRes, nRes] = await Promise.allSettled([
+  const [sRes, nRes] = await Promise.allSettled([
     fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
-    fetch(`/api/pozormedved?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
     fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
 
-  const tumedvedItems = sRes.status === "fulfilled" && sRes.value.items ? sRes.value.items : [];
-  const pozormedvedItems = pmRes.status === "fulfilled" && pmRes.value.items ? pmRes.value.items : [];
-
-  state.sightings = tumedvedItems.concat(pozormedvedItems)
-    .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
-  state.sightingsUpdatedAt = latestIso(
-    sRes.status === "fulfilled" ? sRes.value.updatedAt : null,
-    pmRes.status === "fulfilled" ? pmRes.value.updatedAt : null
-  );
-
-  if (state.sightings.length) {
+  if (sRes.status === "fulfilled" && sRes.value.items) {
+    state.sightings = sRes.value.items;
+    state.sightingsUpdatedAt = sRes.value.updatedAt;
     renderMarkers();
     renderSightings();
   } else {
@@ -566,7 +557,7 @@ async function loadData() {
     state.news = nRes.value.items;
     state.newsUpdatedAt = nRes.value.updatedAt;
     renderNews();
-    renderMarkers();
+    renderMarkers(); // správy môžu mať súradnice -> značky na mape
   } else {
     elNews.innerHTML = `<div class="error-box">Nepodarilo sa načítať správy. Skúste to znova.</div>`;
   }
