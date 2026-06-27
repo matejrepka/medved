@@ -1058,7 +1058,7 @@ main {
   margin-top: clamp(20px, 3vw, 28px);
   padding: clamp(28px, 4vw, 40px);
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--bark) 12%, var(--line));
   border-radius: var(--radius);
 }
 
@@ -1191,6 +1191,33 @@ main {
 }
 
 @media (max-width: 720px) {
+  .mascot-masthead {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .mascot-hero {
+    justify-self: start;
+    width: min(220px, 62vw);
+  }
+
+  .stats-mascot-masthead .mascot-hero {
+    display: none;
+  }
+
+  .report-cta-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .report-cta-content {
+    align-items: flex-start;
+  }
+
+  .mascot-cta-image {
+    width: 124px;
+    justify-self: start;
+  }
+
   .notify-inner {
     grid-template-columns: 1fr;
   }
@@ -1200,6 +1227,34 @@ main {
 .report-container {
   max-width: 660px;
   margin: 0 auto;
+}
+
+.report-container-with-mascot {
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(180px, 260px);
+  align-items: start;
+  gap: clamp(28px, 5vw, 60px);
+}
+
+.report-main {
+  min-width: 0;
+}
+
+.report-mascot {
+  position: sticky;
+  top: 92px;
+  padding-top: 74px;
+}
+
+.report-mascot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--bark) 16%, var(--line));
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
 }
 
 .report-header {
@@ -1692,6 +1747,15 @@ canvas,
   .report-cta-inner,
   .notify-inner {
     gap: clamp(18px, 3vw, 28px);
+  }
+
+  .report-container-with-mascot {
+    max-width: 660px;
+    grid-template-columns: 1fr;
+  }
+
+  .report-mascot {
+    display: none;
   }
 }
 
