@@ -12,6 +12,8 @@ import { fileURLToPath } from "node:url";
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
+import { loadPlaces } from "./src/geo/geocode.js";
+import { buildStatsReport } from "./src/stats-report.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
   deleteEmailSubscription,
@@ -109,6 +111,27 @@ app.get("/api/news", async (_req, res) => {
     res.json({ updatedAt: newsStore.meta.fetchedAt, count: data.length, items: data });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
+  }
+});
+
+// Automatický štatistický report — počíta sa zo všetkých dát (nie len z toho,
+// čo je na mape) a cez gazetteer nájde aj obce spomenuté len v texte správ.
+app.get("/api/stats", async (_req, res) => {
+  try {
+    const [sightings, news, gz] = await Promise.all([
+      sightingsStore.get(),
+      newsStore.get(),
+      loadPlaces(),
+    ]);
+
+    const report = buildStatsReport({ sightings, news, gz });
+    const updatedAt =
+      [sightingsStore.meta.fetchedAt, newsStore.meta.fetchedAt].filter(Boolean).sort().pop() || null;
+
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ updatedAt, ...report });
+  } catch (err) {
+    res.status(500).json({ error: "Nepodarilo sa zostaviť štatistiky", detail: err.message });
   }
 });
 

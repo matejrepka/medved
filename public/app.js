@@ -270,6 +270,48 @@ function normalizeSearchText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function sightingDedupeTime(iso) {
+  if (!iso) return "";
+  const time = new Date(iso).getTime();
+  if (!Number.isFinite(time)) return "";
+  return new Date(Math.floor(time / 60000) * 60000).toISOString();
+}
+
+function sightingCoordKey(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toFixed(5) : "";
+}
+
+function sightingDedupeKey(s) {
+  return [
+    normalizeSearchText(s.location).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
+    normalizeSearchText(s.note).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
+    sightingDedupeTime(s.reportedAt),
+    sightingCoordKey(s.lat),
+    sightingCoordKey(s.lng),
+  ].join("|");
+}
+
+function dedupeSightings(items) {
+  const seenIds = new Set();
+  const seenContent = new Set();
+  const unique = [];
+
+  for (const item of items || []) {
+    const id = item?.id ? String(item.id) : "";
+    if (id && seenIds.has(id)) continue;
+    if (id) seenIds.add(id);
+
+    const contentKey = sightingDedupeKey(item || {});
+    if (contentKey && seenContent.has(contentKey)) continue;
+    if (contentKey) seenContent.add(contentKey);
+
+    unique.push(item);
+  }
+
+  return unique;
+}
+
 function matchesSearchQuery(fields) {
   const q = normalizeSearchText(state.filters.query.trim());
   if (!q) return true;
@@ -545,7 +587,7 @@ async function loadData() {
   ]);
 
   if (sRes.status === "fulfilled" && sRes.value.items) {
-    state.sightings = sRes.value.items;
+    state.sightings = dedupeSightings(sRes.value.items);
     state.sightingsUpdatedAt = sRes.value.updatedAt;
     renderMarkers();
     renderSightings();

@@ -169,7 +169,8 @@ const COMMON_FIRST_NAMES = new Set([
 ]);
 
 const PERSON_ROLE_STEMS = [
-  "minister", "poslan", "riadit", "hovorc", "policajt", "hasic", "ochranar",
+  // "minist" (nie "minister") aj kvôli skloňovaniu "ministrom", "ministra".
+  "minist", "poslan", "riadit", "hovorc", "policajt", "hasic", "ochranar",
   "lesnik", "horar", "polovn", "turist", "muz", "zena",
 ];
 
@@ -361,6 +362,123 @@ export function findPlace(title, body, gz) {
 
   if (!best) return null;
   return { name: best.name, lat: best.lat, lng: best.lng, type: best.type };
+}
+
+/**
+ * Nájde v texte VŠETKY spomenuté slovenské obce — voľnejšie ako findPlace.
+ *
+ * Kým findPlace vyberie JEDNU najpravdepodobnejšiu obec pre značku na mape (a
+ * preto vyžaduje kontext skutočného výskytu medveďa), tu zbierame všetky zmienky
+ * pre štatistiku. Vďaka tomu sa do reportu dostane aj obec ako Klenovec, ktorú
+ * mapa nepinla, lebo si ňou nebola dosť istá. Stačí, že je obec v titulku, po
+ * predložke ("v Klenovci") alebo pri cue slove. Falošné zhody (priezviská,
+ * kraje, bežné slová) naďalej filtrujeme rovnakými strážami ako findPlace.
+ *
+ * @param {string} title  nadpis / hlavný text
+ * @param {string} body   doplnkový text (snippet/telo), môže byť prázdny
+ * @param {{index:Map}} gz  predspracovaný gazetteer
+ * @returns {Array<{name,lat,lng,type}>} unikátne obce v poradí prvého výskytu
+ */
+export function findPlaceMentions(title, body, gz) {
+  const { index } = gz;
+  if (!index || index.size === 0) return [];
+
+  const titleTokens = tokenize(title || "");
+  const bodyTokens = tokenize(body || "");
+  const tokens = titleTokens.concat(bodyTokens);
+  const titleLen = titleTokens.length;
+
+  const found = new Map(); // názov obce -> {name,lat,lng,type}
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (!tok.cap || tok.w.length < 4) continue; // názov obce je vlastné meno
+    if (isBearWord(tok.w) || isStopword(tok.w)) continue;
+    const candidates = index.get(tok.w.slice(0, 4));
+    if (!candidates) continue;
+
+    // Pre danú pozíciu vyberieme JEDNU najlepšiu obec — inak by "Brezno" zhltlo
+    // aj "Breza" a "Klenovec" aj "Klenová". Skórujeme presnosťou zhody rovnako
+    // ako findPlace, len bez globálneho víťaza — víťaz je lokálny pre pozíciu.
+    let bestPlace = null;
+    let bestScore = -Infinity;
+
+    for (const place of candidates) {
+      const parts = place.parts;
+      const noun = parts[parts.length - 1];
+      const cp = nounMatchLen(noun, tok.w);
+      if (cp < 0) continue;
+
+      const inTitle = i < titleLen;
+      const segmentStart = inTitle ? 0 : titleLen;
+      const segmentEnd = inTitle ? titleLen - 1 : tokens.length - 1;
+
+      const next = i + 1 <= segmentEnd ? tokens[i + 1] : null;
+      if (next && REGION_AFTER.test(next.w)) continue;
+
+      const start = i - (parts.length - 1);
+      if (start < 0 || start < segmentStart) continue;
+
+      let ok = true;
+      for (let j = 0; j < parts.length - 1; j++) {
+        const t = tokens[start + j];
+        if (!t || !t.cap || !headMatch(parts[j], t.w)) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+
+      const prev = start > segmentStart ? tokens[start - 1] : null;
+      if (prev && REGION_BEFORE.has(prev.w)) continue;
+
+      const cueBefore = !!prev && CUE_WORDS.has(prev.w);
+      const prepBefore = !!prev && LOCAL_PREPOSITIONS.has(prev.w);
+
+      if (!cueBefore && isPersonContext(tokens, start, i, segmentStart, segmentEnd)) continue;
+      if (parts.length === 1 && NAME_TOWNS.has(noun) && !cueBefore) continue;
+      if (parts.length === 1 && place.rank === 1 && noun.length < 5 && !cueBefore) continue;
+
+      // Kontext zmienky je voľnejší než pri findPlace: stačí titulok, predložka,
+      // cue slovo, alebo incidentné slovo v okolí. Plytké zmienky v tele bez
+      // žiadneho z týchto signálov ignorujeme (znižuje šum).
+      let contextOk = cueBefore || prepBefore || inTitle;
+      if (!contextOk) {
+        const lo = Math.max(segmentStart, start - 5);
+        const hi = Math.min(segmentEnd, i + 8);
+        for (let k = lo; k <= hi; k++) {
+          if (isOccurrenceToken(tokens[k].w) || CUE_WORDS.has(tokens[k].w)) {
+            contextOk = true;
+            break;
+          }
+        }
+      }
+      if (!contextOk) continue;
+
+      const score =
+        cp * 1.5 -
+        Math.abs(noun.length - tok.w.length) * 2 +
+        nounInflectionBonus(noun, tok.w) +
+        (parts.length > 1 ? 60 : 0) +
+        place.rank;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPlace = place;
+      }
+    }
+
+    if (bestPlace && !found.has(bestPlace.name)) {
+      found.set(bestPlace.name, {
+        name: bestPlace.name,
+        lat: bestPlace.lat,
+        lng: bestPlace.lng,
+        type: bestPlace.type,
+      });
+    }
+  }
+
+  return [...found.values()];
 }
 
 /**

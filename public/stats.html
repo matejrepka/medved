@@ -61,41 +61,29 @@
     </header>
 
     <main class="stats-page">
-      <section class="masthead mascot-masthead stats-mascot-masthead">
-        <div class="masthead-copy">
-          <h1>Zaujímavé Štatistiky</h1>
-          <p class="lede">
-            Prehľad o najčastejších lokalitách, čase výskytu a celkovom počte hlásení.
-          </p>
+      <section class="masthead">
+        <h1>Zaujímavé Štatistiky</h1>
+        <p class="lede">
+          Prehľad o najčastejších lokalitách, čase výskytu a celkovom počte hlásení.
+        </p>
 
-          <div class="stats" id="stats">
-            <div class="stat">
-              <span class="stat-num" id="statTotalSightings">-</span>
-              <span class="stat-label">všetkých hlásení</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num" id="statTotalNews">-</span>
-              <span class="stat-label">všetkých správ</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num" id="statTopPlace">-</span>
-              <span class="stat-label">najčastejšia lokalita</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num" id="statTodaySightings">-</span>
-              <span class="stat-label">dnešných hlásení</span>
-            </div>
+        <div class="stats" id="stats">
+          <div class="stat">
+            <span class="stat-num" id="statTotalSightings">-</span>
+            <span class="stat-label">všetkých hlásení</span>
           </div>
-        </div>
-        <div class="mascot-hero mascot-hero-mark" aria-hidden="true">
-          <img
-            src="/assets/mascot/bear-head-mark.png"
-            alt=""
-            width="512"
-            height="512"
-            loading="eager"
-            decoding="async"
-          />
+          <div class="stat">
+            <span class="stat-num" id="statTotalNews">-</span>
+            <span class="stat-label">všetkých správ</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statTopPlace">-</span>
+            <span class="stat-label">najčastejšia lokalita</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statTodaySightings">-</span>
+            <span class="stat-label">dnešných hlásení</span>
+          </div>
         </div>
       </section>
 
@@ -112,7 +100,7 @@
         <div class="charts-grid">
           <div class="chart-container">
             <div class="section-head">
-              <h2><i class="ph ph-map-pin" aria-hidden="true"></i> Top 10 Lokalít (Hlásenia)</h2>
+              <h2><i class="ph ph-map-pin" aria-hidden="true"></i> Najčastejšie lokality (hlásenia + správy)</h2>
             </div>
             <div class="chart-wrapper">
               <canvas id="topLocationsChart"></canvas>

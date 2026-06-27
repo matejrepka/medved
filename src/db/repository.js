@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
+import { dedupeSightings } from "../sightings-dedupe.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
@@ -29,7 +30,7 @@ async function upsertChunks(table, rows, options) {
 }
 
 export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
-  const rows = items.map((item) => ({
+  const rows = dedupeSightings(items).map((item) => ({
     id: item.id,
     source: item.source || "tumedved.sk",
     location: item.location || null,
@@ -82,7 +83,7 @@ export async function loadTumedvedLogs() {
 
   if (error) throw error;
 
-  return (data || [])
+  const items = (data || [])
     .map((row) => ({
       id: row.id,
       source: row.source,
@@ -96,6 +97,8 @@ export async function loadTumedvedLogs() {
       _scrapedAt: row.scraped_at,
     }))
     .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
+
+  return dedupeSightings(items);
 }
 
 export async function loadNewsLogs() {

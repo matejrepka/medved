@@ -220,6 +220,7 @@
           </div>
           <form class="notify-form" id="notifyForm" novalidate>
             <div class="notify-field">
+              <label class="sr-only" for="notifyEmail">Emailová adresa</label>
               <input
                 type="email"
                 id="notifyEmail"
@@ -227,6 +228,7 @@
                 placeholder="vas@email.sk"
                 required
                 autocomplete="email"
+                aria-describedby="notifyMessage"
               />
             </div>
             <div class="notify-type">
@@ -240,6 +242,7 @@
               </label>
             </div>
             <div class="notify-area" id="notifyAreaWrap" hidden>
+              <label class="sr-only" for="notifyArea">Oblasť upozornení</label>
               <input
                 type="text"
                 id="notifyArea"

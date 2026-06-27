@@ -1,10 +1,7 @@
 // Medvede na Slovensku — štatistiky.
 
 const state = {
-  sightings: [],
-  news: [],
-  sightingsUpdatedAt: null,
-  newsUpdatedAt: null,
+  report: null,
   updatedAt: null,
 };
 
@@ -77,7 +74,8 @@ function updateChartTheme() {
     topLocationsChart.options.scales.x.grid.color = colors.gridColor;
     topLocationsChart.options.scales.y.grid.color = colors.gridColor;
     topLocationsChart.options.plugins.legend.labels.color = colors.textColor;
-    topLocationsChart.data.datasets[0].backgroundColor = colors.locationsColors;
+    topLocationsChart.data.datasets[0].backgroundColor = colors.sightingsColor;
+    topLocationsChart.data.datasets[1].backgroundColor = colors.newsColor;
     topLocationsChart.update();
   }
 
@@ -114,16 +112,6 @@ function fmtTime(iso) {
   return d.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
 }
 
-function latestIso(...values) {
-  return values.reduce((latest, iso) => {
-    if (!iso) return latest;
-    const time = new Date(iso).getTime();
-    if (Number.isNaN(time)) return latest;
-    if (!latest || time > latest.time) return { iso, time };
-    return latest;
-  }, null)?.iso || null;
-}
-
 function updatedText(iso) {
   if (!iso) return "";
   return isToday(iso) ? `dnes ${fmtTime(iso)}` : fmtDate(iso, true);
@@ -151,85 +139,30 @@ function setStatus(message, isError = false) {
   if (!existing) host.appendChild(el);
 }
 
-function processStats() {
-  // 1. Zohľadniť základné štatistiky
-  const totalSightings = state.sightings.length;
-  const totalNews = state.news.length;
-  const todaySightings = state.sightings.filter(s => isToday(s.reportedAt)).length;
-  
-  // 2. Najčastejšie lokality hlásení
-  const locationsCount = {};
-  state.sightings.forEach(s => {
-    if (s.location) {
-      // Vyčistíme názov lokality pre lepšie zoskupovanie (napr. odstránime " - okolie")
-      const loc = s.location.split(',')[0].split('-')[0].trim();
-      if(loc.length > 2) {
-        locationsCount[loc] = (locationsCount[loc] || 0) + 1;
-      }
-    }
+function renderReport(report) {
+  // 1. Základné štatistiky (počítané serverom zo všetkých dát)
+  $("statTotalSightings").textContent = report.totals.sightings.toLocaleString("sk-SK");
+  $("statTotalNews").textContent = report.totals.news.toLocaleString("sk-SK");
+  $("statTodaySightings").textContent = report.totals.todaySightings.toLocaleString("sk-SK");
+  $("statTopPlace").textContent = report.topPlace || "Neznáma";
+
+  // 2. Časová os — server vracia [{ month: "YYYY-MM", sightings, news }]
+  const timelineLabels = report.timeline.map((t) => {
+    const [year, month] = t.month.split("-");
+    return new Date(year, month - 1).toLocaleDateString("sk-SK", { month: "short", year: "numeric" });
   });
+  const timelineSightings = report.timeline.map((t) => t.sightings);
+  const timelineNews = report.timeline.map((t) => t.news);
 
-  const sortedLocations = Object.entries(locationsCount)
-    .sort((a, b) => b[1] - a[1]);
-  
-  const topPlace = sortedLocations.length > 0 ? sortedLocations[0][0] : "Neznáma";
-  
-  $("statTotalSightings").textContent = totalSightings.toLocaleString("sk-SK");
-  $("statTotalNews").textContent = totalNews.toLocaleString("sk-SK");
-  $("statTodaySightings").textContent = todaySightings.toLocaleString("sk-SK");
-  $("statTopPlace").textContent = topPlace;
+  // 3. Najčastejšie lokality — hlásenia aj zmienky v správach (top 10)
+  const topLocations = report.topLocations.slice(0, 10);
 
-  // 3. Pripraviť dáta pre časovú os (Zoskupenie po mesiacoch)
-  const timelineData = {};
-  
-  const addDateToTimeline = (isoDate, type) => {
-    if (!isoDate) return;
-    const d = new Date(isoDate);
-    if(Number.isNaN(d.getTime())) return;
-    
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    if (!timelineData[monthKey]) timelineData[monthKey] = { sightings: 0, news: 0 };
-    timelineData[monthKey][type]++;
-  };
-
-  state.sightings.forEach(s => addDateToTimeline(s.reportedAt, 'sightings'));
-  state.news.forEach(n => addDateToTimeline(n.date, 'news'));
-
-  const sortedMonths = Object.keys(timelineData).sort();
-  const timelineLabels = sortedMonths.map(m => {
-    const [year, month] = m.split('-');
-    return new Date(year, month - 1).toLocaleDateString('sk-SK', { month: 'short', year: 'numeric' });
-  });
-  
-  const timelineSightings = sortedMonths.map(m => timelineData[m].sightings);
-  const timelineNews = sortedMonths.map(m => timelineData[m].news);
-
-  // 4. Čas dňa (Ráno, Deň, Večer, Noc)
-  const timeOfDay = {
-    "Noc (22:00 - 05:59)": 0,
-    "Ráno (06:00 - 09:59)": 0,
-    "Deň (10:00 - 17:59)": 0,
-    "Večer (18:00 - 21:59)": 0,
-  };
-
-  state.sightings.forEach(s => {
-    if (!s.reportedAt) return;
-    const d = new Date(s.reportedAt);
-    if(Number.isNaN(d.getTime())) return;
-    const h = d.getHours();
-    
-    if (h >= 6 && h < 10) timeOfDay["Ráno (06:00 - 09:59)"]++;
-    else if (h >= 10 && h < 18) timeOfDay["Deň (10:00 - 17:59)"]++;
-    else if (h >= 18 && h < 22) timeOfDay["Večer (18:00 - 21:59)"]++;
-    else timeOfDay["Noc (22:00 - 05:59)"]++;
-  });
-
-  renderCharts(timelineLabels, timelineSightings, timelineNews, sortedLocations.slice(0, 10), timeOfDay);
+  renderCharts(timelineLabels, timelineSightings, timelineNews, topLocations, report.timeOfDay);
 }
 
 function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocations, timeOfDay) {
   const colors = getChartColors();
-  
+
   // Zničenie starých grafov ak existujú
   if (timelineChart) timelineChart.destroy();
   if (topLocationsChart) topLocationsChart.destroy();
@@ -280,31 +213,38 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
     }
   });
 
-  // Top Locations graf
-  const locLabels = topLocations.map(l => l[0]);
-  const locData = topLocations.map(l => l[1]);
-  
+  // Top Locations graf — stohovaný: hlásenia + zmienky v správach
+  const locLabels = topLocations.map((l) => l.name);
   const ctxLocations = document.getElementById('topLocationsChart').getContext('2d');
   topLocationsChart = new Chart(ctxLocations, {
     type: 'bar',
     data: {
       labels: locLabels,
-      datasets: [{
-        label: 'Počet hlásení',
-        data: locData,
-        backgroundColor: colors.locationsColors,
-        borderRadius: 4
-      }]
+      datasets: [
+        {
+          label: 'Hlásenia',
+          data: topLocations.map((l) => l.sightings),
+          backgroundColor: colors.sightingsColor,
+          borderRadius: 4
+        },
+        {
+          label: 'Zmienky v správach',
+          data: topLocations.map((l) => l.news),
+          backgroundColor: colors.newsColor,
+          borderRadius: 4
+        }
+      ]
     },
     options: {
       ...commonOptions,
       indexAxis: 'y', // horizontálny bar chart
       scales: {
-        x: { ...commonOptions.scales.x, beginAtZero: true },
-        y: { ...commonOptions.scales.y }
+        x: { ...commonOptions.scales.x, beginAtZero: true, stacked: true },
+        y: { ...commonOptions.scales.y, stacked: true }
       },
       plugins: {
-        legend: { display: false }
+        ...commonOptions.plugins,
+        tooltip: { mode: "index", intersect: false }
       }
     }
   });
@@ -326,7 +266,7 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { 
+        legend: {
           position: window.innerWidth < 900 ? 'bottom' : 'right',
           labels: { color: colors.textColor }
         }
@@ -338,27 +278,17 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
 async function loadData() {
   const cacheBust = Date.now();
   try {
-    const [sRes, nRes] = await Promise.all([
-      fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
-        if (!r.ok) throw new Error(`Hlásenia HTTP ${r.status}`);
-        return r.json();
-      }),
-      fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
-        if (!r.ok) throw new Error(`Správy HTTP ${r.status}`);
-        return r.json();
-      })
-    ]);
+    const report = await fetch(`/api/stats?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error(`Štatistiky HTTP ${r.status}`);
+      return r.json();
+    });
 
-    if (sRes.items) state.sightings = sRes.items;
-    if (nRes.items) state.news = nRes.items;
-    state.sightingsUpdatedAt = sRes.updatedAt || null;
-    state.newsUpdatedAt = nRes.updatedAt || null;
-    state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
+    state.report = report;
+    state.updatedAt = report.updatedAt || null;
     setUpdated(state.updatedAt);
     setStatus("");
 
-    processStats();
-
+    renderReport(report);
   } catch (err) {
     console.error("Nepodarilo sa načítať dáta pre štatistiky:", err);
     setStatus("Nepodarilo sa načítať dáta pre štatistiky. Skúste obnoviť stránku.", true);
