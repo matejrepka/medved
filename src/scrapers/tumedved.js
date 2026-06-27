@@ -90,21 +90,26 @@ function normalize(post) {
   };
 }
 
+/** Zostaví URL WP REST API pre danú stránku. */
+function buildUrl(page) {
+  return `${BASE}?per_page=${PER_PAGE}&page=${page}&orderby=date&order=desc&_fields=id,date_gmt,link,title,content,acf`;
+}
+
 /**
- * Stiahne hlásenia o výskyte medveďov z tumedved.sk.
- * @returns {Promise<Array>} zoznam normalizovaných hlásení (najnovšie prvé)
+ * Rýchla cesta: priamy fetch. Keď web odpovedá Cloudflare výzvou (403), vráti
+ * null a volajúci prejde na headless prehliadač. Iné HTTP chyby vyhodí ďalej.
  */
-export async function fetchTumedved() {
+async function fetchDirect() {
   const all = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const url = `${BASE}?per_page=${PER_PAGE}&page=${page}&orderby=date&order=desc&_fields=id,date_gmt,link,title,content,acf`;
-    const res = await fetch(url, {
+    const res = await fetch(buildUrl(page), {
       headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
     });
 
     if (res.status === 400) break; // WP vráti 400 keď požiadame o stránku za poslednou
+    if (res.status === 403) return null; // pravdepodobne Cloudflare výzva → fallback
     if (!res.ok) {
       throw new Error(`tumedved.sk vrátil HTTP ${res.status}`);
     }
@@ -118,7 +123,41 @@ export async function fetchTumedved() {
     if (page >= totalPages) break;
   }
 
-  // Zoradíme od najnovšieho po najstaršie podľa nahláseného času.
-  all.sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
   return all;
+}
+
+/** Záložná cesta cez headless Chromium (prejde Cloudflare výzvou). */
+async function fetchViaBrowser() {
+  // Lenivý import — Playwright/Chromium načítame len keď ich naozaj treba.
+  const { fetchJsonPagesViaBrowser } = await import("./browser-fetch.js");
+  const raw = await fetchJsonPagesViaBrowser({
+    homeUrl: "https://tumedved.sk/",
+    pageUrl: buildUrl,
+    maxPages: MAX_PAGES,
+    perPage: PER_PAGE,
+  });
+  return raw.map(normalize);
+}
+
+/**
+ * Stiahne hlásenia o výskyte medveďov z tumedved.sk.
+ * Skúsi priamy fetch; pri Cloudflare výzve (alebo zlyhaní siete) prejde na
+ * headless prehliadač.
+ * @returns {Promise<Array>} zoznam normalizovaných hlásení (najnovšie prvé)
+ */
+export async function fetchTumedved() {
+  let items = null;
+  try {
+    items = await fetchDirect();
+  } catch (err) {
+    console.warn(`[tumedved] priamy fetch zlyhal (${err.message}), skúšam prehliadač`);
+  }
+
+  if (items === null) {
+    items = await fetchViaBrowser();
+  }
+
+  // Zoradíme od najnovšieho po najstaršie podľa nahláseného času.
+  items.sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
+  return items;
 }

@@ -128,22 +128,43 @@ function isValidCronRequest(req) {
   return typeof token === "string" && token === CRON_REFRESH_SECRET;
 }
 
+// Obnoví obidva zdroje nezávisle. Keď jeden zlyhá (napr. tumedved.sk je za
+// Cloudflare výzvou), druhý sa aj tak obnoví a uloží — a v odpovedi vidíme,
+// ktorý zdroj zlyhal a prečo.
+async function refreshAll(reason) {
+  const [sightingsResult, newsResult] = await Promise.allSettled([
+    sightingsStore.refresh(reason),
+    newsStore.refresh(reason),
+  ]);
+
+  const errors = {};
+  if (sightingsResult.status === "rejected") {
+    errors.sightings = sightingsResult.reason?.message || String(sightingsResult.reason);
+  }
+  if (newsResult.status === "rejected") {
+    errors.news = newsResult.reason?.message || String(newsResult.reason);
+  }
+
+  return {
+    ok: sightingsResult.status === "fulfilled" || newsResult.status === "fulfilled",
+    supabaseConfigured: isSupabaseConfigured(),
+    refreshMode: "external-cron",
+    sightings: sightingsStore.meta,
+    news: newsStore.meta,
+    errors: Object.keys(errors).length ? errors : null,
+  };
+}
+
 app.all("/api/cron/refresh", async (req, res) => {
   if (!isValidCronRequest(req)) {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  try {
-    await Promise.all([sightingsStore.refresh("cron"), newsStore.refresh("cron")]);
-    res.json({
-      ok: true,
-      message: "Cron refresh completed.",
-      sightings: sightingsStore.meta,
-      news: newsStore.meta,
-    });
-  } catch (err) {
-    res.status(502).json({ ok: false, error: err.message });
-  }
+  const result = await refreshAll("cron");
+  res.status(result.ok ? 200 : 502).json({
+    ...result,
+    message: result.ok ? "Cron refresh completed." : "Cron refresh failed.",
+  });
 });
 
 // --- Bear report (public) ---
@@ -219,20 +240,26 @@ app.get("/stats", (_req, res) => {
 
 // --- Basic Auth pre administráciu ---
 function adminAuth(req, res, next) {
-  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
-  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+  // Pri /api volaniach vraciame JSON, nech frontend nespadne na res.json().
+  const wantsJson = req.path.startsWith("/api");
+  const fail = (status, msg) =>
+    wantsJson ? res.status(status).json({ ok: false, error: msg }) : res.status(status).send(msg);
 
   const adminPassword = process.env.ADMIN_PASSWORD;
   if (!adminPassword) {
-    return res.status(500).send("Chyba servera: ADMIN_PASSWORD nie je nastavené v .env súbore.");
+    return fail(500, "Chyba servera: ADMIN_PASSWORD nie je nastavené v .env súbore.");
   }
+
+  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
 
   if (login === 'admin' && password === adminPassword) {
     return next();
   }
 
-  res.set('WWW-Authenticate', 'Basic realm="Admin Sledovac"');
-  res.status(401).send('Vyžaduje sa prihlásenie (meno: admin).');
+  // WWW-Authenticate len pre prehliadačovú navigáciu (/admin), nie pre fetch.
+  if (!wantsJson) res.set('WWW-Authenticate', 'Basic realm="Admin Sledovac"');
+  return fail(401, 'Vyžaduje sa prihlásenie (meno: admin).');
 }
 
 app.get("/admin", adminAuth, (_req, res) => {
@@ -295,18 +322,16 @@ app.delete("/api/admin/subscriptions/:id", adminAuth, async (req, res) => {
   }
 });
 
-app.post("/api/admin/refresh", adminAuth, async (req, res) => {
-  try {
-    await Promise.all([sightingsStore.refresh("admin"), newsStore.refresh("admin")]);
-    res.json({
-      ok: true,
-      message: "Admin sťahovanie dokončené.",
-      sightings: sightingsStore.meta,
-      news: newsStore.meta,
-    });
-  } catch (err) {
-    res.status(502).json({ ok: false, error: err.message });
-  }
+app.post("/api/admin/refresh", adminAuth, async (_req, res) => {
+  const result = await refreshAll("admin");
+  const failed = result.errors ? Object.keys(result.errors) : [];
+
+  let message;
+  if (!result.ok) message = "Sťahovanie zlyhalo.";
+  else if (failed.length) message = `Čiastočne dokončené — zlyhalo: ${failed.join(", ")}.`;
+  else message = "Sťahovanie úspešne dokončené.";
+
+  res.status(result.ok ? 200 : 502).json({ ...result, message });
 });
 
 app.use(express.static(path.join(__dirname, "public")));

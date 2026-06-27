@@ -18,6 +18,9 @@
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "linkedom": "^0.18.12",
+    "playwright": "^1.61.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "rss-parser": "^3.13.0"
   }
 }
