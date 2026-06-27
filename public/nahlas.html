@@ -40,15 +40,14 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
-    />
+    <link rel="icon" type="image/png" href="/assets/mascot/bear-head-mark.png" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Medvede na Slovensku, domov">
-        <span class="brand-mark"><i class="ph ph-paw-print" aria-hidden="true"></i></span>
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png" alt="" aria-hidden="true" />
+        </span>
         <span class="brand-name">Medvede na Slovensku</span>
       </a>
 
@@ -66,21 +65,22 @@
     </header>
 
     <main>
-      <div class="report-container">
-        <div class="report-header">
-          <a href="/" class="btn report-back">
-            <i class="ph ph-arrow-left"></i>
-            <span>Späť na mapu</span>
-          </a>
-        </div>
+      <div class="report-container report-container-with-mascot">
+        <div class="report-main">
+          <div class="report-header">
+            <a href="/" class="btn report-back">
+              <i class="ph ph-arrow-left"></i>
+              <span>Späť na mapu</span>
+            </a>
+          </div>
 
-        <h1>Nahlásiť výskyt medveda</h1>
-        <p class="lede">
-          Videli ste medveda? Vyplňte formulár a pomôžte nám mapovať ich výskyt na Slovensku.
-          Vaše hlásenie bude po overení administrátorom zobrazené na mape.
-        </p>
+          <h1>Nahlásiť výskyt medveda</h1>
+          <p class="lede">
+            Videli ste medveda? Vyplňte formulár a pomôžte nám mapovať ich výskyt na Slovensku.
+            Vaše hlásenie bude po overení administrátorom zobrazené na mape.
+          </p>
 
-        <form id="reportForm" class="report-form" novalidate>
+          <form id="reportForm" class="report-form" novalidate>
           <div class="form-field required" id="locationField">
             <label for="locationSearch">
               <i class="ph ph-map-pin" aria-hidden="true"></i> Lokalita
@@ -169,7 +169,18 @@
           </button>
 
           <div id="formMessage" class="form-message" role="alert"></div>
-        </form>
+          </form>
+        </div>
+        <aside class="report-mascot" aria-hidden="true">
+          <img
+            src="/assets/mascot/bear-helper.png"
+            alt=""
+            width="620"
+            height="827"
+            loading="lazy"
+            decoding="async"
+          />
+        </aside>
       </div>
     </main>
 

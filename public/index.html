@@ -45,15 +45,14 @@
     />
 
     <link rel="stylesheet" href="/styles.css" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐻</text></svg>"
-    />
+    <link rel="icon" type="image/png" href="/assets/mascot/bear-head-mark.png" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Medvede na Slovensku, domov">
-        <span class="brand-mark"><i class="ph ph-paw-print" aria-hidden="true"></i></span>
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png" alt="" aria-hidden="true" />
+        </span>
         <span class="brand-name">Medvede na Slovensku</span>
       </a>
 
@@ -72,26 +71,38 @@
     </header>
 
     <main>
-      <section class="masthead">
-        <h1>Výskyt medveďov na Slovensku</h1>
-        <p class="lede">
-          Živé hlásenia z portálu tumedved.sk a aktuálne slovenské správy o medveďoch,
-          pohromade na jednej mape.
-        </p>
+      <section class="masthead mascot-masthead">
+        <div class="masthead-copy">
+          <h1>Výskyt medveďov na Slovensku</h1>
+          <p class="lede">
+            Živé hlásenia z portálu tumedved.sk a aktuálne slovenské správy o medveďoch,
+            pohromade na jednej mape.
+          </p>
 
-        <div class="stats" id="stats">
-          <div class="stat">
-            <span class="stat-num" id="statSightings">-</span>
-            <span class="stat-label">dnešných hlásení</span>
+          <div class="stats" id="stats">
+            <div class="stat">
+              <span class="stat-num" id="statSightings">-</span>
+              <span class="stat-label">dnešných hlásení</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statNews">-</span>
+              <span class="stat-label">dnešných správ</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statUpdated">-</span>
+              <span class="stat-label">naposledy aktualizované</span>
+            </div>
           </div>
-          <div class="stat">
-            <span class="stat-num" id="statNews">-</span>
-            <span class="stat-label">dnešných správ</span>
-          </div>
-          <div class="stat">
-            <span class="stat-num" id="statUpdated">-</span>
-            <span class="stat-label">naposledy aktualizované</span>
-          </div>
+        </div>
+        <div class="mascot-hero" aria-hidden="true">
+          <img
+            src="/assets/mascot/bear-map-mascot.png"
+            alt=""
+            width="900"
+            height="900"
+            fetchpriority="high"
+            decoding="async"
+          />
         </div>
       </section>
 
@@ -172,17 +183,29 @@
       </div>
       <section class="report-cta">
         <div class="report-cta-inner">
-          <div class="report-cta-text">
-            <h2><i class="ph ph-warning-circle" aria-hidden="true"></i> Videli ste medveda?</h2>
-            <p>
-              Pomôžte nám mapovať výskyt medveďov na Slovensku. Nahláste stretnutie a po overení
-              sa zobrazí na mape.
-            </p>
+          <div class="report-cta-content">
+            <div class="report-cta-text">
+              <h2><i class="ph ph-warning-circle" aria-hidden="true"></i> Videli ste medveda?</h2>
+              <p>
+                Pomôžte nám mapovať výskyt medveďov na Slovensku. Nahláste stretnutie a po overení
+                sa zobrazí na mape.
+              </p>
+            </div>
+            <a href="/nahlas" class="btn">
+              <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+              <span>Nahlásiť výskyt</span>
+            </a>
           </div>
-          <a href="/nahlas" class="btn">
-            <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
-            <span>Nahlásiť výskyt</span>
-          </a>
+          <img
+            class="mascot-cta-image"
+            src="/assets/mascot/bear-helper.png"
+            alt=""
+            aria-hidden="true"
+            width="620"
+            height="827"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </section>
 
