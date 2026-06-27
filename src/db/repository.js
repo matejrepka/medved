@@ -247,14 +247,56 @@ export async function saveEmailSubscription(sub) {
     active: true,
   };
 
+  const existing = await findEmailSubscription(supabase, row.email, row.area_name);
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("email_subscriptions")
+      .update({
+        notify_type: row.notify_type,
+        active: true,
+      })
+      .eq("id", existing.id)
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   const { data, error } = await supabase
     .from("email_subscriptions")
-    .upsert(row, { onConflict: "email,coalesce(area_name, '')" })
+    .insert(row)
     .select("id")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (isUniqueViolation(error)) {
+      const duplicate = await findEmailSubscription(supabase, row.email, row.area_name);
+      if (duplicate) return duplicate;
+    }
+    throw error;
+  }
+
   return data;
+}
+
+async function findEmailSubscription(supabase, email, areaName) {
+  let query = supabase
+    .from("email_subscriptions")
+    .select("id")
+    .eq("email", email)
+    .limit(1);
+
+  query = areaName ? query.eq("area_name", areaName) : query.is("area_name", null);
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+function isUniqueViolation(error) {
+  return error?.code === "23505" || /duplicate key|unique/i.test(error?.message || "");
 }
 
 export async function loadEmailSubscriptions() {
