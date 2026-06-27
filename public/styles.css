@@ -319,6 +319,18 @@ main {
   box-shadow: var(--shadow);
 }
 
+.mascot-hero-cutout img {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 18px 28px rgba(26, 26, 23, 0.12));
+}
+
+[data-theme="dark"] .mascot-hero-cutout img {
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.5));
+}
+
 .stats-mascot-masthead {
   grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
 }
@@ -425,6 +437,10 @@ main {
   margin-top: 12px;
   font-size: 0.86rem;
   color: var(--ink-3);
+}
+
+.mascot-masthead > .stats-status {
+  grid-column: 1 / -1;
 }
 
 .stats-status.error {
