@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
+import { fetchPozormedved } from "./src/scrapers/pozormedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
@@ -20,11 +21,13 @@ import {
   loadEmailSubscriptions,
   loadNewsLogs,
   loadPendingNews,
+  loadPozormedvedLogs,
   loadTumedvedLogs,
   recordScrapeRun,
   saveBearReport,
   saveEmailSubscription,
   saveNewsLogs,
+  savePozormedvedLogs,
   saveTumedvedLogs,
   saveWebsiteLog,
   updateBearReportStatus,
@@ -40,6 +43,14 @@ const sightingsStore = new ScheduledDataStore({
   fetcher: fetchTumedved,
   loadStored: loadTumedvedLogs,
   saveFresh: saveTumedvedLogs,
+  recordRun: recordScrapeRun,
+});
+
+const pozormedvedStore = new ScheduledDataStore({
+  name: "pozormedved",
+  fetcher: fetchPozormedved,
+  loadStored: loadPozormedvedLogs,
+  saveFresh: savePozormedvedLogs,
   recordRun: recordScrapeRun,
 });
 
@@ -102,6 +113,16 @@ app.get("/api/sightings", async (_req, res) => {
   }
 });
 
+app.get("/api/pozormedved", async (_req, res) => {
+  try {
+    const data = await pozormedvedStore.get();
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ updatedAt: pozormedvedStore.meta.fetchedAt, count: data.length, items: data });
+  } catch (err) {
+    res.status(502).json({ error: "Nepodarilo sa stiahnuť hlásenia z pozormedved.sk", detail: err.message });
+  }
+});
+
 app.get("/api/news", async (_req, res) => {
   try {
     const data = await newsStore.get();
@@ -118,6 +139,7 @@ app.get("/api/status", (_req, res) => {
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
     sightings: sightingsStore.meta,
+    pozormedved: pozormedvedStore.meta,
     news: newsStore.meta,
   });
 });
@@ -132,8 +154,9 @@ function isValidCronRequest(req) {
 // Cloudflare výzvou), druhý sa aj tak obnoví a uloží — a v odpovedi vidíme,
 // ktorý zdroj zlyhal a prečo.
 async function refreshAll(reason) {
-  const [sightingsResult, newsResult] = await Promise.allSettled([
+  const [sightingsResult, pozormedvedResult, newsResult] = await Promise.allSettled([
     sightingsStore.refresh(reason),
+    pozormedvedStore.refresh(reason),
     newsStore.refresh(reason),
   ]);
 
@@ -141,15 +164,19 @@ async function refreshAll(reason) {
   if (sightingsResult.status === "rejected") {
     errors.sightings = sightingsResult.reason?.message || String(sightingsResult.reason);
   }
+  if (pozormedvedResult.status === "rejected") {
+    errors.pozormedved = pozormedvedResult.reason?.message || String(pozormedvedResult.reason);
+  }
   if (newsResult.status === "rejected") {
     errors.news = newsResult.reason?.message || String(newsResult.reason);
   }
 
   return {
-    ok: sightingsResult.status === "fulfilled" || newsResult.status === "fulfilled",
+    ok: sightingsResult.status === "fulfilled" || pozormedvedResult.status === "fulfilled" || newsResult.status === "fulfilled",
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
     sightings: sightingsStore.meta,
+    pozormedved: pozormedvedStore.meta,
     news: newsStore.meta,
     errors: Object.keys(errors).length ? errors : null,
   };
@@ -344,6 +371,9 @@ app.listen(PORT, () => {
   sightingsStore.start().catch((err) => {
     console.error("[tumedved] startup load failed:", err.message);
   });
+  pozormedvedStore.start().catch((err) => {
+    console.error("[pozormedved] startup load failed:", err.message);
+  });
   newsStore.start().catch((err) => {
     console.error("[news] startup load failed:", err.message);
   });
@@ -351,6 +381,7 @@ app.listen(PORT, () => {
   if (isSupabaseConfigured()) {
     Promise.all([
       sightingsStore.refresh("startup"),
+      pozormedvedStore.refresh("startup"),
       newsStore.refresh("startup"),
     ]).catch((err) => {
       console.error("[startup] refresh failed:", err.message);
