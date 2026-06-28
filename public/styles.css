@@ -934,7 +934,7 @@ main {
   font-size: 0.95em;
 }
 
-/* Správa s rozpoznanou lokalitou je klikateľná (vycentruje mapu). */
+/* Varovanie s mapovou lokalitou je klikateľné (vycentruje mapu). */
 .card.news.has-place {
   cursor: pointer;
 }

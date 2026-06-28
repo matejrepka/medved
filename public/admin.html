@@ -435,6 +435,9 @@
         justify-content: space-between;
         gap: 12px;
       }
+      .review-card-head > div {
+        min-width: 0;
+      }
       .review-card-title {
         font-family: var(--font-serif);
         font-weight: 600;
@@ -442,22 +445,30 @@
         line-height: 1.35;
         margin: 0;
         color: var(--ink);
+        overflow-wrap: anywhere;
       }
       .review-card-meta {
         font-size: 0.78rem;
         color: var(--ink-3);
         margin: 4px 0 0;
+        overflow-wrap: anywhere;
+      }
+      .review-card-meta a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
       .review-card-body {
         margin: 10px 0 0;
         font-size: 0.88rem;
         color: var(--ink-2);
         line-height: 1.5;
+        overflow-wrap: anywhere;
       }
       .review-card-contact {
         margin: 8px 0 0;
         font-size: 0.78rem;
         color: var(--ink-3);
+        overflow-wrap: anywhere;
       }
       .review-actions {
         display: flex;

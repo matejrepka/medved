@@ -3,7 +3,7 @@
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
-const API_VERSION = "news-map-v3";
+const API_VERSION = "news-map-v4";
 const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -208,6 +208,27 @@ function normalizeNewsLink(url) {
 
 function newsUrl(n) {
   return n.articleUrl || n.googleNewsUrl || normalizeNewsLink(n.link) || "#";
+}
+
+function newsMapPoint(n) {
+  if (n?.category !== "warning") return null;
+  const lat = mapCoord(n.lat);
+  const lng = mapCoord(n.lng);
+  return lat === null || lng === null ? null : { lat, lng };
+}
+
+function newsPlaceLabel(n) {
+  if (n?.place) return n.place;
+  const point = newsMapPoint(n);
+  return point ? `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}` : "";
+}
+
+function focusMapMarker(id, lat, lng) {
+  const marker = state.markers.get(id);
+  if (!marker) return;
+  map.flyTo([lat, lng], 12, { duration: 0.6 });
+  marker.openPopup();
+  document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function readStoredMapLayer() {
@@ -456,12 +477,7 @@ function renderSightings() {
     card.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;
       const s = state.sightings.find((x) => x.id === card.dataset.id);
-      const marker = state.markers.get(card.dataset.id);
-      if (s && s.hasCoords && marker) {
-        map.flyTo([s.lat, s.lng], 12, { duration: 0.6 });
-        marker.openPopup();
-        document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      if (s && s.hasCoords) focusMapMarker(s.id, s.lat, s.lng);
     });
   });
 }
@@ -490,19 +506,18 @@ function renderMarkers() {
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
-    const lat = mapCoord(n.lat);
-    const lng = mapCoord(n.lng);
-    if (n.category !== "warning" || lat === null || lng === null) continue;
+    const point = newsMapPoint(n);
+    if (!point) continue;
     const href = newsUrl(n);
-    const marker = L.marker([lat, lng], { icon: newsPinIcon }).addTo(map);
+    const marker = L.marker([point.lat, point.lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
-      <p class="popup-loc">${esc(n.place || "")}</p>
+      <p class="popup-loc">${esc(newsPlaceLabel(n) || "Varovanie zo správ")}</p>
       <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
       <p class="popup-note">${esc(n.title)}</p>
       <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Čítať článok →</a>
     `);
     state.markers.set(n.id, marker);
-    bounds.push([lat, lng]);
+    bounds.push([point.lat, point.lng]);
     warningsOnMap++;
   }
 
@@ -522,10 +537,10 @@ function renderMarkers() {
 }
 
 // --- Vykreslenie správ ---
-// Zoznam správ obsahuje len bežné články. Medvedie varovania (category ===
-// "warning") sú výskyty a zobrazujú sa na mape, nie v tomto zozname.
+// Varovania zo správ ostávajú v zozname s lokalitou a preklikom na mapu.
+// Bežné články sa na mapu neviažu.
 function renderNews() {
-  const items = filteredNews().filter((n) => n.category !== "warning");
+  const items = filteredNews();
   if (items.length === 0) {
     elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>${
       hasDateFilter() || hasSearchFilter()
@@ -537,12 +552,26 @@ function renderNews() {
   elNews.innerHTML = items
     .map(
       (n, i) => {
+        const point = newsMapPoint(n);
+        const isWarning = n.category === "warning";
+        const place = isWarning ? newsPlaceLabel(n) : "";
         const href = newsUrl(n);
         return `
-      <article class="card news reveal" style="${revealStyle(i)}" data-id="${esc(n.id)}">
-        <p class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener">${esc(n.title)}</a></p>
+      <article class="card news reveal${point ? " has-place" : ""}${
+          isWarning ? " is-warning" : ""
+        }" style="${revealStyle(i)}" data-id="${esc(n.id)}">
+        <p class="card-title">${
+          isWarning
+            ? esc(n.title)
+            : `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(n.title)}</a>`
+        }</p>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
+          ${
+            place
+              ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i>${esc(place)}</span>`
+              : ""
+          }
           <span class="meta-date">${esc(fmtDate(n.date))}</span>
           ${relativeDate(n.date) ? `<span>${esc(relativeDate(n.date))}</span>` : ""}
         </div>
@@ -557,6 +586,15 @@ function renderNews() {
       }
     )
     .join("");
+
+  elNews.querySelectorAll(".card.news.has-place").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      const n = state.news.find((x) => x.id === card.dataset.id);
+      const point = newsMapPoint(n);
+      if (n && point) focusMapMarker(n.id, point.lat, point.lng);
+    });
+  });
 }
 
 // --- Štatistiky ---
