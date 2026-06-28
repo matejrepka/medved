@@ -6,6 +6,7 @@ import { dedupeSightings } from "../sightings-dedupe.js";
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
 const NEWS_LIMIT = 200;
+const NEWS_WARNING_LIMIT = 500;
 
 function toIso(value) {
   if (!value) return null;
@@ -14,7 +15,13 @@ function toIso(value) {
 }
 
 function asNullableNumber(value) {
-  return Number.isFinite(value) ? value : null;
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function hasCoordinates(lat, lng) {
+  return asNullableNumber(lat) !== null && asNullableNumber(lng) !== null;
 }
 
 async function upsertChunks(table, rows, options) {
@@ -105,34 +112,57 @@ export async function loadNewsLogs() {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("news_logs")
-    .select(
-      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,scraped_at"
-    )
-    .eq("status", "approved")
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(NEWS_LIMIT);
+  const columns =
+    "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,scraped_at";
 
-  if (error) throw error;
+  const [approvedResult, warningResult] = await Promise.all([
+    supabase
+      .from("news_logs")
+      .select(columns)
+      .eq("status", "approved")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(NEWS_LIMIT),
+    supabase
+      .from("news_logs")
+      .select(columns)
+      .eq("status", "approved")
+      .eq("category", "warning")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(NEWS_WARNING_LIMIT),
+  ]);
 
-  return (data || [])
-    .map((row) => ({
-      id: row.id,
-      source: row.source,
-      title: row.title,
-      link: row.link,
-      googleNewsUrl: row.google_news_url,
-      articleUrl: row.article_url,
-      snippet: row.snippet || "",
-      date: row.published_at,
-      place: row.place,
-      lat: row.lat,
-      lng: row.lng,
-      hasCoords: Boolean(row.has_coords),
-      category: row.category || "article",
-      _scrapedAt: row.scraped_at,
-    }))
+  if (approvedResult.error) throw approvedResult.error;
+  if (warningResult.error) throw warningResult.error;
+
+  // API potrebuje posledné správy pre zoznam a zároveň všetky mapové varovania.
+  // Varovanie môže byť staršie než NEWS_LIMIT, preto ho do výsledku primiešame
+  // samostatným dotazom a deduplikujeme podľa id.
+  const rowsById = new Map();
+  for (const row of [...(approvedResult.data || []), ...(warningResult.data || [])]) {
+    rowsById.set(row.id, row);
+  }
+
+  return [...rowsById.values()]
+    .map((row) => {
+      const lat = asNullableNumber(row.lat);
+      const lng = asNullableNumber(row.lng);
+      return {
+        id: row.id,
+        source: row.source,
+        title: row.title,
+        link: row.link,
+        googleNewsUrl: row.google_news_url,
+        articleUrl: row.article_url,
+        snippet: row.snippet || "",
+        date: row.published_at,
+        place: row.place,
+        lat,
+        lng,
+        hasCoords: hasCoordinates(lat, lng),
+        category: row.category || "article",
+        _scrapedAt: row.scraped_at,
+      };
+    })
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }
 
@@ -251,10 +281,12 @@ export async function reviewNews(id, fields) {
     update.category = category;
 
     if (category === "warning") {
+      const lat = asNullableNumber(fields.lat);
+      const lng = asNullableNumber(fields.lng);
       update.place = fields.place || null;
-      update.lat = asNullableNumber(fields.lat);
-      update.lng = asNullableNumber(fields.lng);
-      update.has_coords = Number.isFinite(fields.lat) && Number.isFinite(fields.lng);
+      update.lat = lat;
+      update.lng = lng;
+      update.has_coords = hasCoordinates(lat, lng);
     } else {
       update.place = null;
       update.lat = null;

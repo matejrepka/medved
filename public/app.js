@@ -283,6 +283,11 @@ function sightingCoordKey(value) {
   return Number.isFinite(number) ? number.toFixed(5) : "";
 }
 
+function mapCoord(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function sightingDedupeKey(s) {
   return [
     normalizeSearchText(s.location).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
@@ -484,9 +489,11 @@ function renderMarkers() {
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
-    if (n.category !== "warning" || !n.hasCoords) continue;
+    const lat = mapCoord(n.lat);
+    const lng = mapCoord(n.lng);
+    if (n.category !== "warning" || lat === null || lng === null) continue;
     const href = newsUrl(n);
-    const marker = L.marker([n.lat, n.lng], { icon: newsPinIcon }).addTo(map);
+    const marker = L.marker([lat, lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
       <p class="popup-loc">${esc(n.place || "")}</p>
       <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
@@ -494,7 +501,7 @@ function renderMarkers() {
       <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Čítať článok →</a>
     `);
     state.markers.set(n.id, marker);
-    bounds.push([n.lat, n.lng]);
+    bounds.push([lat, lng]);
     warningsOnMap++;
   }
 
