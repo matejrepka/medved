@@ -3,7 +3,7 @@
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
-const API_VERSION = "news-map-v4";
+const API_VERSION = "news-map-v5";
 const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -514,7 +514,7 @@ function renderMarkers() {
       <p class="popup-loc">${esc(newsPlaceLabel(n) || "Varovanie zo správ")}</p>
       <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
       <p class="popup-note">${esc(n.title)}</p>
-      <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Čítať článok →</a>
+      <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Link na článok →</a>
     `);
     state.markers.set(n.id, marker);
     bounds.push([point.lat, point.lng]);
@@ -556,15 +556,17 @@ function renderNews() {
         const isWarning = n.category === "warning";
         const place = isWarning ? newsPlaceLabel(n) : "";
         const href = newsUrl(n);
+        const articleLink =
+          href && href !== "#"
+            ? `<a class="card-link" href="${esc(href)}" target="_blank" rel="noopener">
+                Link na článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+              </a>`
+            : "";
         return `
       <article class="card news reveal${point ? " has-place" : ""}${
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}">
-        <p class="card-title">${
-          isWarning
-            ? esc(n.title)
-            : `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(n.title)}</a>`
-        }</p>
+        <p class="card-title">${esc(n.title)}</p>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
           ${
@@ -582,6 +584,7 @@ function renderNews() {
               }</p>`
             : ""
         }
+        ${articleLink}
       </article>`
       }
     )
