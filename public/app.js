@@ -501,7 +501,7 @@ function renderMarkers() {
   const mapMeta = $("mapMeta");
   if (mapMeta) {
     const sightOnMap = bounds.length - warningsOnMap;
-    mapMeta.textContent = `${sightOnMap} hlásení · ${warningsOnMap} varovaní${
+    mapMeta.textContent = `${sightOnMap} hlásení · ${warningsOnMap} zo správ${
       hasDateFilter() || hasSearchFilter() ? " podľa filtrov" : " na mape"
     }`;
   }

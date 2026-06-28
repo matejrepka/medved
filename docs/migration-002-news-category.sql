@@ -2,8 +2,8 @@
 -- Spusti raz v Supabase SQL editore.
 --
 -- 'warning'  = medvedie varovanie — admin mu priradí lokalitu, zobrazí sa na
---              mape ako výskyt (rovnaká značka ako hlásenie) a popup odkazuje na
---              článok. NEzobrazuje sa v zozname správ.
+--              mape vlastnou hranatou značkou a popup odkazuje na článok.
+--              NEzobrazuje sa v zozname správ.
 -- 'article'  = bežný článok o medveďoch — len v zozname správ, bez značky na
 --              mape a bez lokality v zázname.
 --

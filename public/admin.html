@@ -1156,7 +1156,7 @@
       }
 
       // Schválenie správy s kategóriou + lokalitou. 'warning' = medvedie varovanie
-      // (na mape ako výskyt), 'article' = bežný článok (len v zozname správ).
+      // (na verejnej mape vlastnou hranatou značkou), 'article' = bežný článok.
       async function reviewNews(id, payload, cardEl) {
         const btns = cardEl.querySelectorAll('.review-btn');
         const msg = cardEl.querySelector('.review-msg');
@@ -1223,7 +1223,7 @@
           '<div class="review-loc"' + (isWarning ? '' : ' hidden') + '>' +
             '<label class="review-loc-label" for="loc-' + groupName + '"><i class="ph ph-map-pin"></i> Lokalita (obec)</label>' +
             '<input class="review-loc-input" id="loc-' + groupName + '" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Ružomberok" autocomplete="off">' +
-            '<p class="review-loc-hint">Súradnice sa doplnia automaticky z názvu obce. Zobrazí sa na mape ako výskyt.</p>' +
+            '<p class="review-loc-hint">Súradnice sa doplnia automaticky z názvu obce. Zobrazí sa na verejnej mape hranatou značkou.</p>' +
           '</div>' +
           '<p class="review-msg" role="alert"></p>';
 

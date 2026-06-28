@@ -660,7 +660,7 @@ main {
   z-index: 0;
 }
 
-/* Minimal circular markers instead of emoji */
+/* Minimal map markers instead of emoji */
 .leaflet-div-icon {
   background: transparent;
   border: 0;
@@ -677,7 +677,7 @@ main {
 .pin:hover {
   transform: scale(1.35);
 }
-/* Značka správy (geokódovaná z článku) — odlíšená farbou od hlásení */
+/* Značka schváleného varovania zo správ — hranatá a odlíšená farbou */
 .pin.pin-news {
   background: var(--bark);
   border-radius: 3px;
