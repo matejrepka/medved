@@ -6,7 +6,7 @@ import { dedupeSightings } from "../sightings-dedupe.js";
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
 const NEWS_LIMIT = 200;
-const NEWS_WARNING_LIMIT = 500;
+const NEWS_MAP_LIMIT = 500;
 
 function toIso(value) {
   if (!value) return null;
@@ -22,6 +22,37 @@ function asNullableNumber(value) {
 
 function hasCoordinates(lat, lng) {
   return asNullableNumber(lat) !== null && asNullableNumber(lng) !== null;
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function looksLikeBearWarning(row, hasCoords) {
+  if (!hasCoords) return false;
+  if (String(row.id || "").startsWith("news-pm")) return true;
+  if (normalizeText(row.source).includes("pozormedved")) return true;
+
+  const text = normalizeText([row.title, row.snippet].filter(Boolean).join(" "));
+  return (
+    /\bupozornen/.test(text) ||
+    /\bpozor\b/.test(text) ||
+    /\bvaruj/.test(text) ||
+    /\bvystrah/.test(text) ||
+    /vyskyt.{0,40}medved|medved.{0,40}vyskyt/.test(text) ||
+    /pohybuje.{0,40}medved|medved.{0,40}pohybuje/.test(text) ||
+    /spozor|pozorovan|zaznamen|nahlas|hlasili/.test(text) ||
+    /napad|utoc|zran|usmrtil|zabil/.test(text) ||
+    /intravilan|pri obci|v obci|v meste|pri meste/.test(text)
+  );
+}
+
+function newsCategory(row, hasCoords) {
+  if (row.category === "warning") return "warning";
+  return looksLikeBearWarning(row, hasCoords) ? "warning" : "article";
 }
 
 async function upsertChunks(table, rows, options) {
@@ -115,7 +146,7 @@ export async function loadNewsLogs() {
   const columns =
     "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,scraped_at";
 
-  const [approvedResult, warningResult] = await Promise.all([
+  const [approvedResult, warningResult, mapCandidateResult] = await Promise.all([
     supabase
       .from("news_logs")
       .select(columns)
@@ -128,17 +159,29 @@ export async function loadNewsLogs() {
       .eq("status", "approved")
       .eq("category", "warning")
       .order("published_at", { ascending: false, nullsFirst: false })
-      .limit(NEWS_WARNING_LIMIT),
+      .limit(NEWS_MAP_LIMIT),
+    supabase
+      .from("news_logs")
+      .select(columns)
+      .eq("status", "approved")
+      .eq("has_coords", true)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(NEWS_MAP_LIMIT),
   ]);
 
   if (approvedResult.error) throw approvedResult.error;
   if (warningResult.error) throw warningResult.error;
+  if (mapCandidateResult.error) throw mapCandidateResult.error;
 
   // API potrebuje posledné správy pre zoznam a zároveň všetky mapové varovania.
-  // Varovanie môže byť staršie než NEWS_LIMIT, preto ho do výsledku primiešame
-  // samostatným dotazom a deduplikujeme podľa id.
+  // Legacy riadky spred kategórie majú často len has_coords=true, preto ich
+  // primiešame tiež a pri mapovaní nižšie normalizujeme na "warning".
   const rowsById = new Map();
-  for (const row of [...(approvedResult.data || []), ...(warningResult.data || [])]) {
+  for (const row of [
+    ...(approvedResult.data || []),
+    ...(warningResult.data || []),
+    ...(mapCandidateResult.data || []),
+  ]) {
     rowsById.set(row.id, row);
   }
 
@@ -159,7 +202,7 @@ export async function loadNewsLogs() {
         lat,
         lng,
         hasCoords: hasCoordinates(lat, lng),
-        category: row.category || "article",
+        category: newsCategory(row, hasCoordinates(lat, lng)),
         _scrapedAt: row.scraped_at,
       };
     })

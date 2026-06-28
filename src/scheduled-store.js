@@ -22,7 +22,7 @@ export class ScheduledDataStore {
   async loadFromDatabase() {
     if (!this.loadStored) return [];
     const data = await this.loadStored();
-    if (Array.isArray(data) && data.length > 0) {
+    if (Array.isArray(data)) {
       const scrapedTimes = data
         .map((item) => new Date(item._scrapedAt || 0).getTime())
         .filter((time) => Number.isFinite(time) && time > 0);
@@ -52,10 +52,13 @@ export class ScheduledDataStore {
         if (this.saveFresh) {
           await this.saveFresh(data, finishedAt);
         }
+        if (this.loadStored) {
+          await this.loadFromDatabase();
+        }
         await this.record("success", reason, data.length, null, startedAt, finishedAt);
 
         console.log(`[${this.name}] refreshed ${data.length} items (${reason})`);
-        return data;
+        return this.value || data;
       } catch (err) {
         const finishedAt = new Date().toISOString();
         this.lastError = err;
