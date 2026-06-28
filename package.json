@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "build:geo": "node src/geo/build-gazetteer.mjs"
+    "build:geo": "node src/geo/build-gazetteer.mjs",
+    "build:images": "node scripts/optimize-images.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -15,6 +16,7 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "@supabase/supabase-js": "^2.108.2",
+    "compression": "^1.8.1",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "linkedom": "^0.18.12",
@@ -22,5 +24,8 @@
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
   }
 }

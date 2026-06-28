@@ -87,6 +87,16 @@ alter table public.news_logs
 create index if not exists news_logs_status_idx
   on public.news_logs (status);
 
+-- Category for approved news: 'warning' = bear warning shown on the map (same as
+-- a sighting), 'article' = general article shown only in the news list (no map
+-- marker, no stored location). Existing rows default to 'article'.
+alter table public.news_logs
+  add column if not exists category text not null default 'article'
+  check (category in ('warning', 'article'));
+
+create index if not exists news_logs_category_idx
+  on public.news_logs (category);
+
 -- User-submitted bear sighting reports (require admin approval).
 create table if not exists public.bear_reports (
   id bigserial primary key,

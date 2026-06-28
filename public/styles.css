@@ -12,14 +12,14 @@
   --surface-hover: #f4f4f1;
 
   --ink: #1a1a17;
-  --ink-2: #56564e;
-  --ink-3: #8a8a80;
+  --ink-2: #24251f;
+  --ink-3: #2f3029;
 
   --line: #e7e7e1;
   --line-strong: #d9d9d2;
 
-  --accent: #356b42;
-  --accent-hover: #285237;
+  --accent: #1f4b30;
+  --accent-hover: #173a25;
   --accent-ink: #ffffff;
   --accent-soft: rgba(53, 107, 66, 0.11);
   --bark: #7a4a24;
@@ -39,6 +39,10 @@
   --font-sans: "Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
   --maxw: 1180px;
+
+  --topographic-bg: url("/assets/topographic-bg.png");
+  --topographic-opacity: 0.56;
+  --topographic-filter: brightness(1.02) contrast(1.06);
 }
 
 [data-theme="dark"] {
@@ -66,6 +70,9 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.55);
+
+  --topographic-opacity: 0.76;
+  --topographic-filter: brightness(0.82) contrast(1.12);
 }
 
 * {
@@ -74,9 +81,12 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--bg);
 }
 
 body {
+  position: relative;
+  isolation: isolate;
   margin: 0;
   font-family: var(--font-sans);
   color: var(--ink);
@@ -85,6 +95,28 @@ body {
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -12vh -10vw;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--topographic-bg);
+  background-position: center top;
+  background-repeat: repeat-y;
+  background-size: max(1680px, 118vw) auto;
+  opacity: var(--topographic-opacity);
+  filter: var(--topographic-filter);
+}
+
+@media (max-width: 620px) {
+  body::before {
+    inset: -9vh -48vw;
+    background-position: center top;
+    background-size: 980px auto;
+  }
 }
 
 a {
@@ -366,7 +398,7 @@ main {
 .stat-num {
   display: block;
   font-family: var(--font-serif);
-  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  font-size: clamp(1.45rem, 3vw, 2rem);
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -791,14 +823,28 @@ main {
 
 /* ---------- Lists & cards ---------- */
 .list {
+  --list-fade: 48px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-height: 660px;
   overflow-y: auto;
   padding-right: 4px;
+  padding-bottom: var(--list-fade);
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--list-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - var(--list-fade)),
+    transparent 100%
+  );
 }
 .list::-webkit-scrollbar {
   width: 8px;
@@ -1005,6 +1051,9 @@ main {
 .report-cta {
   margin-top: clamp(34px, 5vw, 52px);
   padding: clamp(22px, 4vw, 34px);
+  padding-right: clamp(170px, 19vw, 240px);
+  min-height: clamp(168px, 18vw, 210px);
+  position: relative;
   background: linear-gradient(135deg, var(--accent-soft), var(--bark-soft));
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
   border-radius: var(--radius);
@@ -1012,19 +1061,19 @@ main {
 }
 
 .report-cta-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, 150px);
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(18px, 4vw, 34px);
+  position: static;
 }
 
 .report-cta-content {
+  position: relative;
+  z-index: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  max-width: 56ch;
+  min-height: clamp(112px, 13vw, 142px);
 }
 
 .report-cta-text h2 {
@@ -1045,10 +1094,18 @@ main {
   max-width: 52ch;
 }
 
+.report-cta-content .btn {
+  align-self: flex-start;
+}
+
 .mascot-cta-image {
   display: block;
-  width: 100%;
-  max-height: 150px;
+  position: absolute;
+  right: clamp(-56px, -4.2vw, -28px);
+  bottom: clamp(-46px, -3.8vw, -24px);
+  z-index: 0;
+  width: clamp(154px, 17vw, 210px);
+  height: auto;
   object-fit: contain;
   object-position: center bottom;
   background: transparent;
@@ -1252,16 +1309,23 @@ main {
   }
 
   .report-cta-inner {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
   .report-cta-content {
     align-items: flex-start;
   }
 
+  .report-cta {
+    padding-right: clamp(22px, 4vw, 34px);
+    padding-bottom: 108px;
+    min-height: 0;
+  }
+
   .mascot-cta-image {
-    width: 124px;
-    justify-self: start;
+    right: -30px;
+    bottom: -48px;
+    width: 150px;
   }
 
   .notify-inner {

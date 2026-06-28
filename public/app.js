@@ -75,7 +75,8 @@ function setTiles(layerId) {
   syncMapLayerControls();
 }
 
-// Čisté značky namiesto emoji. Kruhová = hlásenie, hranatá (iná farba) = správa.
+// Čisté značky namiesto emoji. Kruhová = hlásenie (tumedved), hranatá inej farby
+// = medvedie varovanie zo správ — vizuálne odlíšené od hlásení.
 const pinIcon = L.divIcon({
   className: "",
   html: '<div class="pin"></div>',
@@ -478,10 +479,12 @@ function renderMarkers() {
     bounds.push([s.lat, s.lng]);
   }
 
-  // Geokódované správy — hranatá značka inej farby.
-  let newsOnMap = 0;
+  // Medvedie varovania zo správ — admin im priradil lokalitu. Na mape majú
+  // vlastnú (hranatú, inak sfarbenú) značku, odlíšenú od hlásení z tumedved.
+  // Bežné články (category !== "warning") sa na mape nezobrazujú.
+  let warningsOnMap = 0;
   for (const n of filteredNews()) {
-    if (!n.hasCoords) continue;
+    if (n.category !== "warning" || !n.hasCoords) continue;
     const href = newsUrl(n);
     const marker = L.marker([n.lat, n.lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
@@ -492,13 +495,13 @@ function renderMarkers() {
     `);
     state.markers.set(n.id, marker);
     bounds.push([n.lat, n.lng]);
-    newsOnMap++;
+    warningsOnMap++;
   }
 
   const mapMeta = $("mapMeta");
   if (mapMeta) {
-    const sightOnMap = bounds.length - newsOnMap;
-    mapMeta.textContent = `${sightOnMap} hlásení · ${newsOnMap} správ${
+    const sightOnMap = bounds.length - warningsOnMap;
+    mapMeta.textContent = `${sightOnMap} hlásení · ${warningsOnMap} varovaní${
       hasDateFilter() || hasSearchFilter() ? " podľa filtrov" : " na mape"
     }`;
   }
@@ -511,8 +514,10 @@ function renderMarkers() {
 }
 
 // --- Vykreslenie správ ---
+// Zoznam správ obsahuje len bežné články. Medvedie varovania (category ===
+// "warning") sú výskyty a zobrazujú sa na mape, nie v tomto zozname.
 function renderNews() {
-  const items = filteredNews();
+  const items = filteredNews().filter((n) => n.category !== "warning");
   if (items.length === 0) {
     elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>${
       hasDateFilter() || hasSearchFilter()
@@ -526,17 +531,12 @@ function renderNews() {
       (n, i) => {
         const href = newsUrl(n);
         return `
-      <article class="card news reveal${n.hasCoords ? " has-place" : ""}" style="${revealStyle(i)}" data-id="${esc(n.id)}">
+      <article class="card news reveal" style="${revealStyle(i)}" data-id="${esc(n.id)}">
         <p class="card-title"><a href="${esc(href)}" target="_blank" rel="noopener">${esc(n.title)}</a></p>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
           <span class="meta-date">${esc(fmtDate(n.date))}</span>
           ${relativeDate(n.date) ? `<span>${esc(relativeDate(n.date))}</span>` : ""}
-          ${
-            n.hasCoords
-              ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i> ${esc(n.place)}</span>`
-              : ""
-          }
         </div>
         ${
           n.snippet
@@ -549,20 +549,6 @@ function renderNews() {
       }
     )
     .join("");
-
-  // Klik na správu s lokalitou vycentruje mapu na jej značku.
-  elNews.querySelectorAll(".card.news.has-place").forEach((card) => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;
-      const n = state.news.find((x) => x.id === card.dataset.id);
-      const marker = state.markers.get(card.dataset.id);
-      if (n && n.hasCoords && marker) {
-        map.flyTo([n.lat, n.lng], 11, { duration: 0.6 });
-        marker.openPopup();
-        document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    });
-  });
 }
 
 // --- Štatistiky ---
@@ -570,7 +556,9 @@ function renderStats() {
   $("statSightings").textContent = state.sightings.filter((s) =>
     isToday(s.reportedAt)
   ).length;
-  $("statNews").textContent = state.news.filter((n) => isToday(n.date)).length;
+  $("statNews").textContent = state.news.filter(
+    (n) => n.category !== "warning" && isToday(n.date)
+  ).length;
   $("statUpdated").textContent = fmtTime(state.updatedAt) || "-";
 }
 
@@ -580,10 +568,13 @@ function setUpdated(iso) {
 
 // --- Načítanie dát ---
 async function loadData() {
-  const cacheBust = Date.now();
+  // Bez cache-bustingu — dáta sa scrapujú hodinovým cronom, takže rešpektujeme
+  // serverovú cache (Cache-Control: max-age=300). Rýchle reloady a navigácia
+  // sa obslúžia z pamäte prehliadača; 15-min auto-refresh nižšie si aj tak
+  // vyžiada čerstvé dáta (cache medzitým vyprší).
   const [sRes, nRes] = await Promise.allSettled([
-    fetch(`/api/sightings?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
-    fetch(`/api/news?t=${cacheBust}`, { cache: "no-store" }).then((r) => r.json()),
+    fetch("/api/sightings").then((r) => r.json()),
+    fetch("/api/news").then((r) => r.json()),
   ]);
 
   if (sRes.status === "fulfilled" && sRes.value.items) {

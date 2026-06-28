@@ -35,7 +35,7 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" href="/assets/mascot/bear-head-mark.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png" />
     <style>
       /* ---- Login ---- */
       .login-wrapper {
@@ -514,6 +514,80 @@
         overflow: hidden;
         z-index: 0;
       }
+
+      /* ---- News review controls (category + location) ---- */
+      .review-cat {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .review-cat-opt {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+      }
+      .review-cat-opt:hover { background: var(--surface-hover); }
+      .review-cat-opt:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .review-cat-opt input { accent-color: var(--accent); margin: 0; }
+      .review-cat-opt i { font-size: 1.05em; }
+
+      .review-loc { margin: 12px 0 0; }
+      .review-loc[hidden] { display: none; }
+      .review-loc-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 5px;
+      }
+      .review-loc-label i { color: var(--accent); }
+      .review-loc-input {
+        width: 100%;
+        max-width: 320px;
+        padding: 0.55rem 0.8rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .review-loc-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .review-loc-hint {
+        margin: 5px 0 0;
+        font-size: 0.75rem;
+        color: var(--ink-3);
+      }
+      .review-msg {
+        margin: 10px 0 0;
+        font-size: 0.82rem;
+        color: #b91c1c;
+        min-height: 0;
+      }
+      .review-msg:empty { display: none; }
+      [data-theme="dark"] .review-msg { color: #f87171; }
 
       .empty-state {
         text-align: center;
@@ -1081,17 +1155,52 @@
         });
       }
 
+      // Schválenie správy s kategóriou + lokalitou. 'warning' = medvedie varovanie
+      // (na mape ako výskyt), 'article' = bežný článok (len v zozname správ).
+      async function reviewNews(id, payload, cardEl) {
+        const btns = cardEl.querySelectorAll('.review-btn');
+        const msg = cardEl.querySelector('.review-msg');
+        btns.forEach(b => b.disabled = true);
+        if (msg) msg.textContent = '';
+
+        try {
+          const res = await authFetch('/api/admin/news/' + encodeURIComponent(id) + '/review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            cardEl.style.opacity = '0';
+            cardEl.style.transform = 'translateY(-4px)';
+            setTimeout(() => { cardEl.remove(); updateCounts(); }, 300);
+          } else {
+            if (msg) msg.textContent = data.error || 'Neznáma chyba';
+            btns.forEach(b => b.disabled = false);
+          }
+        } catch (err) {
+          if (msg) msg.textContent = 'Chyba siete: ' + err.message;
+          btns.forEach(b => b.disabled = false);
+        }
+      }
+
+      let newsCardSeq = 0;
+
       function renderNewsCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
         card.dataset.itemId = item.id;
+
+        const groupName = 'cat-' + (++newsCardSeq);
+        const isWarning = item.category === 'warning';
+
         card.innerHTML =
           '<div class="review-card-head">' +
             '<div>' +
               '<p class="review-card-title">' + esc(item.title) + '</p>' +
               '<p class="review-card-meta">' +
                 esc(item.source || '') + ' · ' + formatDateTime(item.published_at) +
-                (item.place ? ' · <i class="ph ph-map-pin"></i> ' + esc(item.place) : '') +
               '</p>' +
             '</div>' +
             '<div class="review-actions">' +
@@ -1100,10 +1209,49 @@
             '</div>' +
           '</div>' +
           (item.snippet ? '<p class="review-card-body">' + esc(item.snippet) + '</p>' : '') +
-          (item.link ? '<p class="review-card-meta"><a href="' + esc(item.link) + '" target="_blank" rel="noopener">' + esc(item.link) + '</a></p>' : '');
+          (item.link ? '<p class="review-card-meta"><a href="' + esc(item.link) + '" target="_blank" rel="noopener">' + esc(item.link) + '</a></p>' : '') +
+          '<div class="review-cat">' +
+            '<label class="review-cat-opt">' +
+              '<input type="radio" name="' + groupName + '" value="article"' + (isWarning ? '' : ' checked') + '>' +
+              '<i class="ph ph-newspaper"></i> Správa / článok' +
+            '</label>' +
+            '<label class="review-cat-opt">' +
+              '<input type="radio" name="' + groupName + '" value="warning"' + (isWarning ? ' checked' : '') + '>' +
+              '<i class="ph ph-paw-print"></i> Medvedie varovanie' +
+            '</label>' +
+          '</div>' +
+          '<div class="review-loc"' + (isWarning ? '' : ' hidden') + '>' +
+            '<label class="review-loc-label" for="loc-' + groupName + '"><i class="ph ph-map-pin"></i> Lokalita (obec)</label>' +
+            '<input class="review-loc-input" id="loc-' + groupName + '" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Ružomberok" autocomplete="off">' +
+            '<p class="review-loc-hint">Súradnice sa doplnia automaticky z názvu obce. Zobrazí sa na mape ako výskyt.</p>' +
+          '</div>' +
+          '<p class="review-msg" role="alert"></p>';
 
-        card.querySelectorAll('.review-btn').forEach(btn => {
-          btn.addEventListener('click', () => updateStatus('news', item.id, btn.dataset.action, card));
+        const locWrap = card.querySelector('.review-loc');
+        const locInput = card.querySelector('.review-loc-input');
+        const msg = card.querySelector('.review-msg');
+
+        card.querySelectorAll('input[type="radio"]').forEach(r => {
+          r.addEventListener('change', () => {
+            const warn = card.querySelector('input[type="radio"]:checked').value === 'warning';
+            locWrap.hidden = !warn;
+            if (warn) locInput.focus();
+          });
+        });
+
+        card.querySelector('.review-btn.reject').addEventListener('click', () => {
+          reviewNews(item.id, { status: 'rejected' }, card);
+        });
+
+        card.querySelector('.review-btn.approve').addEventListener('click', () => {
+          const category = card.querySelector('input[type="radio"]:checked').value;
+          const place = locInput.value.trim();
+          if (category === 'warning' && !place) {
+            msg.textContent = 'Zadajte lokalitu (obec) pre medvedie varovanie.';
+            locInput.focus();
+            return;
+          }
+          reviewNews(item.id, { status: 'approved', category, place }, card);
         });
 
         return card;
@@ -1174,10 +1322,18 @@
           cardBtns.forEach(b => b.disabled = true);
 
           try {
-            const res = await authFetch('/api/admin/' + type + '/' + itemId + '/status', {
+            // Hromadné schválenie správ ich uloží ako bežné články (bez mapy).
+            // Varovania s lokalitou sa schvaľujú jednotlivo cez kartu.
+            const url = type === 'news'
+              ? '/api/admin/news/' + encodeURIComponent(itemId) + '/review'
+              : '/api/admin/' + type + '/' + itemId + '/status';
+            const body = type === 'news'
+              ? { status: 'approved', category: 'article' }
+              : { status: 'approved' };
+            const res = await authFetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'approved' }),
+              body: JSON.stringify(body),
             });
             const data = await res.json();
             if (res.ok && data.ok) {

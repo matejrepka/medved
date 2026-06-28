@@ -108,7 +108,7 @@ export async function loadNewsLogs() {
   const { data, error } = await supabase
     .from("news_logs")
     .select(
-      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,scraped_at"
+      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,scraped_at"
     )
     .eq("status", "approved")
     .order("published_at", { ascending: false, nullsFirst: false })
@@ -130,6 +130,7 @@ export async function loadNewsLogs() {
       lat: row.lat,
       lng: row.lng,
       hasCoords: Boolean(row.has_coords),
+      category: row.category || "article",
       _scrapedAt: row.scraped_at,
     }))
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -213,7 +214,7 @@ export async function loadPendingNews() {
 
   const { data, error } = await supabase
     .from("news_logs")
-    .select("id,source,title,link,snippet,published_at,place,status")
+    .select("id,source,title,link,snippet,published_at,place,lat,lng,has_coords,category,status")
     .eq("status", "pending")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(100);
@@ -231,6 +232,38 @@ export async function updateNewsStatus(id, status) {
     .update({ status })
     .eq("id", id);
 
+  if (error) throw error;
+}
+
+// Schválenie/zamietnutie správy s kategorizáciou. Pri 'warning' uložíme lokalitu
+// (zobrazí sa na mape), pri 'article' lokalitu vyčistíme (len v zozname správ).
+export async function reviewNews(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const update = {
+    status: fields.status,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (fields.status === "approved") {
+    const category = fields.category === "warning" ? "warning" : "article";
+    update.category = category;
+
+    if (category === "warning") {
+      update.place = fields.place || null;
+      update.lat = asNullableNumber(fields.lat);
+      update.lng = asNullableNumber(fields.lng);
+      update.has_coords = Number.isFinite(fields.lat) && Number.isFinite(fields.lng);
+    } else {
+      update.place = null;
+      update.lat = null;
+      update.lng = null;
+      update.has_coords = false;
+    }
+  }
+
+  const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
 }
 

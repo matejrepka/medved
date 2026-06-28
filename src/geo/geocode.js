@@ -365,6 +365,44 @@ export function findPlace(title, body, gz) {
 }
 
 /**
+ * Priame vyhľadanie obce podľa NÁZVU — pre administráciu, kde lokalitu zadáva
+ * človek (nie scraper). Na rozdiel od findPlace neskenuje kontext výskytu, len
+ * porovná zadaný názov s gazetteerom (bez diakritiky). Pri zhode na začiatok
+ * (napr. "Banská" → "Banská Bystrica") uprednostní vyšší rank (mesto > obec) a
+ * najkratší zodpovedajúci názov.
+ *
+ * @param {string} name  zadaný názov obce/mesta
+ * @param {{list:Array}} gz  predspracovaný gazetteer
+ * @returns {{name,lat,lng,type}|null}
+ */
+export function lookupPlaceByName(name, gz) {
+  const list = gz?.list;
+  if (!list || !list.length || !name) return null;
+
+  const q = denorm(String(name)).replace(/\s+/g, " ").trim();
+  if (!q) return null;
+
+  let exact = null;
+  let prefix = null;
+  for (const p of list) {
+    const pn = denorm(p.name).replace(/\s+/g, " ").trim();
+    if (pn === q) {
+      if (!exact || p.rank > exact.rank) exact = p;
+    } else if (pn.startsWith(q) || q.startsWith(pn)) {
+      const better =
+        !prefix ||
+        p.rank > prefix.rank ||
+        (p.rank === prefix.rank && p.name.length < prefix.name.length);
+      if (better) prefix = p;
+    }
+  }
+
+  const best = exact || prefix;
+  if (!best) return null;
+  return { name: best.name, lat: best.lat, lng: best.lng, type: best.type };
+}
+
+/**
  * Nájde v texte VŠETKY spomenuté slovenské obce — voľnejšie ako findPlace.
  *
  * Kým findPlace vyberie JEDNU najpravdepodobnejšiu obec pre značku na mape (a

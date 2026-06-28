@@ -6,13 +6,14 @@
 
 import "dotenv/config";
 import express from "express";
+import compression from "compression";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
-import { loadPlaces } from "./src/geo/geocode.js";
+import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
@@ -31,6 +32,7 @@ import {
   saveWebsiteLog,
   updateBearReportStatus,
   updateNewsStatus,
+  reviewNews,
 } from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -56,6 +58,11 @@ const newsStore = new ScheduledDataStore({
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true");
+
+// Gzip/deflate odpovedí — JSON z API (až 1000 hlásení + 200 správ) aj
+// HTML/CSS/JS sa prenášajú výrazne menšie (~70-85 %).
+app.use(compression());
+
 app.use(express.json());
 
 // Malý logger.
@@ -327,6 +334,61 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
   }
 });
 
+// Schválenie správy s kategorizáciou (varovanie/článok) a úpravou lokality.
+// Pri 'warning' sa zadaný názov obce geokóduje z lokálneho gazetteeru.
+app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
+  const { status, category, place } = req.body || {};
+  if (!["approved", "rejected"].includes(status)) {
+    return res.status(400).json({ ok: false, error: "Neplatný stav." });
+  }
+
+  try {
+    const fields = { status };
+
+    if (status === "approved") {
+      const cat = category === "warning" ? "warning" : "article";
+      fields.category = cat;
+
+      if (cat === "warning") {
+        const name = typeof place === "string" ? place.trim() : "";
+        if (!name) {
+          return res
+            .status(400)
+            .json({ ok: false, error: "Pri medvedom varovaní zadajte lokalitu (obec)." });
+        }
+        const gz = await loadPlaces();
+        const hit = lookupPlaceByName(name, gz);
+        if (!hit) {
+          return res.status(400).json({
+            ok: false,
+            error: `Obec „${name}“ sa nenašla v zozname slovenských obcí. Skontrolujte názov.`,
+          });
+        }
+        fields.place = hit.name;
+        fields.lat = hit.lat;
+        fields.lng = hit.lng;
+      }
+    }
+
+    await reviewNews(req.params.id, fields);
+    // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
+    await newsStore.loadFromDatabase().catch((err) => {
+      console.error("[news review] reload failed:", err.message);
+    });
+
+    res.json({
+      ok: true,
+      category: fields.category || null,
+      place: fields.place || null,
+      lat: fields.lat ?? null,
+      lng: fields.lng ?? null,
+    });
+  } catch (err) {
+    console.error("[news review] failed:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.get("/api/admin/subscriptions", adminAuth, async (_req, res) => {
   try {
     const subs = await loadEmailSubscriptions();
@@ -357,7 +419,24 @@ app.post("/api/admin/refresh", adminAuth, async (_req, res) => {
   res.status(result.ok ? 200 : 502).json({ ...result, message });
 });
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    etag: true,
+    lastModified: true,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".html")) {
+        // HTML vždy prevaliduj, nech sa nasadené zmeny prejavia okamžite.
+        res.setHeader("Cache-Control", "no-cache");
+      } else if (/\.(png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(filePath)) {
+        // Obrázky a fonty sa menia zriedka — drž ich v cache 30 dní.
+        res.setHeader("Cache-Control", "public, max-age=2592000");
+      } else if (/\.(css|js)$/i.test(filePath)) {
+        // CSS/JS bez hashu v názve — kratšia cache + revalidácia cez ETag.
+        res.setHeader("Cache-Control", "public, max-age=3600");
+      }
+    },
+  })
+);
 
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);

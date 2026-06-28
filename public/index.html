@@ -25,27 +25,54 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Phosphor ikony (jedna rodina, regular) -->
+    <!-- Hero obrázok je nad ohybom (LCP) — prednačítaj ho čo najskôr -->
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/mascot/bear-map-mascot-transparent.webp"
+      type="image/webp"
+      fetchpriority="high"
+    />
+
+    <!-- Phosphor ikony — načítané asynchrónne, neblokujú prvé vykreslenie -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+      media="print"
+      onload="this.media='all'"
     />
 
-    <!-- Leaflet (mapa) -->
+    <!-- Leaflet (mapa) — mapa je pod ohybom, CSS nemusí blokovať vykreslenie -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
+      media="print"
+      onload="this.media='all'"
     />
 
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+      />
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+      />
+    </noscript>
+
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" href="/assets/mascot/bear-head-mark.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png" />
   </head>
   <body>
     <header class="site-header">
@@ -95,14 +122,20 @@
           </div>
         </div>
         <div class="mascot-hero mascot-hero-cutout" aria-hidden="true">
-          <img
-            src="/assets/mascot/bear-map-mascot-transparent.png"
-            alt=""
-            width="900"
-            height="900"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <picture>
+            <source
+              srcset="/assets/mascot/bear-map-mascot-transparent.webp"
+              type="image/webp"
+            />
+            <img
+              src="/assets/mascot/bear-map-mascot-transparent.png"
+              alt=""
+              width="700"
+              height="700"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </picture>
         </div>
       </section>
 
@@ -145,8 +178,7 @@
         </div>
         <div id="map" aria-label="Mapa výskytu medveďov na Slovensku"></div>
         <div class="map-legend" aria-hidden="true">
-          <span class="lg"><span class="lg-dot"></span> Hlásenie (tumedved.sk)</span>
-          <span class="lg"><span class="lg-dot news"></span> Správa (geokódovaná z článku)</span>
+          <span class="lg"><span class="lg-dot"></span> Výskyt medveďa — hlásenie (tumedved.sk) alebo varovanie zo správ</span>
         </div>
       </section>
 
@@ -196,16 +228,19 @@
               <span>Nahlásiť výskyt</span>
             </a>
           </div>
-          <img
-            class="mascot-cta-image"
-            src="/assets/mascot/bear-helper.png"
-            alt=""
-            aria-hidden="true"
-            width="620"
-            height="827"
-            loading="lazy"
-            decoding="async"
-          />
+          <picture>
+            <source srcset="/assets/mascot/bear-helper.webp" type="image/webp" />
+            <img
+              class="mascot-cta-image"
+              src="/assets/mascot/bear-helper.png"
+              alt=""
+              aria-hidden="true"
+              width="460"
+              height="460"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
         </div>
       </section>
 
