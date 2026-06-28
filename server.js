@@ -113,9 +113,18 @@ app.get("/api/sightings", async (_req, res) => {
 
 app.get("/api/news", async (_req, res) => {
   try {
-    const data = await newsStore.get();
-    res.set("Cache-Control", "public, max-age=300");
-    res.json({ updatedAt: newsStore.meta.fetchedAt, count: data.length, items: data });
+    const data = isSupabaseConfigured() ? await loadNewsLogs() : await newsStore.get();
+    const scrapedTimes = data
+      .map((item) => new Date(item._scrapedAt || 0).getTime())
+      .filter((time) => Number.isFinite(time) && time > 0);
+    const updatedAt =
+      scrapedTimes.length > 0
+        ? new Date(Math.max(...scrapedTimes)).toISOString()
+        : newsStore.meta.fetchedAt;
+    const items = data.map(({ _scrapedAt, ...item }) => item);
+
+    res.set("Cache-Control", "no-store, max-age=0");
+    res.json({ updatedAt, count: items.length, items });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
   }

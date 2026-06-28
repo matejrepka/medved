@@ -3,6 +3,7 @@
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
+const API_VERSION = "news-map-v3";
 const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -575,13 +576,11 @@ function setUpdated(iso) {
 
 // --- Načítanie dát ---
 async function loadData() {
-  // Bez cache-bustingu — dáta sa scrapujú hodinovým cronom, takže rešpektujeme
-  // serverovú cache (Cache-Control: max-age=300). Rýchle reloady a navigácia
-  // sa obslúžia z pamäte prehliadača; 15-min auto-refresh nižšie si aj tak
-  // vyžiada čerstvé dáta (cache medzitým vyprší).
+  // News načítavame bez cache, aby sa moderácia kategórie/lokality hneď
+  // prejavila aj na mape.
   const [sRes, nRes] = await Promise.allSettled([
     fetch("/api/sightings").then((r) => r.json()),
-    fetch("/api/news").then((r) => r.json()),
+    fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
 
   if (sRes.status === "fulfilled" && sRes.value.items) {
