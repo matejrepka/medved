@@ -29,6 +29,15 @@ alter table public.tumedved_logs
 create index if not exists tumedved_logs_manually_edited_idx
   on public.tumedved_logs (manually_edited);
 
+-- Moderácia hlásení: nové scrapované hlásenia čakajú na schválenie ('pending'),
+-- existujúce riadky sú 'approved' (default), aby z mapy nič nezmizlo.
+alter table public.tumedved_logs
+  add column if not exists status text not null default 'approved'
+  check (status in ('pending', 'approved', 'rejected'));
+
+create index if not exists tumedved_logs_status_idx
+  on public.tumedved_logs (status);
+
 create table if not exists public.news_logs (
   id text primary key,
   source text,

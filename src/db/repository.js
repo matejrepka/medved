@@ -95,16 +95,48 @@ async function loadManuallyEditedSightingIds(ids) {
   return edited;
 }
 
+// Vráti Map id -> status pre existujúce hlásenia. Odolné voči chýbajúcemu
+// stĺpcu status (migrácia 004 ešte nemusela prebehnúť) — vtedy vráti null, čo
+// signalizuje, že moderácia hlásení nie je aktívna a ukladáme po starom.
+async function loadSightingStatuses(ids) {
+  const supabase = getSupabase();
+  const map = new Map();
+  if (!supabase) return map;
+
+  const unique = [...new Set(ids.filter(Boolean))];
+  try {
+    for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+      const chunk = unique.slice(i, i + WRITE_CHUNK_SIZE);
+      const { data, error } = await supabase
+        .from("tumedved_logs")
+        .select("id,status")
+        .in("id", chunk);
+      if (error) throw error;
+      for (const row of data || []) map.set(row.id, row.status);
+    }
+  } catch (err) {
+    console.warn(`[tumedved] status column check skipped: ${err.message}`);
+    return null;
+  }
+
+  return map;
+}
+
 export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
   const deduped = dedupeSightings(items);
 
   // Hlásenia, ktoré admin ručne upravil, pri scrapingu NEprepisujeme — inak by
   // sa úprava stratila hneď pri ďalšom behu (tabuľka sa inak prepisuje upsertom).
   const editedIds = await loadManuallyEditedSightingIds(deduped.map((item) => item.id));
+  const candidates = deduped.filter((item) => !editedIds.has(item.id));
 
-  const rows = deduped
-    .filter((item) => !editedIds.has(item.id))
-    .map((item) => ({
+  // Nové hlásenia čakajú na schválenie ('pending'), existujúce si zachovajú svoj
+  // status (nechceme prepisovať už schválené/zamietnuté späť na pending). Ak
+  // migrácia 004 ešte nebežala, statuses je null → ukladáme bez stĺpca status.
+  const statuses = await loadSightingStatuses(candidates.map((item) => item.id));
+
+  const rows = candidates.map((item) => {
+    const row = {
       id: item.id,
       source: item.source || "tumedved.sk",
       location: item.location || null,
@@ -117,7 +149,10 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
       payload: item,
       scraped_at: scrapedAt,
       updated_at: scrapedAt,
-    }));
+    };
+    if (statuses) row.status = statuses.get(item.id) || "pending";
+    return row;
+  });
 
   await upsertChunks("tumedved_logs", rows, { onConflict: "id" });
 
@@ -188,15 +223,32 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) 
   console.log(`[news] saved ${freshItems.length} new, ${knownIds.size} already known`);
 }
 
+// Chyba PostgREST pre neexistujúci stĺpec (napr. status pred migráciou 004).
+function isMissingColumn(error) {
+  return error?.code === "42703" || /does not exist/i.test(error?.message || "");
+}
+
 export async function loadTumedvedLogs() {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const columns = "id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at";
+  // Na mape/API zobrazujeme len schválené hlásenia.
+  let { data, error } = await supabase
     .from("tumedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at")
+    .select(columns)
+    .eq("status", "approved")
     .order("reported_at", { ascending: false, nullsFirst: false })
     .limit(SIGHTINGS_LIMIT);
+
+  // Migrácia 004 (stĺpec status) ešte nebežala — načítaj všetko po starom.
+  if (error && isMissingColumn(error)) {
+    ({ data, error } = await supabase
+      .from("tumedved_logs")
+      .select(columns)
+      .order("reported_at", { ascending: false, nullsFirst: false })
+      .limit(SIGHTINGS_LIMIT));
+  }
 
   if (error) throw error;
 
@@ -446,6 +498,40 @@ export async function updateBearReportStatus(id, status) {
   if (error) throw error;
 }
 
+// --- Tumedved sightings moderation ---
+
+// Scrapované hlásenia čakajúce na schválenie (rovnaká sekcia ako hlásenia od
+// používateľov). Ak stĺpec status ešte neexistuje (migrácia 004), vráti [].
+export async function loadPendingSightings() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("tumedved_logs")
+    .select("id,source,location,note,lat,lng,has_coords,reported_at,url")
+    .eq("status", "pending")
+    .order("reported_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+
+  if (error) {
+    if (isMissingColumn(error)) return [];
+    throw error;
+  }
+  return data || [];
+}
+
+export async function updateSightingStatus(id, status) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from("tumedved_logs")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
 export async function loadPendingNews() {
   const supabase = getSupabase();
   if (!supabase) return [];
@@ -534,11 +620,22 @@ export async function loadAllSightings({ limit = ADMIN_SIGHTINGS_LIMIT } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const withStatus =
+    "id,source,location,note,lat,lng,has_coords,reported_at,url,status,scraped_at,updated_at";
+  let { data, error } = await supabase
     .from("tumedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at,updated_at")
+    .select(withStatus)
     .order("reported_at", { ascending: false, nullsFirst: false })
     .limit(limit);
+
+  // Migrácia 004 (stĺpec status) ešte nebežala — načítaj bez neho.
+  if (error && isMissingColumn(error)) {
+    ({ data, error } = await supabase
+      .from("tumedved_logs")
+      .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at,updated_at")
+      .order("reported_at", { ascending: false, nullsFirst: false })
+      .limit(limit));
+  }
 
   if (error) throw error;
   return data || [];
@@ -589,6 +686,9 @@ export async function updateSightingFields(id, fields) {
   if ("reportedAt" in fields) update.reported_at = toIso(fields.reportedAt);
   if ("lat" in fields) update.lat = asNullableNumber(fields.lat);
   if ("lng" in fields) update.lng = asNullableNumber(fields.lng);
+  if (["pending", "approved", "rejected"].includes(fields.status)) {
+    update.status = fields.status;
+  }
   if ("lat" in update && "lng" in update) {
     update.has_coords = hasCoordinates(update.lat, update.lng);
   }
