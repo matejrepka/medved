@@ -6,7 +6,7 @@
     <title>Medvede na Slovensku</title>
     <meta
       name="description"
-      content="Živé hlásenia o výskyte medveďov z tumedved.sk a aktuálne slovenské správy o medveďoch na jednej mape."
+      content="Overené medvedie varovania, hlásenia od používateľov a aktuálne slovenské správy o medveďoch na jednej mape."
     />
 
     <!-- Nastav tému ešte pred vykreslením, aby neblikla (FOUC) -->
@@ -102,14 +102,14 @@
         <div class="masthead-copy">
           <h1>Výskyt medveďov na Slovensku</h1>
           <p class="lede">
-            Živé hlásenia z portálu tumedved.sk a aktuálne slovenské správy o medveďoch,
-            pohromade na jednej mape.
+            Medvedie varovania z overených hlásení používateľov a verejných zdrojov spolu
+            s aktuálnymi slovenskými správami o medveďoch, pohromade na jednej mape.
           </p>
 
           <div class="stats" id="stats">
             <div class="stat">
               <span class="stat-num" id="statSightings">-</span>
-              <span class="stat-label">dnešných hlásení</span>
+              <span class="stat-label">dnešných varovaní</span>
             </div>
             <div class="stat">
               <span class="stat-num" id="statNews">-</span>
@@ -178,7 +178,7 @@
         </div>
         <div id="map" aria-label="Mapa výskytu medveďov na Slovensku"></div>
         <div class="map-legend" aria-hidden="true">
-          <span class="lg"><span class="lg-dot"></span> Hlásenie z tumedved.sk</span>
+          <span class="lg"><span class="lg-dot"></span> Medvedie varovanie</span>
           <span class="lg"><span class="lg-dot news"></span> Varovanie zo správ</span>
         </div>
       </section>
@@ -199,8 +199,8 @@
       <div class="columns">
         <section class="panel" aria-labelledby="sightingsHead">
           <div class="section-head">
-            <h2 id="sightingsHead">Najnovšie hlásenia</h2>
-            <span class="src">tumedved.sk</span>
+            <h2 id="sightingsHead">Medvedie varovania</h2>
+            <span class="src">overené hlásenia</span>
           </div>
 
           <div id="sightingsList" class="list" aria-live="polite"></div>
@@ -300,10 +300,8 @@
     <footer class="site-footer">
       <div class="footer-inner">
         <p>
-          Dáta sa automaticky sťahujú z verejných zdrojov
-          <a href="https://tumedved.sk" target="_blank" rel="noopener">tumedved.sk</a> a
-          <a href="https://news.google.com" target="_blank" rel="noopener">Google News</a>.
-          Hlásenia pridávajú používatelia a nemusia byť overené. Slúžia ako orientačná informácia.
+          Varovania pochádzajú z overených hlásení používateľov, verejných zdrojov a správ.
+          Slúžia ako orientačná informácia a nemusia byť úplné.
         </p>
         <nav class="footer-links" aria-label="Právne informácie">
           <a href="/privacy">Ochrana súkromia</a>
@@ -317,6 +315,6 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=news-map-v5"></script>
+    <script src="/app.js?v=warnings-v1"></script>
   </body>
 </html>

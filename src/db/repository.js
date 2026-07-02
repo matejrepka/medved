@@ -232,6 +232,7 @@ export async function saveBearReport(report) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
+  const approved = report.status === "approved";
   const { data, error } = await supabase
     .from("bear_reports")
     .insert({
@@ -243,13 +244,98 @@ export async function saveBearReport(report) {
       lng: asNullableNumber(report.lng),
       has_coords: Boolean(report.lat && report.lng),
       reported_date: toIso(report.reportedDate),
-      status: "pending",
+      status: approved ? "approved" : "pending",
+      reviewed_at: approved ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
 
   if (error) throw error;
   return data;
+}
+
+// Schválené hlásenia od používateľov (a manuálne pridané varovania) v rovnakom
+// tvare ako hlásenia z tumedved_logs, nech sa dajú zlúčiť do jedného zoznamu.
+export async function loadApprovedBearReports() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("bear_reports")
+    .select("id,location,description,lat,lng,has_coords,reported_date,created_at")
+    .eq("status", "approved")
+    .order("reported_date", { ascending: false, nullsFirst: false })
+    .limit(500);
+
+  if (error) throw error;
+
+  return (data || []).map((row) => {
+    const lat = asNullableNumber(row.lat);
+    const lng = asNullableNumber(row.lng);
+    return {
+      id: `report-${row.id}`,
+      sourceType: "report",
+      source: "Hlásenie používateľa",
+      location: row.location,
+      note: row.description || "",
+      lat,
+      lng,
+      hasCoords: hasCoordinates(lat, lng),
+      reportedAt: row.reported_date || row.created_at,
+      url: null,
+    };
+  });
+}
+
+// --- Manuálne pridané položky z administrácie ---
+
+export async function saveManualNews(item) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("news_logs").insert({
+    id: item.id,
+    source: item.source || null,
+    title: item.title,
+    link: item.link || null,
+    snippet: item.snippet || null,
+    published_at: toIso(item.publishedAt) || now,
+    place: item.place || null,
+    lat: asNullableNumber(item.lat),
+    lng: asNullableNumber(item.lng),
+    has_coords: hasCoordinates(item.lat, item.lng),
+    status: "approved",
+    category: item.category === "warning" ? "warning" : "article",
+    payload: { manual: true },
+    scraped_at: now,
+    updated_at: now,
+  });
+
+  if (error) throw error;
+}
+
+export async function saveManualTumedved(item) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("tumedved_logs").insert({
+    id: item.id,
+    source: "tumedved.sk",
+    location: item.location,
+    note: item.note || null,
+    lat: asNullableNumber(item.lat),
+    lng: asNullableNumber(item.lng),
+    has_coords: hasCoordinates(item.lat, item.lng),
+    reported_at: toIso(item.reportedAt) || now,
+    url: item.url || null,
+    payload: { manual: true },
+    scraped_at: now,
+    updated_at: now,
+  });
+
+  if (error) throw error;
 }
 
 export async function loadBearReports(status) {
