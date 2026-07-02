@@ -106,18 +106,54 @@
             pohromade na jednej mape.
           </p>
 
-          <div class="stats" id="stats">
-            <div class="stat">
-              <span class="stat-num" id="statSightings">-</span>
-              <span class="stat-label">dnešných hlásení</span>
+          <div class="home-insights" id="stats" aria-label="Aktuálny štatistický prehľad">
+            <div class="insight-main">
+              <span class="insight-eyebrow">
+                <i class="ph ph-activity" aria-hidden="true"></i>
+                Dnešný prehľad
+              </span>
+              <div class="insight-value-row">
+                <span class="insight-value" id="statSightings">-</span>
+                <span class="insight-unit" id="statSightingsLabel">hlásení dnes</span>
+              </div>
+              <p class="insight-copy" id="statHeadline">Načítavam najnovšie dáta...</p>
             </div>
-            <div class="stat">
-              <span class="stat-num" id="statNews">-</span>
-              <span class="stat-label">dnešných správ</span>
-            </div>
-            <div class="stat">
-              <span class="stat-num" id="statUpdated">-</span>
-              <span class="stat-label">naposledy aktualizované</span>
+
+            <div class="insight-metrics">
+              <div class="insight-metric">
+                <i class="ph ph-calendar-dots" aria-hidden="true"></i>
+                <div>
+                  <span class="metric-value" id="statWeekSightings">-</span>
+                  <span class="metric-label" id="statWeekSightingsLabel">hlásení za 7 dní</span>
+                  <span class="metric-note" id="statWeekTrend">-</span>
+                </div>
+              </div>
+              <div class="insight-metric">
+                <i class="ph ph-newspaper" aria-hidden="true"></i>
+                <div>
+                  <span class="metric-value" id="statNews">-</span>
+                  <span class="metric-label" id="statNewsLabel">správ dnes</span>
+                  <span class="metric-note" id="statWarnings">-</span>
+                </div>
+              </div>
+              <div class="insight-metric">
+                <i class="ph ph-map-pin" aria-hidden="true"></i>
+                <div>
+                  <span class="metric-value" id="statMappedPoints">-</span>
+                  <span class="metric-label" id="statMappedPointsLabel">bodov na mape</span>
+                  <span class="metric-note" id="statTopPlace">-</span>
+                </div>
+              </div>
+              <div class="insight-metric">
+                <i class="ph ph-clock" aria-hidden="true"></i>
+                <div>
+                  <span class="metric-value" id="statUpdated">-</span>
+                  <span class="metric-label">aktualizované</span>
+                  <a class="metric-note metric-link" href="/stats">
+                    Podrobné štatistiky <i class="ph ph-arrow-right" aria-hidden="true"></i>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -317,6 +353,6 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=news-map-v5"></script>
+    <script src="/app.js?v=news-map-v6"></script>
   </body>
 </html>

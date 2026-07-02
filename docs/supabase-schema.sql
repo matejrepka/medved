@@ -22,6 +22,13 @@ create index if not exists tumedved_logs_reported_at_idx
 create index if not exists tumedved_logs_scraped_at_idx
   on public.tumedved_logs (scraped_at desc);
 
+-- Hlásenia ručne upravené adminom — scraper ich pri ďalšom behu neprepíše.
+alter table public.tumedved_logs
+  add column if not exists manually_edited boolean not null default false;
+
+create index if not exists tumedved_logs_manually_edited_idx
+  on public.tumedved_logs (manually_edited);
+
 create table if not exists public.news_logs (
   id text primary key,
   source text,

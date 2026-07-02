@@ -67,27 +67,102 @@ async function upsertChunks(table, rows, options) {
   }
 }
 
-export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
-  const rows = dedupeSightings(items).map((item) => ({
-    id: item.id,
-    source: item.source || "tumedved.sk",
-    location: item.location || null,
-    note: item.note || null,
-    lat: asNullableNumber(item.lat),
-    lng: asNullableNumber(item.lng),
-    has_coords: Boolean(item.hasCoords),
-    reported_at: toIso(item.reportedAt),
-    url: item.url || null,
-    payload: item,
-    scraped_at: scrapedAt,
-    updated_at: scrapedAt,
-  }));
+// Vráti množinu id hlásení, ktoré admin ručne upravil. Odolné voči chýbajúcemu
+// stĺpcu manually_edited (migrácia 003 ešte nemusela prebehnúť) — vtedy vráti
+// prázdnu množinu a scraping pokračuje normálne.
+async function loadManuallyEditedSightingIds(ids) {
+  const supabase = getSupabase();
+  const edited = new Set();
+  if (!supabase) return edited;
 
-  await upsertChunks("tumedved_logs", rows, { onConflict: "id" });
+  const unique = [...new Set(ids.filter(Boolean))];
+  try {
+    for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+      const chunk = unique.slice(i, i + WRITE_CHUNK_SIZE);
+      const { data, error } = await supabase
+        .from("tumedved_logs")
+        .select("id")
+        .eq("manually_edited", true)
+        .in("id", chunk);
+      if (error) throw error;
+      for (const row of data || []) edited.add(row.id);
+    }
+  } catch (err) {
+    console.warn(`[tumedved] manually_edited check skipped: ${err.message}`);
+    return new Set();
+  }
+
+  return edited;
 }
 
+export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
+  const deduped = dedupeSightings(items);
+
+  // Hlásenia, ktoré admin ručne upravil, pri scrapingu NEprepisujeme — inak by
+  // sa úprava stratila hneď pri ďalšom behu (tabuľka sa inak prepisuje upsertom).
+  const editedIds = await loadManuallyEditedSightingIds(deduped.map((item) => item.id));
+
+  const rows = deduped
+    .filter((item) => !editedIds.has(item.id))
+    .map((item) => ({
+      id: item.id,
+      source: item.source || "tumedved.sk",
+      location: item.location || null,
+      note: item.note || null,
+      lat: asNullableNumber(item.lat),
+      lng: asNullableNumber(item.lng),
+      has_coords: Boolean(item.hasCoords),
+      reported_at: toIso(item.reportedAt),
+      url: item.url || null,
+      payload: item,
+      scraped_at: scrapedAt,
+      updated_at: scrapedAt,
+    }));
+
+  await upsertChunks("tumedved_logs", rows, { onConflict: "id" });
+
+  if (editedIds.size) {
+    console.log(`[tumedved] preserved ${editedIds.size} manually edited sightings`);
+  }
+}
+
+// Vráti množinu id správ, ktoré už v news_logs existujú — bez ohľadu na status
+// (pending / approved / rejected). Slúži na overenie, čo už bolo zapísané.
+async function loadKnownNewsIds(ids) {
+  const supabase = getSupabase();
+  const known = new Set();
+  if (!supabase) return known;
+
+  const unique = [...new Set(ids.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+    const chunk = unique.slice(i, i + WRITE_CHUNK_SIZE);
+    const { data, error } = await supabase.from("news_logs").select("id").in("id", chunk);
+    if (error) throw error;
+    for (const row of data || []) known.add(row.id);
+  }
+
+  return known;
+}
+
+// Uloží len NAOZAJ NOVÉ správy. Najprv si overí, ktoré id už v databáze sú
+// (vrátane tých, ktoré admin zamietol), a tie preskočí. Vďaka tomu:
+//  - zamietnuté správy ostávajú uložené so status='rejected' a pri ďalšom
+//    scrapingu sa nevyhodnotia znova ako nové (neobjavia sa späť v moderácii),
+//  - schválené ani rozpracované (pending) správy sa neprepíšu späť na pending.
+// Každý nový článok sa zapíše ako 'pending' a čaká na moderáciu.
 export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) {
-  const rows = items.map((item) => ({
+  const supabase = getSupabase();
+  if (!supabase || !items.length) return;
+
+  const knownIds = await loadKnownNewsIds(items.map((item) => item.id));
+  const freshItems = items.filter((item) => item.id && !knownIds.has(item.id));
+
+  if (!freshItems.length) {
+    console.log(`[news] no new articles — all ${items.length} already in DB`);
+    return;
+  }
+
+  const rows = freshItems.map((item) => ({
     id: item.id,
     source: item.source || null,
     title: item.title || null,
@@ -106,7 +181,11 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) 
     updated_at: scrapedAt,
   }));
 
+  // ignoreDuplicates je poistka proti súbehu — keby ten istý článok medzitým
+  // pribudol, nech zápis nespadne na konflikte primárneho kľúča.
   await upsertChunks("news_logs", rows, { onConflict: "id", ignoreDuplicates: true });
+
+  console.log(`[news] saved ${freshItems.length} new, ${knownIds.size} already known`);
 }
 
 export async function loadTumedvedLogs() {
@@ -339,6 +418,96 @@ export async function reviewNews(id, fields) {
   }
 
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+// --- Admin: správa obsahu (zoznam + editácia všetkých záznamov) ---
+
+const ADMIN_NEWS_LIMIT = 1000;
+const ADMIN_SIGHTINGS_LIMIT = 2000;
+
+// Všetky správy pre admin správu obsahu — každý status, najnovšie prvé.
+export async function loadAllNews({ limit = ADMIN_NEWS_LIMIT } = {}) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("news_logs")
+    .select(
+      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,scraped_at,updated_at"
+    )
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Všetky hlásenia (tumedved) pre admin správu obsahu — najnovšie prvé.
+export async function loadAllSightings({ limit = ADMIN_SIGHTINGS_LIMIT } = {}) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("tumedved_logs")
+    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at,updated_at")
+    .order("reported_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Editácia správy adminom — prepíše len povolené polia. Súradnice posielame z
+// formulára vždy oba naraz, takže has_coords vieme prepočítať spoľahlivo.
+export async function updateNewsFields(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const update = { updated_at: new Date().toISOString() };
+
+  if (typeof fields.title === "string") update.title = fields.title.trim() || null;
+  if (typeof fields.source === "string") update.source = fields.source.trim() || null;
+  if (typeof fields.snippet === "string") update.snippet = fields.snippet.trim() || null;
+  if (typeof fields.link === "string") update.link = fields.link.trim() || null;
+  if (typeof fields.place === "string") update.place = fields.place.trim() || null;
+  if ("publishedAt" in fields) update.published_at = toIso(fields.publishedAt);
+  if ("lat" in fields) update.lat = asNullableNumber(fields.lat);
+  if ("lng" in fields) update.lng = asNullableNumber(fields.lng);
+  if (fields.category === "warning" || fields.category === "article") {
+    update.category = fields.category;
+  }
+  if (["pending", "approved", "rejected"].includes(fields.status)) {
+    update.status = fields.status;
+  }
+  if ("lat" in update && "lng" in update) {
+    update.has_coords = hasCoordinates(update.lat, update.lng);
+  }
+
+  const { error } = await supabase.from("news_logs").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+// Editácia hlásenia adminom. Nastaví manually_edited = true, aby ho scraper pri
+// ďalšom behu neprepísal (vyžaduje migráciu 003).
+export async function updateSightingFields(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const update = { updated_at: new Date().toISOString(), manually_edited: true };
+
+  if (typeof fields.location === "string") update.location = fields.location.trim() || null;
+  if (typeof fields.note === "string") update.note = fields.note.trim() || null;
+  if (typeof fields.source === "string") update.source = fields.source.trim() || null;
+  if (typeof fields.url === "string") update.url = fields.url.trim() || null;
+  if ("reportedAt" in fields) update.reported_at = toIso(fields.reportedAt);
+  if ("lat" in fields) update.lat = asNullableNumber(fields.lat);
+  if ("lng" in fields) update.lng = asNullableNumber(fields.lng);
+  if ("lat" in update && "lng" in update) {
+    update.has_coords = hasCoordinates(update.lat, update.lng);
+  }
+
+  const { error } = await supabase.from("tumedved_logs").update(update).eq("id", id);
   if (error) throw error;
 }
 

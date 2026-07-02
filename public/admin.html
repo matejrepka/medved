@@ -686,6 +686,276 @@
         background: rgba(239,68,68,0.05);
       }
 
+      /* ---- Content management ---- */
+      .content-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .seg-toggle {
+        display: inline-flex;
+        padding: 3px;
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+      }
+      .seg-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: none;
+        background: none;
+        border-radius: calc(var(--radius-sm) - 2px);
+        font-family: var(--font-sans);
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+      .seg-btn:hover { color: var(--ink); }
+      .seg-btn.active {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .seg-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--radius-pill);
+        background: var(--line);
+        color: var(--ink-3);
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .seg-btn.active .seg-count { background: rgba(255,255,255,0.25); color: var(--accent-ink); }
+
+      .content-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        align-items: center;
+      }
+      .content-search i {
+        position: absolute;
+        left: 11px;
+        color: var(--ink-3);
+        font-size: 1rem;
+        pointer-events: none;
+      }
+      .content-search input {
+        width: 100%;
+        padding: 0.55rem 0.8rem 0.55rem 2.1rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .content-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .content-filter {
+        padding: 0.55rem 0.7rem;
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        cursor: pointer;
+      }
+      .content-filter[hidden] { display: none; }
+
+      #contentTableWrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+      }
+      .data-table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+      .data-table th {
+        text-align: left;
+        padding: 10px 12px;
+        background: var(--surface);
+        border-bottom: 2px solid var(--line-strong);
+        color: var(--ink-3);
+        font-weight: 600;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .data-table th.sortable { cursor: pointer; user-select: none; }
+      .data-table th.sortable:hover { color: var(--ink); }
+      .data-table th .sort-arrow { margin-left: 4px; opacity: 0.9; }
+      .data-table th.actions-col { text-align: right; }
+      .data-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        color: var(--ink-2);
+      }
+      .data-table tbody tr.data-row { transition: background 0.12s; }
+      .data-table tbody tr.data-row:hover { background: var(--surface-hover); }
+      .data-table td strong { color: var(--ink); font-weight: 600; }
+      .cell-truncate {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 320px;
+      }
+      .row-edit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-2);
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .row-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .actions-cell { text-align: right; white-space: nowrap; }
+
+      .status-badge, .cat-badge {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: var(--radius-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .status-badge.pending { background: rgba(217,119,6,0.12); color: #b45309; }
+      .status-badge.approved { background: rgba(34,197,94,0.12); color: #15803d; }
+      .status-badge.rejected { background: rgba(239,68,68,0.12); color: #b91c1c; }
+      [data-theme="dark"] .status-badge.pending { color: #fbbf24; }
+      [data-theme="dark"] .status-badge.approved { color: #4ade80; }
+      [data-theme="dark"] .status-badge.rejected { color: #f87171; }
+      .cat-badge.warning { background: var(--accent-soft); color: var(--accent); }
+      .cat-badge.article { background: var(--line); color: var(--ink-3); }
+      .coord-no { color: #b45309; }
+      [data-theme="dark"] .coord-no { color: #fbbf24; }
+
+      /* Inline editor */
+      .edit-row > td { background: var(--bg); padding: 0; border-bottom: 1px solid var(--line-strong); }
+      .edit-form { padding: 1.1rem 1.25rem; }
+      .edit-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+      }
+      .edit-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .edit-field.full { grid-column: 1 / -1; }
+      .edit-field label {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .edit-field input,
+      .edit-field select,
+      .edit-field textarea {
+        width: 100%;
+        padding: 0.5rem 0.7rem;
+        font-family: var(--font-sans);
+        font-size: 0.88rem;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .edit-field textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
+      .edit-field input:focus,
+      .edit-field select:focus,
+      .edit-field textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .edit-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+      .edit-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .edit-save:hover { background: var(--accent-hover); }
+      .edit-save:disabled { opacity: 0.5; cursor: not-allowed; }
+      .edit-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--surface);
+        color: var(--ink-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .edit-cancel:hover { color: var(--ink); border-color: var(--ink-3); }
+      .edit-msg { font-size: 0.82rem; color: #b91c1c; }
+      .edit-msg.ok { color: #15803d; }
+      [data-theme="dark"] .edit-msg { color: #f87171; }
+      [data-theme="dark"] .edit-msg.ok { color: #4ade80; }
+      .edit-id { margin-left: auto; font-size: 0.74rem; color: var(--ink-3); font-family: monospace; }
+
+      .content-empty {
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: var(--ink-3);
+        font-size: 0.9rem;
+      }
+
       /* ---- Responsive ---- */
       @media (max-width: 640px) {
         .admin-toolbar { padding-top: 1rem; }
@@ -699,6 +969,8 @@
         .review-card-head { flex-direction: column; }
         .review-actions { width: 100%; }
         .review-btn { flex: 1; justify-content: center; padding: 10px 14px; }
+        .edit-grid { grid-template-columns: 1fr; }
+        .content-search { order: 3; width: 100%; flex-basis: 100%; }
       }
       @media (max-width: 400px) {
         .stats-grid { grid-template-columns: 1fr; }
@@ -763,6 +1035,9 @@
           <button class="admin-tab" data-tab="news">
             <i class="ph ph-newspaper"></i> Správy
             <span class="tab-count" id="tabNewsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="content">
+            <i class="ph ph-table"></i> Databáza
           </button>
           <button class="admin-tab" data-tab="subscriptions">
             <i class="ph ph-bell-ringing"></i> Odbery
@@ -840,6 +1115,43 @@
             <div id="pendingNewsList"></div>
           </div>
 
+          <!-- Content management -->
+          <div class="tab-panel" id="panel-content">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Správa obsahu</h2>
+                <span class="section-count" id="contentCount">0</span>
+              </div>
+              <button class="logout-btn" id="contentReload" type="button">
+                <i class="ph ph-arrows-clockwise"></i> Obnoviť
+              </button>
+            </div>
+            <p class="section-lede">Všetky uložené správy a hlásenia — vyhľadávateľné, zoraditeľné a editovateľné. Kliknutím na hlavičku stĺpca zoradíš, tlačidlom upravíš ktorýkoľvek záznam.</p>
+
+            <div class="content-toolbar">
+              <div class="seg-toggle" id="contentTypeToggle">
+                <button class="seg-btn active" type="button" data-type="news">
+                  <i class="ph ph-newspaper"></i> Správy <span class="seg-count" id="segNewsCount">0</span>
+                </button>
+                <button class="seg-btn" type="button" data-type="sightings">
+                  <i class="ph ph-paw-print"></i> Hlásenia <span class="seg-count" id="segSightingsCount">0</span>
+                </button>
+              </div>
+              <div class="content-search">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="search" id="contentSearch" placeholder="Hľadať v texte, lokalite, zdroji…" autocomplete="off" />
+              </div>
+              <select class="content-filter" id="contentStatusFilter">
+                <option value="">Všetky stavy</option>
+                <option value="pending">Čakajúce</option>
+                <option value="approved">Schválené</option>
+                <option value="rejected">Zamietnuté</option>
+              </select>
+            </div>
+
+            <div id="contentTableWrap"></div>
+          </div>
+
           <!-- Subscriptions -->
           <div class="tab-panel" id="panel-subscriptions">
             <div class="section-header">
@@ -867,6 +1179,7 @@
       function switchTab(tabName) {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
         panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+        if (tabName === 'content' && !contentState.loaded) loadContent();
       }
 
       tabs.forEach(tab => {
@@ -1438,6 +1751,366 @@
           console.error('Failed to load subscriptions:', err);
         }
       }
+
+      // --- Content management (všetky správy + hlásenia: hľadanie, zoradenie, editácia) ---
+      const contentState = {
+        type: 'news',
+        news: [],
+        sightings: [],
+        search: '',
+        status: '',
+        sort: {
+          news: { key: 'published_at', dir: 'desc' },
+          sightings: { key: 'reported_at', dir: 'desc' },
+        },
+        loaded: false,
+        openId: null,
+      };
+
+      const COLUMNS = {
+        news: [
+          { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || '—') + '</strong>' },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || '—') },
+          { key: 'published_at', label: 'Dátum', render: (r) => formatDateTime(r.published_at) },
+          { key: 'place', label: 'Lokalita', render: (r) => esc(r.place || '—') },
+          { key: 'category', label: 'Kategória', render: (r) => catBadge(r.category) },
+          { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status) },
+        ],
+        sightings: [
+          { key: 'location', label: 'Lokalita', render: (r) => '<strong>' + esc(r.location || '—') + '</strong>' },
+          { key: 'note', label: 'Poznámka', render: (r) => '<span class="cell-truncate">' + esc(r.note || '—') + '</span>' },
+          { key: 'reported_at', label: 'Dátum', render: (r) => formatDateTime(r.reported_at) },
+          { key: 'has_coords', label: 'Súradnice', render: (r) => coordsCell(r) },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || '—') },
+        ],
+      };
+
+      function statusBadge(status) {
+        const map = { pending: 'Čaká', approved: 'Schválené', rejected: 'Zamietnuté' };
+        const s = map[status] ? status : 'pending';
+        return '<span class="status-badge ' + s + '">' + (map[s] || s) + '</span>';
+      }
+      function catBadge(category) {
+        return category === 'warning'
+          ? '<span class="cat-badge warning">Varovanie</span>'
+          : '<span class="cat-badge article">Článok</span>';
+      }
+      function coordsCell(r) {
+        const lat = Number(r.lat), lng = Number(r.lng);
+        const has = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+        return has
+          ? lat.toFixed(4) + ', ' + lng.toFixed(4)
+          : '<span class="coord-no">bez súradníc</span>';
+      }
+
+      function toLocalInputValue(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        const p = (n) => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+          'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+      }
+      function fromLocalInputValue(val) {
+        if (!val) return null;
+        const d = new Date(val);
+        return Number.isNaN(d.getTime()) ? null : d.toISOString();
+      }
+
+      function searchableText(type, r) {
+        const parts = type === 'news'
+          ? [r.title, r.source, r.snippet, r.place, r.link, r.id]
+          : [r.location, r.note, r.source, r.url, r.id];
+        return parts.filter(Boolean).join(' ').toLowerCase();
+      }
+
+      function sortValue(type, key, r) {
+        if (key === 'published_at' || key === 'reported_at') {
+          const t = new Date(r[key] || 0).getTime();
+          return Number.isFinite(t) ? t : 0;
+        }
+        if (key === 'has_coords') return r.has_coords ? 1 : 0;
+        return String(r[key] == null ? '' : r[key]).toLowerCase();
+      }
+
+      function filteredSortedList() {
+        const type = contentState.type;
+        let list = (type === 'news' ? contentState.news : contentState.sightings).slice();
+        const q = contentState.search.trim().toLowerCase();
+        if (q) list = list.filter((r) => searchableText(type, r).includes(q));
+        if (type === 'news' && contentState.status) {
+          list = list.filter((r) => r.status === contentState.status);
+        }
+        const sort = contentState.sort[type];
+        const dir = sort.dir === 'asc' ? 1 : -1;
+        list.sort((a, b) => {
+          const av = sortValue(type, sort.key, a);
+          const bv = sortValue(type, sort.key, b);
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av).localeCompare(String(bv), 'sk') * dir;
+        });
+        return list;
+      }
+
+      function renderContentTable() {
+        const wrap = document.getElementById('contentTableWrap');
+        const type = contentState.type;
+        const cols = COLUMNS[type];
+        const list = filteredSortedList();
+        const total = (type === 'news' ? contentState.news : contentState.sightings).length;
+
+        setText('contentCount', list.length + (list.length !== total ? ' / ' + total : ''));
+
+        if (!list.length) {
+          wrap.innerHTML = '<div class="content-empty">' +
+            (total ? 'Nič nezodpovedá filtru.' : 'Žiadne záznamy v databáze.') + '</div>';
+          return;
+        }
+
+        const sort = contentState.sort[type];
+        const headCells = cols.map((c) => {
+          const active = sort.key === c.key;
+          const arrow = active ? '<i class="ph ph-caret-' + (sort.dir === 'asc' ? 'up' : 'down') + ' sort-arrow"></i>' : '';
+          return '<th class="sortable" data-key="' + c.key + '">' + c.label + arrow + '</th>';
+        }).join('');
+
+        const bodyRows = list.map((r) => {
+          const cells = cols.map((c) => '<td>' + c.render(r) + '</td>').join('');
+          return '<tr class="data-row" data-id="' + esc(String(r.id)) + '">' + cells +
+            '<td class="actions-cell"><button class="row-edit-btn" type="button"><i class="ph ph-pencil-simple"></i> Upraviť</button></td></tr>';
+        }).join('');
+
+        const table = document.createElement('table');
+        table.className = 'data-table';
+        table.innerHTML =
+          '<thead><tr>' + headCells + '<th class="actions-col">Akcie</th></tr></thead>' +
+          '<tbody>' + bodyRows + '</tbody>';
+
+        // Zoradenie kliknutím na hlavičku.
+        table.querySelectorAll('th.sortable').forEach((th) => {
+          th.addEventListener('click', () => {
+            const key = th.dataset.key;
+            const s = contentState.sort[type];
+            if (s.key === key) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+            else { s.key = key; s.dir = 'desc'; }
+            contentState.openId = null;
+            renderContentTable();
+          });
+        });
+
+        // Editácia.
+        table.querySelectorAll('tr.data-row').forEach((tr) => {
+          const id = tr.dataset.id;
+          tr.querySelector('.row-edit-btn').addEventListener('click', () => openEditor(tr, id));
+        });
+
+        wrap.innerHTML = '';
+        wrap.appendChild(table);
+      }
+
+      function findRecord(type, id) {
+        const list = type === 'news' ? contentState.news : contentState.sightings;
+        return list.find((r) => String(r.id) === String(id));
+      }
+
+      function openEditor(rowTr, id) {
+        const tbody = rowTr.parentElement;
+        const existing = tbody.querySelector('tr.edit-row');
+        const wasOpenHere = existing && existing.previousElementSibling === rowTr;
+        if (existing) existing.remove();
+        if (wasOpenHere) { contentState.openId = null; return; }
+
+        const type = contentState.type;
+        const rec = findRecord(type, id);
+        if (!rec) return;
+        contentState.openId = id;
+
+        const colCount = COLUMNS[type].length + 1;
+        const editTr = document.createElement('tr');
+        editTr.className = 'edit-row';
+        const td = document.createElement('td');
+        td.colSpan = colCount;
+        td.innerHTML = type === 'news' ? newsEditForm(rec) : sightingEditForm(rec);
+        editTr.appendChild(td);
+        rowTr.after(editTr);
+
+        wireEditor(editTr, type, rec);
+      }
+
+      function field(label, inner, full) {
+        return '<div class="edit-field' + (full ? ' full' : '') + '"><label>' + label + '</label>' + inner + '</div>';
+      }
+
+      function newsEditForm(r) {
+        const sel = (v, opts) => opts.map((o) =>
+          '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+        return '<div class="edit-form">' +
+          '<div class="edit-grid">' +
+            field('Titulok', '<input data-f="title" type="text" value="' + esc(r.title || '') + '">', true) +
+            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '">') +
+            field('Dátum publikovania', '<input data-f="publishedAt" type="datetime-local" value="' + toLocalInputValue(r.published_at) + '">') +
+            field('Stav', '<select data-f="status">' + sel(r.status, [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
+            field('Kategória', '<select data-f="category">' + sel(r.category === 'warning' ? 'warning' : 'article', [['article','Článok'],['warning','Medvedie varovanie']]) + '</select>') +
+            field('Lokalita (obec)', '<input data-f="place" type="text" value="' + esc(r.place || '') + '">') +
+            field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
+            field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
+            field('Odkaz', '<input data-f="link" type="url" value="' + esc(r.link || '') + '">', true) +
+            field('Krátky popis', '<textarea data-f="snippet">' + esc(r.snippet || '') + '</textarea>', true) +
+          '</div>' +
+          '<div class="edit-actions">' +
+            '<button class="edit-save" type="button"><i class="ph ph-check"></i> Uložiť</button>' +
+            '<button class="edit-cancel" type="button">Zrušiť</button>' +
+            '<span class="edit-msg" role="alert"></span>' +
+            '<span class="edit-id">' + esc(String(r.id)) + '</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function sightingEditForm(r) {
+        return '<div class="edit-form">' +
+          '<div class="edit-grid">' +
+            field('Lokalita', '<input data-f="location" type="text" value="' + esc(r.location || '') + '">', true) +
+            field('Dátum nahlásenia', '<input data-f="reportedAt" type="datetime-local" value="' + toLocalInputValue(r.reported_at) + '">') +
+            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '">') +
+            field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
+            field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
+            field('URL', '<input data-f="url" type="url" value="' + esc(r.url || '') + '">', true) +
+            field('Poznámka', '<textarea data-f="note">' + esc(r.note || '') + '</textarea>', true) +
+          '</div>' +
+          '<div class="edit-actions">' +
+            '<button class="edit-save" type="button"><i class="ph ph-check"></i> Uložiť</button>' +
+            '<button class="edit-cancel" type="button">Zrušiť</button>' +
+            '<span class="edit-msg" role="alert"></span>' +
+            '<span class="edit-id">' + esc(String(r.id)) + '</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function wireEditor(editTr, type, rec) {
+        const get = (f) => {
+          const el = editTr.querySelector('[data-f="' + f + '"]');
+          return el ? el.value : undefined;
+        };
+        const msg = editTr.querySelector('.edit-msg');
+        const saveBtn = editTr.querySelector('.edit-save');
+
+        editTr.querySelector('.edit-cancel').addEventListener('click', () => {
+          editTr.remove();
+          contentState.openId = null;
+        });
+
+        saveBtn.addEventListener('click', async () => {
+          const payload = type === 'news'
+            ? {
+                title: get('title'), source: get('source'),
+                publishedAt: fromLocalInputValue(get('publishedAt')),
+                status: get('status'), category: get('category'),
+                place: get('place'), lat: get('lat'), lng: get('lng'),
+                link: get('link'), snippet: get('snippet'),
+              }
+            : {
+                location: get('location'),
+                reportedAt: fromLocalInputValue(get('reportedAt')),
+                source: get('source'), lat: get('lat'), lng: get('lng'),
+                url: get('url'), note: get('note'),
+              };
+
+          saveBtn.disabled = true;
+          msg.className = 'edit-msg';
+          msg.textContent = '';
+
+          try {
+            const url = '/api/admin/' + (type === 'news' ? 'news' : 'sightings') + '/' +
+              encodeURIComponent(rec.id) + '/edit';
+            const res = await authFetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+              applyEdit(type, rec, payload);
+              msg.className = 'edit-msg ok';
+              msg.textContent = 'Uložené ✓';
+              setTimeout(() => { contentState.openId = null; renderContentTable(); }, 600);
+            } else {
+              msg.textContent = data.error || 'Neznáma chyba pri ukladaní.';
+              saveBtn.disabled = false;
+            }
+          } catch (err) {
+            msg.textContent = 'Chyba siete: ' + err.message;
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
+      function numOrNull(v) {
+        if (v === '' || v == null) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      // Premietne uložené hodnoty späť do pamäte, nech tabuľka hneď sedí.
+      function applyEdit(type, rec, p) {
+        const lat = numOrNull(p.lat), lng = numOrNull(p.lng);
+        const hasCoords = lat != null && lng != null;
+        if (type === 'news') {
+          Object.assign(rec, {
+            title: p.title || null, source: p.source || null,
+            published_at: p.publishedAt, status: p.status, category: p.category,
+            place: p.place || null, lat, lng, has_coords: hasCoords,
+            link: p.link || null, snippet: p.snippet || null,
+          });
+        } else {
+          Object.assign(rec, {
+            location: p.location || null, reported_at: p.reportedAt,
+            source: p.source || null, lat, lng, has_coords: hasCoords,
+            url: p.url || null, note: p.note || null,
+          });
+        }
+      }
+
+      async function loadContent() {
+        const wrap = document.getElementById('contentTableWrap');
+        wrap.innerHTML = '<div class="content-empty">Načítavam…</div>';
+        try {
+          const res = await authFetch('/api/admin/content');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          contentState.news = data.news || [];
+          contentState.sightings = data.sightings || [];
+          contentState.loaded = true;
+          contentState.openId = null;
+          setText('segNewsCount', contentState.news.length);
+          setText('segSightingsCount', contentState.sightings.length);
+          renderContentTable();
+        } catch (err) {
+          wrap.innerHTML = '<div class="content-empty">Nepodarilo sa načítať obsah: ' + esc(err.message) + '</div>';
+        }
+      }
+
+      // Toolbar wiring
+      document.getElementById('contentTypeToggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('.seg-btn');
+        if (!btn) return;
+        contentState.type = btn.dataset.type;
+        contentState.openId = null;
+        document.querySelectorAll('#contentTypeToggle .seg-btn')
+          .forEach((b) => b.classList.toggle('active', b === btn));
+        document.getElementById('contentStatusFilter').hidden = contentState.type !== 'news';
+        renderContentTable();
+      });
+      document.getElementById('contentSearch').addEventListener('input', (e) => {
+        contentState.search = e.target.value;
+        contentState.openId = null;
+        renderContentTable();
+      });
+      document.getElementById('contentStatusFilter').addEventListener('change', (e) => {
+        contentState.status = e.target.value;
+        contentState.openId = null;
+        renderContentTable();
+      });
+      document.getElementById('contentReload').addEventListener('click', loadContent);
     </script>
   </body>
 </html>

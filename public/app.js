@@ -3,7 +3,7 @@
 // (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
-const API_VERSION = "news-map-v5";
+const API_VERSION = "news-map-v6";
 const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -156,6 +156,127 @@ function isToday(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
   return isSameLocalDate(d, new Date());
+}
+
+function formatNum(value) {
+  return Number(value || 0).toLocaleString("sk-SK");
+}
+
+function pluralSk(value, one, few, many) {
+  const n = Math.abs(Number(value));
+  if (n === 1) return one;
+  if (n >= 2 && n <= 4) return few;
+  return many;
+}
+
+function countPhrase(value, forms) {
+  return `${formatNum(value)} ${pluralSk(value, forms[0], forms[1], forms[2])}`;
+}
+
+function joinSk(parts) {
+  if (parts.length <= 1) return parts[0] || "";
+  return `${parts.slice(0, -1).join(", ")} a ${parts[parts.length - 1]}`;
+}
+
+function startOfLocalDay(offsetDays = 0) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + offsetDays);
+  return date.getTime();
+}
+
+function countItemsBetween(items, getIso, start, end) {
+  return (items || []).filter((item) => {
+    const time = itemTime(getIso(item));
+    return time !== null && time >= start && time < end;
+  }).length;
+}
+
+function trendText(current, previous) {
+  if (current === 0 && previous === 0) return "bez záznamov aj minulý týždeň";
+  if (previous === 0) return "minulý týždeň bez hlásení";
+  const delta = current - previous;
+  if (delta === 0) return "rovnako ako minulý týždeň";
+  const pct = Math.max(1, Math.round((Math.abs(delta) / previous) * 100));
+  return delta > 0
+    ? `o ${pct} % viac ako min. týždeň`
+    : `o ${pct} % menej ako min. týždeň`;
+}
+
+function placeLabel(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return text.split(/[;,|]/)[0].trim();
+}
+
+function placeKey(value) {
+  return normalizeSearchText(placeLabel(value))
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function topSightingPlace(days = 30) {
+  const start = startOfLocalDay(-(days - 1));
+  const counts = new Map();
+
+  for (const sighting of state.sightings) {
+    const label = placeLabel(sighting.location);
+    const key = placeKey(label);
+    if (!key) continue;
+
+    const time = itemTime(sighting.reportedAt);
+    if (time !== null && time < start) continue;
+
+    const entry = counts.get(key) || { label, count: 0, latest: 0 };
+    entry.count += 1;
+    entry.latest = Math.max(entry.latest, time || 0);
+    counts.set(key, entry);
+  }
+
+  const top = Array.from(counts.values()).sort(
+    (a, b) => b.count - a.count || b.latest - a.latest
+  )[0];
+
+  if (!top) return "";
+  return top.count > 1 ? `${top.label} (${top.count}x)` : top.label;
+}
+
+function setText(id, value) {
+  const node = $(id);
+  if (node) node.textContent = value;
+}
+
+function homeInsightCopy({ todaySightings, todayNews, weekSightings, mapPoints, topPlace }) {
+  const todayParts = [];
+  if (todaySightings > 0) {
+    todayParts.push(countPhrase(todaySightings, ["hlásenie", "hlásenia", "hlásení"]));
+  }
+  if (todayNews > 0) {
+    todayParts.push(countPhrase(todayNews, ["správa", "správy", "správ"]));
+  }
+
+  if (todayParts.length > 0) {
+    return `Dnes pribudlo ${joinSk(todayParts)}. Mapa teraz pokrýva ${countPhrase(
+      mapPoints,
+      ["bod", "body", "bodov"]
+    )}.`;
+  }
+
+  if (weekSightings > 0 && topPlace) {
+    return `Za posledných 7 dní evidujeme ${countPhrase(
+      weekSightings,
+      ["hlásenie", "hlásenia", "hlásení"]
+    )}. Najčastejšie sa opakuje ${topPlace}.`;
+  }
+
+  if (mapPoints > 0) {
+    return `Dáta sú načítané, dnes zatiaľ bez nových hlásení. Na mape zostáva ${countPhrase(
+      mapPoints,
+      ["bod", "body", "bodov"]
+    )}.`;
+  }
+
+  return "Dáta sa práve načítavajú. Po obnove tu uvidíte najdôležitejší denný prehľad.";
 }
 
 function latestIso(...values) {
@@ -602,13 +723,58 @@ function renderNews() {
 
 // --- Štatistiky ---
 function renderStats() {
-  $("statSightings").textContent = state.sightings.filter((s) =>
-    isToday(s.reportedAt)
-  ).length;
-  $("statNews").textContent = state.news.filter(
-    (n) => n.category !== "warning" && isToday(n.date)
-  ).length;
-  $("statUpdated").textContent = fmtTime(state.updatedAt) || "-";
+  const todaySightings = state.sightings.filter((s) => isToday(s.reportedAt)).length;
+  const todayNews = state.news.filter((n) => isToday(n.date)).length;
+  const currentWeekStart = startOfLocalDay(-6);
+  const previousWeekStart = startOfLocalDay(-13);
+  const now = Date.now() + 1;
+  const weekSightings = countItemsBetween(
+    state.sightings,
+    (s) => s.reportedAt,
+    currentWeekStart,
+    now
+  );
+  const previousWeekSightings = countItemsBetween(
+    state.sightings,
+    (s) => s.reportedAt,
+    previousWeekStart,
+    currentWeekStart
+  );
+  const mappedSightings = state.sightings.filter((s) => s.hasCoords).length;
+  const warningsOnMap = state.news.filter((n) => newsMapPoint(n)).length;
+  const mapPoints = mappedSightings + warningsOnMap;
+  const topPlace = topSightingPlace();
+
+  setText("statSightings", formatNum(todaySightings));
+  setText(
+    "statSightingsLabel",
+    `${pluralSk(todaySightings, "hlásenie", "hlásenia", "hlásení")} dnes`
+  );
+  setText("statNews", formatNum(todayNews));
+  setText("statNewsLabel", `${pluralSk(todayNews, "správa", "správy", "správ")} dnes`);
+  setText("statWeekSightings", formatNum(weekSightings));
+  setText(
+    "statWeekSightingsLabel",
+    `${pluralSk(weekSightings, "hlásenie", "hlásenia", "hlásení")} za 7 dní`
+  );
+  setText("statWeekTrend", trendText(weekSightings, previousWeekSightings));
+  setText("statMappedPoints", formatNum(mapPoints));
+  setText(
+    "statMappedPointsLabel",
+    `${pluralSk(mapPoints, "bod", "body", "bodov")} na mape`
+  );
+  setText(
+    "statWarnings",
+    warningsOnMap
+      ? `${countPhrase(warningsOnMap, ["varovanie", "varovania", "varovaní"])} na mape`
+      : "bez varovaní na mape"
+  );
+  setText("statTopPlace", topPlace ? `najčastejšie: ${topPlace}` : "lokality sa zbierajú");
+  setText("statUpdated", fmtTime(state.updatedAt) || "-");
+  setText(
+    "statHeadline",
+    homeInsightCopy({ todaySightings, todayNews, weekSightings, mapPoints, topPlace })
+  );
 }
 
 function setUpdated(iso) {

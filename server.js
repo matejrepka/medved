@@ -19,6 +19,8 @@ import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
   deleteEmailSubscription,
   hashIp,
+  loadAllNews,
+  loadAllSightings,
   loadBearReports,
   loadEmailSubscriptions,
   loadNewsLogs,
@@ -31,7 +33,9 @@ import {
   saveTumedvedLogs,
   saveWebsiteLog,
   updateBearReportStatus,
+  updateNewsFields,
   updateNewsStatus,
+  updateSightingFields,
   reviewNews,
 } from "./src/db/repository.js";
 
@@ -394,6 +398,44 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("[news review] failed:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// --- Admin: správa obsahu (všetky správy + hlásenia, editácia) ---
+
+app.get("/api/admin/content", adminAuth, async (_req, res) => {
+  try {
+    const [news, sightings] = await Promise.all([loadAllNews(), loadAllSightings()]);
+    res.json({ ok: true, news, sightings });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
+  try {
+    await updateNewsFields(req.params.id, req.body || {});
+    // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
+    await newsStore.loadFromDatabase().catch((err) => {
+      console.error("[news edit] reload failed:", err.message);
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[news edit] failed:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
+  try {
+    await updateSightingFields(req.params.id, req.body || {});
+    await sightingsStore.loadFromDatabase().catch((err) => {
+      console.error("[sighting edit] reload failed:", err.message);
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[sighting edit] failed:", err.message);
     res.status(500).json({ ok: false, error: err.message });
   }
 });
