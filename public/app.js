@@ -1,10 +1,10 @@
-// Medvede na Slovensku — frontend.
+// Kde je Medveď — frontend.
 // Načíta dáta z vlastného API (/api/warnings, /api/news), vykreslí mapu
 // (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
 const API_VERSION = "news-map-v6";
-const MAP_LAYER_IDS = ["standard", "tourist", "satellite"];
+const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
 const state = {
   sightings: [],
   news: [],
@@ -41,6 +41,15 @@ const TILES = {
       subdomains: "abcd",
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  classic: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 19,
+      subdomains: "abc",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     },
   },
   tourist: {
@@ -297,12 +306,14 @@ function updatedText(iso) {
 
 function relativeDate(iso) {
   if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const day = 86400000;
-  if (diff < 0) return "";
-  if (diff < day) return "dnes";
-  if (diff < 2 * day) return "včera";
-  const days = Math.floor(diff / day);
+  const now = new Date();
+  const date = new Date(iso);
+  if (isNaN(date)) return "";
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+  if (date >= todayStart) return "dnes";
+  if (date >= yesterdayStart) return "včera";
+  const days = Math.floor((now - date) / 86400000);
   if (days < 31) return `pred ${days} dňami`;
   const months = Math.floor(days / 30);
   return `pred ${months} ${months === 1 ? "mesiacom" : "mesiacmi"}`;

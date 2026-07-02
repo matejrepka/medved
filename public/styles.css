@@ -1,5 +1,5 @@
 /* ============================================================
-  Medvede na Slovensku — editorial / minimalistic redesign
+  Kde je Medveď — editorial / minimalistic redesign
    Type:  Newsreader (serif headings) + Hanken Grotesk (UI)
    Accent: single forest green, locked across the whole page
    Themes: light + dark via [data-theme] CSS variables
@@ -435,197 +435,50 @@ main {
   color: var(--ink-3);
 }
 
+/* Compact, quiet stat strip — the map is the focus, not the numbers. */
 .home-insights {
-  display: grid;
-  grid-template-columns: minmax(240px, 0.88fr) minmax(0, 1.12fr);
-  align-items: stretch;
-  margin-top: clamp(26px, 4vw, 40px);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 54%, transparent);
-}
-
-.insight-main {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding: clamp(18px, 3vw, 26px) clamp(18px, 3vw, 28px) clamp(18px, 3vw, 26px) 0;
-  border-right: 1px solid var(--line);
-}
-
-.insight-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  width: fit-content;
-  margin-bottom: 12px;
-  padding: 4px 9px;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
-  border-radius: 8px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.insight-eyebrow i {
-  font-size: 1rem;
-}
-
-.insight-value-row {
-  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 14px 28px;
+  margin-top: clamp(20px, 3vw, 32px);
+  padding-top: clamp(15px, 2.2vw, 22px);
+  border-top: 1px solid var(--line);
+}
+
+.home-insights .stats {
+  margin-top: 0;
   min-width: 0;
 }
 
-.insight-value {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: clamp(2.4rem, 6vw, 4.15rem);
-  font-weight: 500;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-.insight-unit {
-  max-width: 9ch;
-  color: var(--ink-2);
-  font-size: 0.94rem;
-  font-weight: 650;
-  line-height: 1.15;
-}
-
-.insight-copy {
-  margin: 13px 0 0;
-  max-width: 42ch;
-  color: var(--ink-2);
-  font-size: 0.94rem;
-  line-height: 1.55;
-}
-
-.insight-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-width: 0;
-}
-
-.insight-metric {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-  min-width: 0;
-  padding: clamp(16px, 2.4vw, 20px);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.insight-metric:nth-child(2n) {
-  border-right: 0;
-}
-
-.insight-metric:nth-last-child(-n + 2) {
-  border-bottom: 0;
-}
-
-.insight-metric > i {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: 8px;
-  font-size: 1.1rem;
-}
-
-.metric-value {
-  display: block;
-  color: var(--ink);
-  font-family: var(--font-serif);
-  font-size: clamp(1.35rem, 2.6vw, 1.8rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.015em;
-  font-variant-numeric: tabular-nums;
-}
-
-.metric-label,
-.metric-note {
-  display: block;
-  margin-top: 5px;
-  color: var(--ink-3);
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.metric-label {
-  color: var(--ink-2);
-  font-weight: 650;
-}
-
-.metric-link {
+.stat-more {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  width: fit-content;
+  gap: 5px;
   color: var(--accent);
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 650;
   text-decoration: none;
+  white-space: nowrap;
 }
 
-.metric-link:hover {
-  text-decoration: none;
+.stat-more:hover {
   color: var(--accent-hover);
 }
 
-.metric-link i {
+.stat-more i {
   font-size: 0.95em;
 }
 
-@media (max-width: 980px) {
-  .home-insights {
-    grid-template-columns: 1fr;
-  }
-
-  .insight-main {
-    padding-right: 0;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-}
-
 @media (max-width: 520px) {
-  .insight-value-row {
-    flex-wrap: wrap;
-    gap: 8px 10px;
+  .home-insights .stat {
+    padding-right: clamp(14px, 4vw, 22px);
+    margin-right: clamp(14px, 4vw, 22px);
   }
 
-  .insight-unit {
-    max-width: none;
-  }
-
-  .insight-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .insight-metric {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .insight-metric:nth-last-child(-n + 2) {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .insight-metric:last-child {
-    border-bottom: 0;
+  .home-insights .stat-num {
+    font-size: 1.4rem;
   }
 }
 

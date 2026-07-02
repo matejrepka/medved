@@ -1,4 +1,4 @@
-// Medvede na Slovensku — štatistiky.
+// Kde je Medveď — štatistiky.
 
 const state = {
   report: null,
