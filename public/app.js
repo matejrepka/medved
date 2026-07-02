@@ -314,7 +314,7 @@ function relativeDate(iso) {
   if (date >= todayStart) return "dnes";
   if (date >= yesterdayStart) return "včera";
   const days = Math.floor((now - date) / 86400000);
-  if (days < 31) return `pred ${days} dňami`;
+  if (days < 31) return `pred ${days} ${days === 1 ? "dňom" : "dňami"}`;
   const months = Math.floor(days / 30);
   return `pred ${months} ${months === 1 ? "mesiacom" : "mesiacmi"}`;
 }
@@ -386,6 +386,16 @@ const filterEnd = $("filterEnd");
 const clearFiltersBtn = $("clearFiltersBtn");
 const contentSearch = $("contentSearch");
 const layerInputs = Array.from(document.querySelectorAll('input[name="mapLayer"]'));
+
+function todayInputDate() {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 10);
+}
+
+// „Do" je predvolene dnešný dátum.
+filterEnd.value = todayInputDate();
+state.filters.endDate = filterEnd.value;
 
 function dateInputToTime(value, endOfDay = false) {
   if (!value) return null;
@@ -522,13 +532,15 @@ function syncDateFilterLimits() {
     return date.toISOString().slice(0, 10);
   };
 
+  const today = todayInputDate();
   const min = toInputDate(Math.min(...datedItems));
   const max = toInputDate(Math.max(...datedItems));
+  const maxEnd = max > today ? max : today;
 
   filterStart.min = min;
-  filterStart.max = state.filters.endDate || max;
+  filterStart.max = state.filters.endDate || maxEnd;
   filterEnd.min = state.filters.startDate || min;
-  filterEnd.max = max;
+  filterEnd.max = maxEnd;
 }
 
 function updateDateFilters(changedInput) {
@@ -562,7 +574,7 @@ filterStart.addEventListener("change", () => updateDateFilters("start"));
 filterEnd.addEventListener("change", () => updateDateFilters("end"));
 clearFiltersBtn.addEventListener("click", () => {
   filterStart.value = "";
-  filterEnd.value = "";
+  filterEnd.value = todayInputDate();
   updateDateFilters();
 });
 

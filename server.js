@@ -619,6 +619,17 @@ app.post("/api/admin/refresh", adminAuth, async (_req, res) => {
   res.status(result.ok ? 200 : 502).json({ ...result, message });
 });
 
+// Servíruje @vercel/analytics ako ES modul priamo z node_modules, nech ho
+// vieme importovať v prehliadači bez bundlera (public/ je čistý HTML/JS).
+app.use(
+  "/vendor/analytics",
+  express.static(path.join(__dirname, "node_modules", "@vercel", "analytics", "dist"), {
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "public, max-age=3600");
+    },
+  })
+);
+
 app.use(
   express.static(path.join(__dirname, "public"), {
     etag: true,

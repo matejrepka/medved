@@ -16,6 +16,7 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@vercel/analytics": "^2.0.1",
     "compression": "^1.8.1",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",

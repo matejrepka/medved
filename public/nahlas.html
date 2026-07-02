@@ -40,13 +40,13 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260702" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png" alt="" aria-hidden="true" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260702" alt="" aria-hidden="true" />
         </span>
         <span class="brand-name">Kde je Medveď</span>
       </a>
@@ -175,9 +175,9 @@
     <footer class="site-footer">
       <div class="footer-inner">
         <p>
-          Varovania slúžia ako pomocná orientácia z overených hlásení používateľov,
-          verejných zdrojov a správ. Nejde o úplný ani vyčerpávajúci prehľad a výskyt
-          medveďov môže byť aj mimo zaznačených miest.
+          Varovania vychádzajú z overených hlásení používateľov. Slúžia ako pomocná
+          orientácia a nemusia byť úplné. Medvede sa môžu vyskytnúť aj mimo zaznačených
+          miest.
         </p>
         <nav class="footer-links" aria-label="Právne informácie">
           <a href="/privacy">Ochrana súkromia</a>
@@ -464,6 +464,10 @@
           submitBtn.querySelector('span').textContent = 'Odoslať hlásenie';
         }
       });
+    </script>
+    <script type="module">
+      import { inject } from "/vendor/analytics/index.mjs";
+      inject();
     </script>
   </body>
 </html>

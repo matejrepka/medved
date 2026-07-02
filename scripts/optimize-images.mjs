@@ -57,7 +57,7 @@ async function buildMascots() {
 }
 
 async function buildFavicon() {
-  const src = path.join(SRC, "favicon.png");
+  const src = path.join(SRC, "mascot", "bear-head-mark.png");
   const out = path.join(ROOT, "public", "favicon.png");
   await sharp(src)
     .resize(256, 256, { fit: "inside" })
