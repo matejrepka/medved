@@ -21,6 +21,7 @@ import {
   hashIp,
   loadAllNews,
   loadAllSightings,
+  loadApprovedBearReports,
   loadBearReports,
   loadEmailSubscriptions,
   loadNewsLogs,
@@ -29,6 +30,8 @@ import {
   recordScrapeRun,
   saveBearReport,
   saveEmailSubscription,
+  saveManualNews,
+  saveManualTumedved,
   saveNewsLogs,
   saveTumedvedLogs,
   saveWebsiteLog,
@@ -115,6 +118,35 @@ app.get("/api/sightings", async (_req, res) => {
   }
 });
 
+// Zlúčený zoznam medvedích varovaní: scrapované hlásenia (tumedved) + schválené
+// hlásenia od používateľov / manuálne pridané varovania. Každá položka nesie
+// sourceType, nech frontend vie zobraziť pôvod (napr. štítok "tumedved.sk").
+async function loadWarnings() {
+  const [scraped, reports] = await Promise.all([
+    sightingsStore.get(),
+    loadApprovedBearReports().catch((err) => {
+      console.error("[warnings] reports load failed:", err.message);
+      return [];
+    }),
+  ]);
+
+  return [
+    ...scraped.map((item) => ({ sourceType: "tumedved", ...item })),
+    ...reports,
+  ].sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
+}
+
+app.get("/api/warnings", async (_req, res) => {
+  try {
+    const items = await loadWarnings();
+    // Krátka cache — schválené hlásenie sa má na webe objaviť rýchlo.
+    res.set("Cache-Control", "public, max-age=60");
+    res.json({ updatedAt: sightingsStore.meta.fetchedAt, count: items.length, items });
+  } catch (err) {
+    res.status(502).json({ error: "Nepodarilo sa načítať varovania", detail: err.message });
+  }
+});
+
 app.get("/api/news", async (_req, res) => {
   try {
     const data = isSupabaseConfigured() ? await loadNewsLogs() : await newsStore.get();
@@ -139,7 +171,7 @@ app.get("/api/news", async (_req, res) => {
 app.get("/api/stats", async (_req, res) => {
   try {
     const [sightings, news, gz] = await Promise.all([
-      sightingsStore.get(),
+      loadWarnings(),
       newsStore.get(),
       loadPlaces(),
     ]);
@@ -404,7 +436,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
 
 // --- Admin: správa obsahu (všetky správy + hlásenia, editácia) ---
 
-app.get("/api/admin/content", adminAuth, async (_req, res) => {
+app.get(“/api/admin/content”, adminAuth, async (_req, res) => {
   try {
     const [news, sightings] = await Promise.all([loadAllNews(), loadAllSightings()]);
     res.json({ ok: true, news, sightings });
@@ -413,29 +445,125 @@ app.get("/api/admin/content", adminAuth, async (_req, res) => {
   }
 });
 
-app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
+app.post(“/api/admin/news/:id/edit”, adminAuth, async (req, res) => {
   try {
     await updateNewsFields(req.params.id, req.body || {});
-    // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
     await newsStore.loadFromDatabase().catch((err) => {
-      console.error("[news edit] reload failed:", err.message);
+      console.error(“[news edit] reload failed:”, err.message);
     });
     res.json({ ok: true });
   } catch (err) {
-    console.error("[news edit] failed:", err.message);
+    console.error(“[news edit] failed:”, err.message);
     res.status(500).json({ ok: false, error: err.message });
   }
 });
 
-app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
+app.post(“/api/admin/sightings/:id/edit”, adminAuth, async (req, res) => {
   try {
     await updateSightingFields(req.params.id, req.body || {});
     await sightingsStore.loadFromDatabase().catch((err) => {
-      console.error("[sighting edit] reload failed:", err.message);
+      console.error(“[sighting edit] reload failed:”, err.message);
     });
     res.json({ ok: true });
   } catch (err) {
-    console.error("[sighting edit] failed:", err.message);
+    console.error(“[sighting edit] failed:”, err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Manuálne pridanie položky adminom. Typ určuje cieľovú tabuľku:
+//   news         -> news_logs (bežný článok, len v zozname správ)
+//   news-warning -> news_logs (medvedie varovanie zo správ, na mape)
+//   tumedved     -> tumedved_logs (hlásenie so štítkom tumedved.sk)
+//   warning      -> bear_reports so statusom approved (všeobecné varovanie)
+app.post(“/api/admin/warnings”, adminAuth, async (req, res) => {
+  const { type, title, location, description, source, link, place, date } = req.body || {};
+
+  if (![“news”, “news-warning”, “tumedved”, “warning”].includes(type)) {
+    return res.status(400).json({ ok: false, error: “Neplatný typ položky.” });
+  }
+
+  const reportedAt = date ? new Date(date) : new Date();
+  if (Number.isNaN(reportedAt.getTime())) {
+    return res.status(400).json({ ok: false, error: “Neplatný dátum.” });
+  }
+
+  try {
+    let geo = null;
+    const placeName = typeof place === “string” ? place.trim() : “”;
+    if (placeName) {
+      const gz = await loadPlaces();
+      geo = lookupPlaceByName(placeName, gz);
+      if (!geo) {
+        return res.status(400).json({
+          ok: false,
+          error: `Obec „${placeName}” sa nenašla v zozname slovenských obcí. Skontrolujte názov.`,
+        });
+      }
+    }
+
+    if (type === “news” || type === “news-warning”) {
+      const cleanTitle = typeof title === “string” ? title.trim() : “”;
+      if (!cleanTitle) {
+        return res.status(400).json({ ok: false, error: “Titulok je povinný.” });
+      }
+      if (type === “news-warning” && !geo) {
+        return res
+          .status(400)
+          .json({ ok: false, error: “Pri medvedom varovaní zo správ zadajte lokalitu (obec).” });
+      }
+
+      await saveManualNews({
+        id: `manual-news-${Date.now()}`,
+        source: source?.trim() || “Manuálne pridané”,
+        title: cleanTitle,
+        link: link?.trim() || null,
+        snippet: description?.trim() || null,
+        publishedAt: reportedAt.toISOString(),
+        category: type === “news-warning” ? “warning” : “article”,
+        place: type === “news-warning” ? geo.name : null,
+        lat: type === “news-warning” ? geo.lat : null,
+        lng: type === “news-warning” ? geo.lng : null,
+      });
+
+      await newsStore.loadFromDatabase().catch((err) => {
+        console.error(“[manual news] reload failed:”, err.message);
+      });
+    } else {
+      const loc = (typeof location === “string” && location.trim()) || geo?.name || “”;
+      if (!loc) {
+        return res.status(400).json({ ok: false, error: “Lokalita je povinná.” });
+      }
+
+      if (type === “tumedved”) {
+        await saveManualTumedved({
+          id: `manual-tm-${Date.now()}`,
+          location: loc,
+          note: description?.trim() || null,
+          lat: geo?.lat ?? null,
+          lng: geo?.lng ?? null,
+          reportedAt: reportedAt.toISOString(),
+          url: link?.trim() || null,
+        });
+
+        await sightingsStore.loadFromDatabase().catch((err) => {
+          console.error(“[manual tumedved] reload failed:”, err.message);
+        });
+      } else {
+        await saveBearReport({
+          location: loc,
+          description: description?.trim() || null,
+          lat: geo?.lat ?? null,
+          lng: geo?.lng ?? null,
+          reportedDate: reportedAt.toISOString(),
+          status: “approved”,
+        });
+      }
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(“[manual warning] save failed:”, err.message);
     res.status(500).json({ ok: false, error: err.message });
   }
 });

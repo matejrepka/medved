@@ -1,6 +1,6 @@
 // Medvede na Slovensku — frontend.
-// Načíta dáta z vlastného API (/api/sightings, /api/news), vykreslí mapu
-// (Leaflet) a zoznamy hlásení a správ. Podporuje svetlý/tmavý režim.
+// Načíta dáta z vlastného API (/api/warnings, /api/news), vykreslí mapu
+// (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
 const API_VERSION = "news-map-v6";
@@ -76,8 +76,8 @@ function setTiles(layerId) {
   syncMapLayerControls();
 }
 
-// Čisté značky namiesto emoji. Kruhová = hlásenie (tumedved), hranatá inej farby
-// = medvedie varovanie zo správ — vizuálne odlíšené od hlásení.
+// Čisté značky namiesto emoji. Kruhová = medvedie varovanie (overené hlásenie),
+// hranatá inej farby = medvedie varovanie zo správ — vizuálne odlíšené.
 const pinIcon = L.divIcon({
   className: "",
   html: '<div class="pin"></div>',
@@ -561,24 +561,35 @@ for (const input of layerInputs) {
   });
 }
 
-// --- Vykreslenie hlásení ---
+// --- Vykreslenie varovaní ---
+// Každé varovanie nesie sourceType — štítok ukáže pôvod (tumedved.sk /
+// overené hlásenie od používateľa), ale zoznam je jeden spoločný.
+function warningSourceLabel(s) {
+  if (s.sourceType === "tumedved") return "tumedved.sk";
+  if (s.sourceType === "report") return "overené hlásenie";
+  return s.source || "";
+}
+
 function renderSightings() {
   const items = filteredSightings();
   if (items.length === 0) {
     elSightings.innerHTML = `<div class="empty"><i class="ph ph-binoculars"></i>${
       hasSearchFilter() || hasDateFilter()
-        ? "Žiadne hlásenia nezodpovedajú filtrom."
-        : "Zatiaľ žiadne hlásenia."
+        ? "Žiadne varovania nezodpovedajú filtrom."
+        : "Zatiaľ žiadne varovania."
     }</div>`;
     return;
   }
 
   elSightings.innerHTML = items
     .map(
-      (s, i) => `
+      (s, i) => {
+        const sourceLabel = warningSourceLabel(s);
+        return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         <p class="card-title">${esc(s.location)}</p>
         <div class="card-meta">
+          ${sourceLabel ? `<span class="meta-source">${esc(sourceLabel)}</span>` : ""}
           <span class="meta-date">${esc(fmtDate(s.reportedAt, true))}</span>
           ${
             relativeDate(s.reportedAt)
@@ -587,10 +598,15 @@ function renderSightings() {
           }
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        <a class="card-link" href="${esc(s.url)}" target="_blank" rel="noopener">
-          Detail na tumedved.sk <i class="ph ph-arrow-up-right"></i>
-        </a>
-      </article>`
+        ${
+          s.url
+            ? `<a class="card-link" href="${esc(s.url)}" target="_blank" rel="noopener">
+          Detail zdroja <i class="ph ph-arrow-up-right"></i>
+        </a>`
+            : ""
+        }
+      </article>`;
+      }
     )
     .join("");
 
@@ -612,18 +628,19 @@ function renderMarkers() {
   for (const s of filteredSightings()) {
     if (!s.hasCoords) continue;
     const marker = L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map);
+    const sourceLabel = warningSourceLabel(s);
     marker.bindPopup(`
       <p class="popup-loc">${esc(s.location)}</p>
-      <p class="popup-meta">${esc(fmtDate(s.reportedAt, true))}</p>
+      <p class="popup-meta">${esc(sourceLabel)}${sourceLabel ? " · " : ""}${esc(fmtDate(s.reportedAt, true))}</p>
       ${s.note ? `<p class="popup-note">${esc(s.note)}</p>` : ""}
-      <a class="popup-link" href="${esc(s.url)}" target="_blank" rel="noopener">Detail na tumedved.sk →</a>
+      ${s.url ? `<a class="popup-link" href="${esc(s.url)}" target="_blank" rel="noopener">Detail zdroja →</a>` : ""}
     `);
     state.markers.set(s.id, marker);
     bounds.push([s.lat, s.lng]);
   }
 
   // Medvedie varovania zo správ — admin im priradil lokalitu. Na mape majú
-  // vlastnú (hranatú, inak sfarbenú) značku, odlíšenú od hlásení z tumedved.
+  // vlastnú (hranatú, inak sfarbenú) značku, odlíšenú od overených hlásení.
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
@@ -645,7 +662,7 @@ function renderMarkers() {
   const mapMeta = $("mapMeta");
   if (mapMeta) {
     const sightOnMap = bounds.length - warningsOnMap;
-    mapMeta.textContent = `${sightOnMap} hlásení · ${warningsOnMap} zo správ${
+    mapMeta.textContent = `${sightOnMap} varovaní · ${warningsOnMap} zo správ${
       hasDateFilter() || hasSearchFilter() ? " podľa filtrov" : " na mape"
     }`;
   }
@@ -786,7 +803,7 @@ async function loadData() {
   // News načítavame bez cache, aby sa moderácia kategórie/lokality hneď
   // prejavila aj na mape.
   const [sRes, nRes] = await Promise.allSettled([
-    fetch("/api/sightings").then((r) => r.json()),
+    fetch(`/api/warnings?v=${API_VERSION}`).then((r) => r.json()),
     fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
 
@@ -796,7 +813,7 @@ async function loadData() {
     renderMarkers();
     renderSightings();
   } else {
-    elSightings.innerHTML = `<div class="error-box">Nepodarilo sa načítať hlásenia. Skúste to znova.</div>`;
+    elSightings.innerHTML = `<div class="error-box">Nepodarilo sa načítať varovania. Skúste to znova.</div>`;
   }
 
   if (nRes.status === "fulfilled" && nRes.value.items) {

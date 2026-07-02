@@ -600,6 +600,50 @@
       .review-msg:empty { display: none; }
       [data-theme="dark"] .review-msg { color: #f87171; }
 
+      /* ---- Manual add form ---- */
+      .add-form {
+        max-width: 560px;
+      }
+      .add-field {
+        margin-bottom: 1.1rem;
+      }
+      .add-field[hidden] { display: none; }
+      .add-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 6px;
+      }
+      .add-label i { color: var(--accent); }
+      .add-input {
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        resize: vertical;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .add-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .add-input::placeholder { color: var(--ink-3); }
+      .add-input-date { max-width: 260px; }
+      .add-hint {
+        margin: 5px 0 0;
+        font-size: 0.75rem;
+        color: var(--ink-3);
+      }
+      .add-type { margin: 0; padding-top: 0; border-top: 0; }
+
       .empty-state {
         text-align: center;
         padding: 3rem 1.5rem;
@@ -1036,6 +1080,9 @@
             <i class="ph ph-newspaper"></i> Správy
             <span class="tab-count" id="tabNewsCount">0</span>
           </button>
+          <button class="admin-tab" data-tab="add">
+            <i class="ph ph-plus-circle"></i> Pridať
+          </button>
           <button class="admin-tab" data-tab="content">
             <i class="ph ph-table"></i> Databáza
           </button>
@@ -1113,6 +1160,87 @@
             </div>
             <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
             <div id="pendingNewsList"></div>
+          </div>
+
+          <!-- Manual add -->
+          <div class="tab-panel" id="panel-add">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Pridať položku manuálne</h2>
+              </div>
+            </div>
+            <p class="section-lede">
+              Manuálne pridaná položka sa uloží ako schválená a hneď sa zobrazí na webe.
+            </p>
+
+            <form id="addForm" class="add-form" novalidate>
+              <div class="add-field">
+                <span class="add-label"><i class="ph ph-tag"></i> Typ položky</span>
+                <div class="review-cat add-type">
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="warning" checked />
+                    <i class="ph ph-warning-circle"></i> Varovanie
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="tumedved" />
+                    <i class="ph ph-paw-print"></i> Hlásenie (tumedved.sk)
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="news-warning" />
+                    <i class="ph ph-megaphone"></i> Medvedie varovanie zo správ
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="news" />
+                    <i class="ph ph-newspaper"></i> Správa / článok
+                  </label>
+                </div>
+              </div>
+
+              <div class="add-field" data-field="title" hidden>
+                <label class="add-label" for="addTitle"><i class="ph ph-text-t"></i> Titulok *</label>
+                <input class="add-input" id="addTitle" type="text" placeholder="Titulok správy / články" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="location">
+                <label class="add-label" for="addLocation"><i class="ph ph-map-pin"></i> Lokalita *</label>
+                <input class="add-input" id="addLocation" type="text" placeholder="napr. Ružomberok - Čutkovská dolina" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="place">
+                <label class="add-label" for="addPlace"><i class="ph ph-map-trifold"></i> Obec (pre mapu)</label>
+                <input class="add-input" id="addPlace" type="text" placeholder="napr. Ružomberok" autocomplete="off" />
+                <p class="add-hint" id="addPlaceHint"></p>
+              </div>
+
+              <div class="add-field" data-field="description">
+                <label class="add-label" for="addDescription"><i class="ph ph-note"></i> Popis / poznámka</label>
+                <textarea class="add-input" id="addDescription" rows="3" placeholder="Krátky popis…"></textarea>
+              </div>
+
+              <div class="add-field" data-field="source" hidden>
+                <label class="add-label" for="addSource"><i class="ph ph-newspaper-clipping"></i> Zdroj (názov média)</label>
+                <input class="add-input" id="addSource" type="text" placeholder="napr. TASR, Aktuality.sk" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="link" hidden>
+                <label class="add-label" for="addLink"><i class="ph ph-link"></i> Odkaz (URL)</label>
+                <input class="add-input" id="addLink" type="url" placeholder="https://…" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="date">
+                <label class="add-label" for="addDate"><i class="ph ph-calendar-blank"></i> Dátum a čas</label>
+                <input class="add-input add-input-date" id="addDate" type="datetime-local" />
+                <p class="add-hint">Ak necháte prázdne, použije sa aktuálny čas.</p>
+              </div>
+
+              <div class="action-bar">
+                <button type="submit" class="btn-primary" id="addBtn">
+                  <i class="ph ph-plus-circle"></i>
+                  <span>Pridať položku</span>
+                </button>
+                <div id="addMsg" class="status-msg"></div>
+              </div>
+            </form>
           </div>
 
           <!-- Content management -->
@@ -1683,6 +1811,105 @@
       });
       document.getElementById('approveAllNews').addEventListener('click', function() {
         approveAll('news', 'pendingNewsList', this);
+      });
+
+      // --- Manuálne pridanie položky ---
+      // Ktoré polia formulára platia pre ktorý typ. 'warning' ide do bear_reports
+      // (bez URL stĺpca), preto pri ňom odkaz skrývame.
+      const ADD_FIELD_VISIBILITY = {
+        'warning':      { title: false, location: true,  place: true,  description: true, source: false, link: false, date: true },
+        'tumedved':     { title: false, location: true,  place: true,  description: true, source: false, link: true,  date: true },
+        'news-warning': { title: true,  location: false, place: true,  description: true, source: true,  link: true,  date: true },
+        'news':         { title: true,  location: false, place: false, description: true, source: true,  link: true,  date: true },
+      };
+
+      const addForm = document.getElementById('addForm');
+      const addBtn = document.getElementById('addBtn');
+      const addMsg = document.getElementById('addMsg');
+      const addPlaceHint = document.getElementById('addPlaceHint');
+
+      function syncAddForm() {
+        const type = addForm.addType.value;
+        const vis = ADD_FIELD_VISIBILITY[type];
+        addForm.querySelectorAll('[data-field]').forEach(el => {
+          el.hidden = !vis[el.dataset.field];
+        });
+        addPlaceHint.textContent = type === 'news-warning'
+          ? 'Povinné — súradnice sa doplnia automaticky z názvu obce a varovanie sa zobrazí na mape.'
+          : 'Voliteľné — ak zadáte obec, položka dostane súradnice a zobrazí sa aj na mape.';
+      }
+
+      addForm.querySelectorAll('input[name="addType"]').forEach(r => {
+        r.addEventListener('change', syncAddForm);
+      });
+      syncAddForm();
+
+      function showAddMessage(text, ok) {
+        addMsg.textContent = text;
+        addMsg.className = 'status-msg ' + (ok ? 'success' : 'error');
+      }
+
+      addForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        addMsg.className = 'status-msg';
+        addMsg.textContent = '';
+
+        const type = addForm.addType.value;
+        const vis = ADD_FIELD_VISIBILITY[type];
+        const val = (id) => document.getElementById(id).value.trim();
+
+        if (vis.title && !val('addTitle')) {
+          showAddMessage('Titulok je povinný.', false);
+          document.getElementById('addTitle').focus();
+          return;
+        }
+        if (vis.location && !val('addLocation')) {
+          showAddMessage('Lokalita je povinná.', false);
+          document.getElementById('addLocation').focus();
+          return;
+        }
+        if (type === 'news-warning' && !val('addPlace')) {
+          showAddMessage('Pri varovaní zo správ zadajte obec.', false);
+          document.getElementById('addPlace').focus();
+          return;
+        }
+
+        const payload = {
+          type,
+          title: vis.title ? val('addTitle') : null,
+          location: vis.location ? val('addLocation') : null,
+          place: vis.place ? val('addPlace') : null,
+          description: vis.description ? val('addDescription') : null,
+          source: vis.source ? val('addSource') : null,
+          link: vis.link ? val('addLink') : null,
+          date: val('addDate') || null,
+        };
+
+        addBtn.disabled = true;
+        addBtn.querySelector('span').textContent = 'Ukladám…';
+
+        try {
+          const res = await authFetch('/api/admin/warnings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            showAddMessage('Položka bola pridaná a je hneď viditeľná na webe.', true);
+            addForm.reset();
+            syncAddForm();
+            loadStats();
+          } else {
+            showAddMessage('Chyba: ' + (data.error || 'Neznáma chyba'), false);
+          }
+        } catch (err) {
+          showAddMessage('Chyba siete: ' + err.message, false);
+        } finally {
+          addBtn.disabled = false;
+          addBtn.querySelector('span').textContent = 'Pridať položku';
+        }
       });
 
       // --- Subscriptions ---

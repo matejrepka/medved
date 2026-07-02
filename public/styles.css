@@ -41,7 +41,7 @@
   --maxw: 1180px;
 
   --topographic-bg: url("/assets/topographic-bg.png");
-  --topographic-opacity: 0.56;
+  --topographic-opacity: 0.3;
   --topographic-filter: brightness(1.02) contrast(1.06);
 }
 
@@ -71,7 +71,7 @@
   --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.55);
 
-  --topographic-opacity: 0.76;
+  --topographic-opacity: 0.45;
   --topographic-filter: brightness(0.82) contrast(1.12);
 }
 
@@ -113,9 +113,10 @@ body::before {
 
 @media (max-width: 620px) {
   body::before {
-    inset: -9vh -48vw;
+    inset: 0;
     background-position: center top;
-    background-size: 980px auto;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 }
 
