@@ -490,22 +490,18 @@ app.get("/api/sightings", async (_req, res) => {
 });
 
 // Zlúčený zoznam medvedích varovaní: externé mapy + schválené
-// hlásenia od používateľov / manuálne pridané varovania. Každá položka nesie
-// všetky sourceLinks, aby sa pri zhodnom pozorovaní nestratili odkazy na zdroje.
+// hlásenia od používateľov / manuálne pridané varovania. Spravodajské články
+// zostávajú oddelené v /api/news a nikdy sa nepripájajú k sourceLinks hlásenia.
 async function loadWarnings() {
-  const [scraped, reports, news] = await Promise.all([
+  const [scraped, reports] = await Promise.all([
     sightingsStore.get(),
     loadApprovedBearReports().catch((err) => {
       console.error("[warnings] reports load failed:", err.message);
       return [];
     }),
-    newsStore.get().catch((err) => {
-      console.error("[warnings] news merge failed:", err.message);
-      return [];
-    }),
   ]);
 
-  return mergeWarnings({ sightings: scraped, reports, news });
+  return mergeWarnings({ sightings: scraped, reports });
 }
 
 app.get("/api/warnings", async (_req, res) => {

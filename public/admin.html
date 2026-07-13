@@ -1211,7 +1211,7 @@
                 <i class="ph ph-checks"></i> Schváliť všetky
               </button>
             </div>
-            <p class="section-lede">Hlásenia z tumedved.sk a od používateľov čakajúce na schválenie pred zobrazením na mape.</p>
+            <p class="section-lede">Hlásenia z verejných máp a od používateľov čakajúce na schválenie pred zobrazením na mape.</p>
             <div id="pendingReportsList"></div>
           </div>
 
@@ -1380,6 +1380,7 @@
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
         panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
         if (tabName === 'content' && !contentState.loaded) loadContent();
+        if (tabName === 'reports') scheduleReviewMapsRefresh();
       }
 
       tabs.forEach(tab => {
@@ -1656,8 +1657,22 @@
         toggleApproveAllButtons();
       }
 
-      // Karta scrapovaného hlásenia (tumedved.sk) v tej istej sekcii ako hlásenia
-      // od používateľov. kind='sightings' → schvaľuje sa cez /api/admin/sightings.
+      function sightingSourceLabels(item) {
+        const labels = (Array.isArray(item.source_links) ? item.source_links : [])
+          .map(link => String(link?.label || '').trim())
+          .filter(Boolean);
+        if (labels.length) return [...new Set(labels)];
+
+        try {
+          const host = new URL(item.url).hostname.replace(/^www\./, '');
+          if (host) return [host];
+        } catch {}
+
+        return [String(item.source || 'Verejná mapa')];
+      }
+
+      // Karta scrapovaného hlásenia z verejných máp v tej istej sekcii ako
+      // hlásenia od používateľov. kind='sightings' → /api/admin/sightings.
       function renderSightingCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
@@ -1667,6 +1682,9 @@
         const lat = Number(item.lat);
         const lng = Number(item.lng);
         const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+        const sourceBadges = sightingSourceLabels(item)
+          .map(label => '<span class="sub-type-badge area">' + esc(label) + '</span>')
+          .join(' ');
         const coordsHtml = hasCoords
           ? '<p class="review-card-meta review-coords">' +
               '<i class="ph ph-map-pin"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5) +
@@ -1680,7 +1698,7 @@
             '<div>' +
               '<p class="review-card-title">' + esc(item.location || 'Bez lokality') + '</p>' +
               '<p class="review-card-meta">' +
-                '<span class="sub-type-badge area">tumedved.sk</span> · ' +
+                sourceBadges + ' · ' +
                 formatDateTime(item.reported_at) +
               '</p>' +
             '</div>' +
@@ -1758,9 +1776,40 @@
         iconAnchor: [7, 7],
       });
 
+      const reviewMaps = new Map();
+      let reviewMapsFrame = 0;
+
+      function scheduleReviewMapsRefresh() {
+        if (reviewMapsFrame) cancelAnimationFrame(reviewMapsFrame);
+        reviewMapsFrame = requestAnimationFrame(() => {
+          reviewMapsFrame = requestAnimationFrame(() => {
+            reviewMapsFrame = 0;
+            initReviewMaps();
+          });
+        });
+      }
+
       function initReviewMaps() {
         const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-        document.querySelectorAll('.review-map:not([data-init])').forEach(el => {
+
+        reviewMaps.forEach((map, el) => {
+          if (!el.isConnected) {
+            map.remove();
+            reviewMaps.delete(el);
+          }
+        });
+
+        document.querySelectorAll('.review-map').forEach(el => {
+          // Leaflet nesmie vzniknúť v skrytej záložke: dostal by nulovú šírku
+          // a po otvorení by vykreslil iba úzky pás dlaždíc.
+          if (el.offsetParent === null || el.getBoundingClientRect().width < 1) return;
+
+          const existing = reviewMaps.get(el);
+          if (existing) {
+            existing.invalidateSize({ animate: false, pan: false });
+            return;
+          }
+
           const lat = parseFloat(el.dataset.lat);
           const lng = parseFloat(el.dataset.lng);
           if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -1768,8 +1817,11 @@
           const m = L.map(el, { scrollWheelZoom: false, attributionControl: true }).setView([lat, lng], 12);
           L.tileLayer(dark ? ADMIN_TILE_URLS.dark : ADMIN_TILE_URLS.light, ADMIN_TILE_OPTS).addTo(m);
           L.marker([lat, lng], { icon: adminPinIcon }).addTo(m);
+          reviewMaps.set(el, m);
         });
       }
+
+      window.addEventListener('resize', scheduleReviewMapsRefresh);
 
       // Schválenie správy s kategóriou + lokalitou. 'warning' = medvedie varovanie
       // (na verejnej mape vlastnou hranatou značkou), 'article' = bežný článok.
@@ -2013,7 +2065,7 @@
             // tumedved.sk hlásenia idú prvé, potom hlásenia od používateľov.
             sightings.forEach(s => reportsList.appendChild(renderSightingCard(s)));
             reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
-            initReviewMaps();
+            scheduleReviewMapsRefresh();
           } else {
             reportsList.innerHTML = renderEmptyState('check-circle', 'Žiadne hlásenia na schválenie.');
           }

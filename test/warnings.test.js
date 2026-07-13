@@ -20,7 +20,7 @@ const sighting = {
   ],
 };
 
-test("spravodajský odkaz sa pripojí k rovnakému mapovému varovaniu", () => {
+test("spravodajský odkaz sa nepripojí ani k rovnakému mapovému varovaniu", () => {
   const news = [{
     id: "article-1",
     source: "Miestne správy",
@@ -40,7 +40,7 @@ test("spravodajský odkaz sa pripojí k rovnakému mapovému varovaniu", () => {
   assert.equal(merged.length, 1);
   assert.deepEqual(
     merged[0].sourceLinks.map((link) => link.label).sort(),
-    ["Miestne správy", "tumedved.sk"]
+    ["tumedved.sk"]
   );
 });
 

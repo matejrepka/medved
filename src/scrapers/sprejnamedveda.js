@@ -10,7 +10,25 @@ function dateOnlyToIso(value) {
   return match ? `${match[1]}T12:00:00.000Z` : null;
 }
 
-function cleanDescription(value) {
+export function cleanSprejnamedvedaDescription(value) {
+  const compact = String(value || "").replace(/\s+/g, " ").trim();
+  if (!compact) return "";
+
+  // Časť bodov na zdrojovej mape obsahuje interný text z importu. Návštevníkovi
+  // patrí iba pôvodná poznámka alebo názov upozornenia, nie pokyny pre redakciu.
+  const sourceNote = compact.match(/Pozn[aá]mka zo zdroja:\s*(.+)$/iu);
+  if (sourceNote?.[1]) return sourceNote[1].trim();
+
+  const article = compact.match(
+    /(?:[ČC]l[aá]nok):\s*(.+?)(?=\.\s*(?:Odpor[uú][čc]anie):|$)/iu
+  );
+  if (article?.[1]) return article[1].trim();
+
+  if (
+    /^Draft import\s+\d{4}\./iu.test(compact) ||
+    /^Automaticky zachyteny kandidat (?:z verejnej mapy )?na rucnu kontrolu/iu.test(compact)
+  ) return "";
+
   const parts = String(value || "")
     .split(/\n{2,}/)
     .map((part) => part.trim())
@@ -37,7 +55,7 @@ function normalize(row) {
     source: "sprejnamedveda.sk",
     sourceKey: "sprejnamedveda",
     location: row.location || row.title || "Lokalita neuvedená",
-    note: cleanDescription(row.description),
+    note: cleanSprejnamedvedaDescription(row.description),
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
     hasCoords: Number.isFinite(lat) && Number.isFinite(lng),
@@ -77,4 +95,3 @@ export async function fetchSprejnamedveda() {
   }
   return sightings.map(normalize).filter((item) => item.reportedAt);
 }
-

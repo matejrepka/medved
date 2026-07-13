@@ -15,8 +15,9 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
 
 - **Hlásenia o výskyte** – sťahuje hlásenia z tumedved.sk, používateľské hlásenia z
   mapamedvedov.sk a aktuálnu mapu sprejnamedveda.sk (lokalita, dátum, poznámka a GPS).
-- **Zlučovanie zdrojov** – podobné udalosti porovná podľa dátumu, času, lokality,
-  súradníc a komentára. Na mape ostane jeden bod s odkazmi na všetky zhodné zdroje.
+- **Zlučovanie mapových zdrojov** – podobné udalosti z máp porovná podľa dátumu, času,
+  lokality, súradníc a komentára. Na mape ostane jeden bod s odkazmi na všetky zhodné
+  mapové hlásenia. Spravodajské články sa s hláseniami nezlučujú.
 - **Správy** – agreguje slovenské spravodajstvo o medveďoch z viacerých vyhľadávaní cez
   Google News (výskyt, útok, stretnutie turistu…), odstráni duplicity a zoradí podľa dátumu.
   Relevančný filter vyhodí články, ktoré medveďa len spomenú/odkazujú naň (medvedí výraz

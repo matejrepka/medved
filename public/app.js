@@ -3,7 +3,7 @@
 // (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
-const API_VERSION = "news-map-v7";
+const API_VERSION = "news-map-v8";
 const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -500,16 +500,6 @@ function todayInputDate(offsetDays = 0) {
   return date.toISOString().slice(0, 10);
 }
 
-function newsWarningMerged(n) {
-  const id = String(n?.id || "");
-  if (!id) return false;
-  return state.sightings.some((sighting) =>
-    warningSourceLinks(sighting).some((link) =>
-      String(link.sourceId || "") === id && String(link.key || "").startsWith("news:")
-    )
-  );
-}
-
 // Predvolene zobrazujeme hlásenia za posledný týždeň vrátane dneška.
 filterStart.value = todayInputDate(-7);
 filterEnd.value = todayInputDate();
@@ -833,7 +823,6 @@ function renderMarkers() {
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
-    if (newsWarningMerged(n)) continue;
     const point = newsMapPoint(n);
     if (!point) continue;
     const href = newsUrl(n);
@@ -948,7 +937,7 @@ function renderStats() {
     currentWeekStart
   );
   const mappedSightings = state.sightings.filter((s) => s.hasCoords).length;
-  const warningsOnMap = state.news.filter((n) => newsMapPoint(n) && !newsWarningMerged(n)).length;
+  const warningsOnMap = state.news.filter((n) => newsMapPoint(n)).length;
   const mapPoints = mappedSightings + warningsOnMap;
   const topPlace = topSightingPlace();
 

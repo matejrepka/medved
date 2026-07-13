@@ -168,7 +168,12 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
   const stored = await loadSightingsForMerge();
   const incomingIds = new Set(items.map((item) => String(item.id || "")).filter(Boolean));
   const incomingLinks = new Set(items.flatMap(sightingSourceLinks).map(sourceLinkIdentity));
-  const deduped = dedupeSightings([...stored, ...items]).filter((item) =>
+  // Čerstvá položka s rovnakým stabilným ID nahrádza svoju staršiu podobu.
+  // Inak by pri rovnakej priorite mohol zostať dlhší, ale už neaktuálny text.
+  const storedWithoutFreshCopies = stored.filter((item) =>
+    !incomingIds.has(String(item.id || ""))
+  );
+  const deduped = dedupeSightings([...storedWithoutFreshCopies, ...items]).filter((item) =>
     incomingIds.has(String(item.id || "")) ||
     sightingSourceLinks(item).some((link) => incomingLinks.has(sourceLinkIdentity(link)))
   );
@@ -562,7 +567,7 @@ export async function loadPendingSightings() {
 
   const { data, error } = await supabase
     .from("tumedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url")
+    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,payload")
     .eq("status", "pending")
     .order("reported_at", { ascending: false, nullsFirst: false })
     .limit(200);
@@ -571,7 +576,13 @@ export async function loadPendingSightings() {
     if (isMissingColumn(error)) return [];
     throw error;
   }
-  return data || [];
+  return (data || []).map((row) => {
+    const { payload: _payload, ...publicRow } = row;
+    return {
+      ...publicRow,
+      source_links: sightingSourceLinks(rowToSighting(row)),
+    };
+  });
 }
 
 export async function updateSightingStatus(id, status) {
