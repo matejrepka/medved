@@ -183,13 +183,8 @@ function faqEntities() {
     },
     {
       question: "Čo robiť, keď stretnem medveďa?",
-      answer:
-        "Zachovajte pokoj, neutekajte, neotáčajte sa chrbtom a pomaly cúvajte smerom, odkiaľ ste prišli. Medveďa neprovokujte a riaďte sa aktuálnymi odporúčaniami Zásahového tímu ŠOP SR.",
-    },
-    {
-      question: "Kedy volať tiesňovú linku 112?",
-      answer:
-        "Linku 112 volajte pri bezprostrednom ohrození zdravia alebo života, prípadne ak vzniká alebo môže vzniknúť škoda na majetku. Neurgentné pozorovania pri obývaných oblastiach rieši príslušný Zásahový tím.",
+      answer: "Bezpečnosť – Zásahový tím pre medveďa hnedého ŠOP SR",
+      answerUrl: "https://zasahovytim.sopsr.sk/bezpecnost/",
     },
   ];
 }
@@ -281,10 +276,14 @@ function structuredDataForPage(pathname, page, origin) {
       {
         "@type": "FAQPage",
         "@id": `${origin}/#faq`,
-        mainEntity: faqEntities().map(({ question, answer }) => ({
+        mainEntity: faqEntities().map(({ question, answer, answerUrl }) => ({
           "@type": "Question",
           name: question,
-          acceptedAnswer: { "@type": "Answer", text: answer },
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: answer,
+            ...(answerUrl ? { url: answerUrl } : {}),
+          },
         })),
       }
     );
