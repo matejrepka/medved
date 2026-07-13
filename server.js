@@ -14,7 +14,9 @@ import { readFile, stat } from "node:fs/promises";
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
+import { classifyFreshNews } from "./src/ai/news-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
+import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
@@ -395,7 +397,8 @@ const newsStore = new ScheduledDataStore({
   name: "news",
   fetcher: fetchNews,
   loadStored: loadNewsLogs,
-  saveFresh: saveNewsLogs,
+  saveFresh: (items, scrapedAt) =>
+    saveNewsLogs(items, scrapedAt, { prepareFresh: classifyFreshNews }),
   recordRun: recordScrapeRun,
 });
 
@@ -830,6 +833,74 @@ app.get("/api/admin/pending", adminAuth, async (_req, res) => {
   }
 });
 
+function selectedAdminLocation(name, latValue, lngValue) {
+  const lat = Number(latValue);
+  const lng = Number(lngValue);
+  if (!isSlovakCoordinate(lat, lng)) return null;
+  return { name, lat, lng, type: "selected" };
+}
+
+async function resolveAdminLocation(name, latValue, lngValue) {
+  const selected = selectedAdminLocation(name, latValue, lngValue);
+  if (selected) return selected;
+
+  const gz = await loadPlaces();
+  const municipality = lookupPlaceByName(name, gz);
+  if (municipality) return municipality;
+
+  const results = await searchSlovakLocations(name);
+  return results[0] || null;
+}
+
+// Explicitné vyhľadávanie pre admina. Na rozdiel od lokálneho gazetteeru nájde
+// aj doliny, jazerá, vrchy a ďalšie pomenované body na mape.
+app.get("/api/admin/locations", adminAuth, async (req, res) => {
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  if (query.length < 2 || query.length > 120) {
+    return res.status(400).json({
+      ok: false,
+      error: "Zadajte aspoň 2 znaky názvu lokality.",
+    });
+  }
+
+  try {
+    const gz = await loadPlaces();
+    const municipality = lookupPlaceByName(query, gz);
+    let remote = [];
+    try {
+      remote = await searchSlovakLocations(query);
+    } catch (err) {
+      // Obce vieme nájsť aj offline. Externá chyba preto nemá znefunkčniť
+      // výsledok z lokálneho gazetteeru.
+      if (!municipality) throw err;
+    }
+    const results = municipality
+      ? [
+          {
+            name: municipality.name,
+            label: `${municipality.name}, Slovensko`,
+            lat: municipality.lat,
+            lng: municipality.lng,
+            type: municipality.type,
+            source: "gazetteer",
+          },
+          ...remote.filter(
+            (item) =>
+              item.name.toLocaleLowerCase("sk") !== municipality.name.toLocaleLowerCase("sk")
+          ),
+        ]
+      : remote;
+    res.set("Cache-Control", "private, max-age=1800");
+    res.json({ ok: true, results: results.slice(0, 6) });
+  } catch (err) {
+    console.error("[admin locations] search failed:", err.message);
+    res.status(502).json({
+      ok: false,
+      error: "Vyhľadávanie lokalít je dočasne nedostupné. Skúste to znova.",
+    });
+  }
+});
+
 app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   const { status } = req.body || {};
   if (!["approved", "rejected"].includes(status)) {
@@ -875,9 +946,9 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
 });
 
 // Schválenie správy s kategorizáciou (varovanie/článok) a úpravou lokality.
-// Pri 'warning' sa zadaný názov obce geokóduje z lokálneho gazetteeru.
+// Pri 'warning' prijmeme vybraný bod na mape alebo názov geokódujeme.
 app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
-  const { status, category, place } = req.body || {};
+  const { status, category, place, lat, lng } = req.body || {};
   if (!["approved", "rejected"].includes(status)) {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
@@ -894,14 +965,13 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
         if (!name) {
           return res
             .status(400)
-            .json({ ok: false, error: "Pri medvedom varovaní zadajte lokalitu (obec)." });
+            .json({ ok: false, error: "Pri medvedom varovaní zadajte lokalitu." });
         }
-        const gz = await loadPlaces();
-        const hit = lookupPlaceByName(name, gz);
+        const hit = await resolveAdminLocation(name, lat, lng);
         if (!hit) {
           return res.status(400).json({
             ok: false,
-            error: `Obec „${name}“ sa nenašla v zozname slovenských obcí. Skontrolujte názov.`,
+            error: `Lokalita „${name}“ sa na Slovensku nenašla. Skontrolujte názov alebo ju vyhľadajte a vyberte zo zoznamu.`,
           });
         }
         fields.place = hit.name;
@@ -972,7 +1042,7 @@ app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
 //   tumedved     -> tumedved_logs (hlásenie so štítkom tumedved.sk)
 //   warning      -> bear_reports so statusom approved (všeobecné varovanie)
 app.post("/api/admin/warnings", adminAuth, async (req, res) => {
-  const { type, title, location, description, source, link, place, date } = req.body || {};
+  const { type, title, location, description, source, link, place, lat, lng, date } = req.body || {};
 
   if (!["news", "news-warning", "tumedved", "warning"].includes(type)) {
     return res.status(400).json({ ok: false, error: "Neplatný typ položky." });
@@ -987,12 +1057,11 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     let geo = null;
     const placeName = typeof place === "string" ? place.trim() : "";
     if (placeName) {
-      const gz = await loadPlaces();
-      geo = lookupPlaceByName(placeName, gz);
+      geo = await resolveAdminLocation(placeName, lat, lng);
       if (!geo) {
         return res.status(400).json({
           ok: false,
-          error: `Obec „${placeName}” sa nenašla v zozname slovenských obcí. Skontrolujte názov.`,
+          error: `Lokalita „${placeName}” sa na Slovensku nenašla. Skontrolujte názov alebo ju vyhľadajte a vyberte zo zoznamu.`,
         });
       }
     }
@@ -1005,7 +1074,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       if (type === "news-warning" && !geo) {
         return res
           .status(400)
-          .json({ ok: false, error: "Pri medvedom varovaní zo správ zadajte lokalitu (obec)." });
+          .json({ ok: false, error: "Pri medvedom varovaní zo správ zadajte lokalitu." });
       }
 
       await saveManualNews({

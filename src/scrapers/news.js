@@ -225,7 +225,15 @@ export async function fetchNews() {
   const allItems = gnItems.concat(pmItems);
   const geocoded = await geocodeNews(allItems);
   geocoded.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  return geocoded.map(({ body, rssDate, ...rest }) => rest);
+  return geocoded.map(({ body, rssDate, ...rest }) => {
+    // Celé telo potrebuje len AI klasifikácia nových správ. Neenumerovateľná
+    // vlastnosť sa neodošle verejným API ani neuloží do JSON payloadu.
+    Object.defineProperty(rest, "_analysisBody", {
+      value: String(body || "").slice(0, 12000),
+      enumerable: false,
+    });
+    return rest;
+  });
 }
 
 function hostFromLink(link) {

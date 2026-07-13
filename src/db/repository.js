@@ -185,7 +185,7 @@ async function loadKnownNewsIds(ids) {
 //    scrapingu sa nevyhodnotia znova ako nové (neobjavia sa späť v moderácii),
 //  - schválené ani rozpracované (pending) správy sa neprepíšu späť na pending.
 // Každý nový článok sa zapíše ako 'pending' a čaká na moderáciu.
-export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) {
+export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), options = {}) {
   const supabase = getSupabase();
   if (!supabase || !items.length) return;
 
@@ -195,6 +195,16 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) 
   if (!freshItems.length) {
     console.log(`[news] no new articles — all ${items.length} already in DB`);
     return;
+  }
+
+  // Drahšie/limitované spracovanie (AI) beží až po odfiltrovaní známych ID,
+  // takže sa pri hodinovom crone neopakuje nad tými istými článkami.
+  if (typeof options.prepareFresh === "function") {
+    try {
+      await options.prepareFresh(freshItems);
+    } catch (err) {
+      console.warn(`[news] fresh-item preparation failed: ${err.message}`);
+    }
   }
 
   const rows = freshItems.map((item) => ({
@@ -210,6 +220,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString()) 
     lat: asNullableNumber(item.lat),
     lng: asNullableNumber(item.lng),
     has_coords: Boolean(item.hasCoords),
+    category: item.category === "warning" ? "warning" : "article",
     status: "pending",
     payload: item,
     scraped_at: scrapedAt,

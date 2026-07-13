@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check public/app.js && node --check public/page.js && node scripts/check-seo.mjs",
+    "check": "node --check server.js && node --check src/ai/news-classifier.js && node --check src/geo/search.js && node --check public/app.js && node --check public/page.js && node scripts/check-seo.mjs",
+    "test": "node --test",
     "build:geo": "node src/geo/build-gazetteer.mjs",
     "build:images": "node scripts/optimize-images.mjs"
   },

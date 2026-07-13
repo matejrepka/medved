@@ -572,7 +572,6 @@
       .review-loc-label i { color: var(--accent); }
       .review-loc-input {
         width: 100%;
-        max-width: 320px;
         padding: 0.55rem 0.8rem;
         font-family: var(--font-sans);
         font-size: 0.9rem;
@@ -587,11 +586,77 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-soft);
       }
+      .place-search-row {
+        display: flex;
+        align-items: stretch;
+        gap: 7px;
+        width: 100%;
+        max-width: 560px;
+      }
+      .place-search-row .review-loc-input,
+      .place-search-row .add-input { min-width: 0; }
+      .place-search-btn {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 0.55rem 0.8rem;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        font: 600 0.82rem var(--font-sans);
+        cursor: pointer;
+      }
+      .place-search-btn:hover { filter: brightness(0.96); }
+      .place-search-btn:disabled { opacity: 0.6; cursor: wait; }
+      .place-search-results {
+        display: grid;
+        gap: 5px;
+        width: 100%;
+        max-width: 560px;
+        margin-top: 7px;
+      }
+      .place-search-results[hidden] { display: none; }
+      .place-search-result {
+        width: 100%;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink-2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        font: 500 0.78rem/1.35 var(--font-sans);
+        text-align: left;
+        cursor: pointer;
+      }
+      .place-search-result:hover,
+      .place-search-result:focus-visible {
+        color: var(--ink);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        outline: none;
+      }
+      .place-search-result strong {
+        display: block;
+        margin-bottom: 1px;
+        color: var(--ink);
+        font-size: 0.84rem;
+      }
+      .place-search-status {
+        margin: 0;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink-3);
+        border: 1px dashed var(--line);
+        border-radius: var(--radius-sm);
+        font-size: 0.78rem;
+      }
       .review-loc-hint {
         margin: 5px 0 0;
         font-size: 0.75rem;
         color: var(--ink-3);
       }
+      .review-loc-hint.selected { color: var(--accent); }
       .review-msg {
         margin: 10px 0 0;
         font-size: 0.82rem;
@@ -1208,8 +1273,12 @@
               </div>
 
               <div class="add-field" data-field="place">
-                <label class="add-label" for="addPlace"><i class="ph ph-map-trifold"></i> Obec (pre mapu)</label>
-                <input class="add-input" id="addPlace" type="text" placeholder="napr. Ružomberok" autocomplete="off" />
+                <label class="add-label" for="addPlace"><i class="ph ph-map-trifold"></i> Lokalita (pre mapu)</label>
+                <div class="place-search-row">
+                  <input class="add-input" id="addPlace" type="text" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off" />
+                  <button class="place-search-btn" id="addPlaceSearch" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>
+                </div>
+                <div class="place-search-results" id="addPlaceResults" hidden></div>
                 <p class="add-hint" id="addPlaceHint"></p>
               </div>
 
@@ -1683,6 +1752,99 @@
         }
       }
 
+      // Explicitné vyhľadanie chráni externú mapovú službu pred dopytom po
+      // každom stlačení klávesu. Admin vyhľadá názov a zvolí správny bod.
+      function wireLocationSearch(input, button, resultsEl, hintEl, initialValue) {
+        let selected = initialValue || null;
+        if (!hintEl.dataset.defaultHint) hintEl.dataset.defaultHint = hintEl.textContent;
+        const defaultHint = () => hintEl.dataset.defaultHint;
+
+        function closeResults() {
+          resultsEl.innerHTML = '';
+          resultsEl.hidden = true;
+        }
+
+        function setSelected(hit) {
+          selected = hit;
+          input.value = hit.name;
+          closeResults();
+          hintEl.textContent = 'Vybraté: ' + hit.label;
+          hintEl.classList.add('selected');
+        }
+
+        async function search() {
+          const query = input.value.trim();
+          if (query.length < 2) {
+            resultsEl.innerHTML = '<p class="place-search-status">Zadajte aspoň 2 znaky.</p>';
+            resultsEl.hidden = false;
+            return;
+          }
+
+          button.disabled = true;
+          button.innerHTML = '<i class="ph ph-spinner spin"></i> Hľadám';
+          resultsEl.innerHTML = '<p class="place-search-status">Vyhľadávam lokality na Slovensku…</p>';
+          resultsEl.hidden = false;
+
+          try {
+            const res = await authFetch('/api/admin/locations?q=' + encodeURIComponent(query));
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'Vyhľadávanie zlyhalo.');
+
+            resultsEl.innerHTML = '';
+            const results = data.results || [];
+            if (!results.length) {
+              resultsEl.innerHTML = '<p class="place-search-status">Nenašla sa žiadna lokalita na Slovensku.</p>';
+              return;
+            }
+
+            results.forEach(hit => {
+              const option = document.createElement('button');
+              option.type = 'button';
+              option.className = 'place-search-result';
+              const name = document.createElement('strong');
+              name.textContent = hit.name;
+              const label = document.createElement('span');
+              label.textContent = hit.label;
+              option.append(name, label);
+              option.addEventListener('click', () => setSelected(hit));
+              resultsEl.appendChild(option);
+            });
+          } catch (err) {
+            resultsEl.innerHTML = '';
+            const status = document.createElement('p');
+            status.className = 'place-search-status';
+            status.textContent = err.message;
+            resultsEl.appendChild(status);
+          } finally {
+            button.disabled = false;
+            button.innerHTML = '<i class="ph ph-magnifying-glass"></i> Hľadať';
+          }
+        }
+
+        input.addEventListener('input', () => {
+          if (!selected || input.value.trim() !== selected.name) selected = null;
+          hintEl.textContent = defaultHint();
+          hintEl.classList.remove('selected');
+          closeResults();
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          search();
+        });
+        button.addEventListener('click', search);
+
+        return {
+          getSelected: () => selected,
+          reset() {
+            selected = null;
+            hintEl.textContent = defaultHint();
+            hintEl.classList.remove('selected');
+            closeResults();
+          },
+        };
+      }
+
       let newsCardSeq = 0;
 
       function renderNewsCard(item) {
@@ -1719,15 +1881,33 @@
             '</label>' +
           '</div>' +
           '<div class="review-loc"' + (isWarning ? '' : ' hidden') + '>' +
-            '<label class="review-loc-label" for="loc-' + groupName + '"><i class="ph ph-map-pin"></i> Lokalita (obec)</label>' +
-            '<input class="review-loc-input" id="loc-' + groupName + '" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Ružomberok" autocomplete="off">' +
-            '<p class="review-loc-hint">Súradnice sa doplnia automaticky z názvu obce. Zobrazí sa na verejnej mape hranatou značkou.</p>' +
+            '<label class="review-loc-label" for="loc-' + groupName + '"><i class="ph ph-map-pin"></i> Lokalita na mape</label>' +
+            '<div class="place-search-row">' +
+              '<input class="review-loc-input" id="loc-' + groupName + '" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off">' +
+              '<button class="place-search-btn review-loc-search" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
+            '</div>' +
+            '<div class="place-search-results" hidden></div>' +
+            '<p class="review-loc-hint">Vyhľadajte a vyberte obec, dolinu, jazero alebo inú lokalitu. Zobrazí sa na verejnej mape hranatou značkou.</p>' +
           '</div>' +
           '<p class="review-msg" role="alert"></p>';
 
         const locWrap = card.querySelector('.review-loc');
         const locInput = card.querySelector('.review-loc-input');
+        const locSearch = card.querySelector('.review-loc-search');
+        const locResults = card.querySelector('.place-search-results');
+        const locHint = card.querySelector('.review-loc-hint');
         const msg = card.querySelector('.review-msg');
+        const initialLat = Number(item.lat);
+        const initialLng = Number(item.lng);
+        const locationPicker = wireLocationSearch(
+          locInput,
+          locSearch,
+          locResults,
+          locHint,
+          item.place && Number.isFinite(initialLat) && Number.isFinite(initialLng)
+            ? { name: item.place, label: item.place, lat: initialLat, lng: initialLng }
+            : null
+        );
 
         card.querySelectorAll('input[type="radio"]').forEach(r => {
           r.addEventListener('change', () => {
@@ -1745,11 +1925,18 @@
           const category = card.querySelector('input[type="radio"]:checked').value;
           const place = locInput.value.trim();
           if (category === 'warning' && !place) {
-            msg.textContent = 'Zadajte lokalitu (obec) pre medvedie varovanie.';
+            msg.textContent = 'Zadajte lokalitu pre medvedie varovanie.';
             locInput.focus();
             return;
           }
-          reviewNews(item.id, { status: 'approved', category, place }, card);
+          const selected = locationPicker.getSelected();
+          reviewNews(item.id, {
+            status: 'approved',
+            category,
+            place,
+            lat: selected ? selected.lat : null,
+            lng: selected ? selected.lng : null,
+          }, card);
         });
 
         return card;
@@ -1888,15 +2075,29 @@
         addForm.querySelectorAll('[data-field]').forEach(el => {
           el.hidden = !vis[el.dataset.field];
         });
-        addPlaceHint.textContent = type === 'news-warning'
-          ? 'Povinné: súradnice sa doplnia automaticky z názvu obce a varovanie sa zobrazí na mape.'
-          : 'Voliteľné: ak zadáte obec, položka dostane súradnice a zobrazí sa aj na mape.';
+        const hint = type === 'news-warning'
+          ? 'Povinné: vyhľadajte obec alebo inú lokalitu; varovanie sa zobrazí na mape.'
+          : 'Voliteľné: vyhľadajte obec alebo inú lokalitu, aby sa položka zobrazila na mape.';
+        addPlaceHint.dataset.defaultHint = hint;
+        addPlaceHint.textContent = hint;
+        addPlaceHint.classList.remove('selected');
       }
 
       addForm.querySelectorAll('input[name="addType"]').forEach(r => {
-        r.addEventListener('change', syncAddForm);
+        r.addEventListener('change', () => {
+          addLocationPicker.reset();
+          syncAddForm();
+        });
       });
       syncAddForm();
+
+      const addLocationPicker = wireLocationSearch(
+        document.getElementById('addPlace'),
+        document.getElementById('addPlaceSearch'),
+        document.getElementById('addPlaceResults'),
+        addPlaceHint,
+        null
+      );
 
       function showAddMessage(text, ok) {
         addMsg.textContent = text;
@@ -1923,10 +2124,12 @@
           return;
         }
         if (type === 'news-warning' && !val('addPlace')) {
-          showAddMessage('Pri varovaní zo správ zadajte obec.', false);
+          showAddMessage('Pri varovaní zo správ zadajte lokalitu.', false);
           document.getElementById('addPlace').focus();
           return;
         }
+
+        const selectedPlace = addLocationPicker.getSelected();
 
         const payload = {
           type,
@@ -1936,6 +2139,8 @@
           description: vis.description ? val('addDescription') : null,
           source: vis.source ? val('addSource') : null,
           link: vis.link ? val('addLink') : null,
+          lat: selectedPlace ? selectedPlace.lat : null,
+          lng: selectedPlace ? selectedPlace.lng : null,
           date: val('addDate') || null,
         };
 
@@ -1953,6 +2158,7 @@
           if (res.ok && data.ok) {
             showAddMessage('Položka bola pridaná a je hneď viditeľná na webe.', true);
             addForm.reset();
+            addLocationPicker.reset();
             syncAddForm();
             loadStats();
           } else {

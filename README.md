@@ -22,6 +22,9 @@ mape Slovenska a v prehľadných zoznamoch.
 - **Geokódovanie správ** – z titulku/popisu článku sa rozpozná slovenská obec/mesto a správa
   sa zobrazí ako značka na mape. Funguje offline cez lokálny gazetteer (`src/geo/sk-places.json`)
   s toleranciou na slovenské skloňovanie (napr. „v Ružomberku" → Ružomberok).
+- **AI predvyplnenie moderácie** – iba nové správy po stiahnutí spracuje cez OpenRouter model
+  `google/gemma-4-31b-it:free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
+  a pri varovaní doplní najpresnejšiu lokalitu; admin výsledok pred schválením skontroluje.
 - **Mapa** – Leaflet + prepínateľné vrstvy: štandardná, turistická (OpenTopoMap) a satelitná
   (Esri). Kliknutie na hlásenie/správu v zozname vycentruje mapu na dané miesto. Dva druhy
   značiek: **hlásenia** z tumedved.sk (presné GPS) a **správy** geokódované z textu článku.
@@ -57,6 +60,9 @@ Pred produkčným spustením vyplň `.env`:
 SITE_URL=https://tvoja-domena.sk
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
+# voliteľné, toto je predvolená hodnota:
+OPENROUTER_MODEL=google/gemma-4-31b-it:free
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
 ```
@@ -64,6 +70,9 @@ CRON_REFRESH_SECRET=replace-with-a-long-random-string
 `SITE_URL` musí byť presný verejný HTTPS origin bez cesty a bez lomky na konci.
 Server ho používa pre kanonické URL, Open Graph, JSON-LD, sitemapu, RSS a `llms.txt`.
 Ak nie je nastavený, lokálny vývoj použije origin aktuálnej požiadavky.
+
+OpenRouter dostáva iba titulok, zdroj, krátky popis a extrahovaný text nového článku. Ak
+`OPENROUTER_API_KEY` chýba alebo model zlyhá, scraping pokračuje bez AI predvyplnenia.
 
 Ak appku hostuješ na Verceli a chceš pravidelný refresh cez cron-job.org, nastav v cron-job.org
 volanie na:
@@ -155,6 +164,8 @@ medved/
 ├── server.js              # Express server + API + servírovanie frontendu
 ├── src/
 │   ├── scheduled-store.js # hodinový serverový refresh + pamäťová kópia dát
+│   ├── ai/
+│   │   └── news-classifier.js # OpenRouter klasifikácia nových správ + lokalita
 │   ├── db/
 │   │   ├── supabase.js    # Supabase klient zo serverového .env
 │   │   └── repository.js  # ukladanie/čítanie hlásení, správ a webových logov
