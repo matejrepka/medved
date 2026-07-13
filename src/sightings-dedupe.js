@@ -110,10 +110,13 @@ function normalizeSourceLink(link) {
   const key = String(link.key || "source").trim() || "source";
   let label = String(link.label || link.key || "Zdroj").trim() || "Zdroj";
   if (key === "sprejnamedveda") {
-    if (/\/aktuality\//i.test(url)) label = "sprejnamedveda.sk – článok";
-    else if (/sprejnamedveda\.sk\/medvede-na-mape\/?/i.test(url)) {
-      label = "sprejnamedveda.sk – mapa";
-    }
+    label = "sprejnamedveda.sk";
+    return {
+      key,
+      label,
+      url: "https://www.sprejnamedveda.sk/aktuality/",
+      ...(link.sourceId ? { sourceId: String(link.sourceId) } : {}),
+    };
   }
   return {
     key,

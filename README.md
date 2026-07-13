@@ -17,8 +17,8 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
   mapamedvedov.sk a aktuálnu mapu sprejnamedveda.sk (lokalita, dátum, poznámka a GPS).
 - **Zlučovanie mapových zdrojov** – podobné udalosti z máp porovná podľa dátumu, času,
   lokality, súradníc a komentára. Na mape ostane jeden bod s odkazmi na všetky zhodné
-  mapové hlásenia. Spravodajské články sa s hláseniami nezlučujú; článok, ktorý je priamo
-  detailom bodu mapy sprejnamedveda.sk, zostáva iba zdrojovým odkazom daného bodu.
+  mapové hlásenia. Spravodajské články sa s hláseniami nezlučujú. Zdroj
+  sprejnamedveda.sk sa z každého bodu preklikáva iba na jeho stránku Aktuality.
 - **Správy** – agreguje slovenské spravodajstvo o medveďoch z viacerých vyhľadávaní cez
   Google News (výskyt, útok, stretnutie turistu…), odstráni duplicity a zoradí podľa dátumu.
   Relevančný filter vyhodí články, ktoré medveďa len spomenú/odkazujú naň (medvedí výraz
@@ -46,7 +46,7 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
 |-------|-----|----------|
 | **tumedved.sk** | oficiálne WordPress REST API (typ príspevku `vyskyt-medveda`) — žiadne krehké HTML scrapovanie | `https://tumedved.sk/wp-json/wp/v2/vyskyt-medveda` |
 | **mapamedvedov.sk** | schválené príspevky používateľov vložené v dátach aktuálnej mapy | `https://mapamedvedov.sk/` |
-| **sprejnamedveda.sk** | strojovo čitateľné dáta mapy + presné detailné články párované podľa lokality a dátumu | `https://www.sprejnamedveda.sk/mapa-2/`, `https://www.sprejnamedveda.sk/wp-json/wp/v2/posts` |
+| **sprejnamedveda.sk** | strojovo čitateľné dáta mapy; články sa interne párujú na kontrolu obsahu, verejný zdrojový odkaz vedie iba na Aktuality | `https://www.sprejnamedveda.sk/aktuality/` |
 | **Slovenské správy** | Google News RSS pre viaceré dopyty, slovenská edícia (`hl=sk&gl=SK&ceid=SK:sk`) | `https://news.google.com/rss/search?q=…` |
 
 ## Spustenie / Run

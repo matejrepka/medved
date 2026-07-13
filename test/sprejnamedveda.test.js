@@ -101,7 +101,7 @@ test("index článkov priradí detail podľa lokality a dátumu", () => {
     "https://www.sprejnamedveda.sk/aktuality/vyskyt-medveda-hrochot-25-6-2026/");
 });
 
-test("normalizovaný bod odkazuje na článok aj mapu a nepoužíva článok ako komentár", () => {
+test("normalizovaný bod odkazuje iba na stránku Aktuality", () => {
   const row = {
     location: "Hrochoť",
     title: "Hrochoť",
@@ -118,8 +118,11 @@ test("normalizovaný bod odkazuje na článok aj mapu a nepoužíva článok ako
   });
 
   assert.equal(item.note, "Medveď pri obci.");
-  assert.deepEqual(item.sourceLinks.map((link) => link.label), [
-    "sprejnamedveda.sk – článok",
-    "sprejnamedveda.sk – mapa",
-  ]);
+  assert.deepEqual(item.sourceLinks, [{
+    key: "sprejnamedveda",
+    label: "sprejnamedveda.sk",
+    url: "https://www.sprejnamedveda.sk/aktuality/",
+    sourceId: item.id.replace(/^sprejnamedveda-/, ""),
+  }]);
+  assert.equal(item.url, "https://www.sprejnamedveda.sk/aktuality/");
 });

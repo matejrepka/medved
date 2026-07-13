@@ -1335,15 +1335,74 @@ main {
   border-radius: var(--radius);
 }
 
-.safety-callout p:not(.section-kicker) {
-  margin: 12px 0 20px;
+.safety-official-source {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.safety-source-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 50%;
+  font-size: 1.3rem;
+}
+
+.safety-source-label,
+.safety-source-name {
+  display: block;
+}
+
+.safety-source-label {
+  margin-bottom: 2px;
+  color: var(--ink-3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.safety-source-name {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.safety-callout .safety-description {
+  margin: 12px 0 22px;
   color: var(--ink-2);
+}
+
+.safety-actions {
+  display: grid;
+  gap: 12px;
 }
 
 .safety-btn {
   width: 100%;
   min-height: 46px;
   justify-content: center;
+  text-align: center;
+}
+
+.safety-summary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  font-size: 0.86rem;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -1423,7 +1482,7 @@ main {
 }
 
 .knowledge-hero > .section-kicker {
-  margin-bottom: clamp(14px, 2vw, 18px);
+  margin-bottom: clamp(18px, 3vw, 32px);
 }
 
 .knowledge-hero h1 {

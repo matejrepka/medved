@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { parseHTML } from "linkedom";
 
-const MAP_URL = "https://www.sprejnamedveda.sk/medvede-na-mape/";
+const ACTUALITY_URL = "https://www.sprejnamedveda.sk/aktuality/";
 const DATA_URL = "https://www.sprejnamedveda.sk/mapa-2/";
 const POSTS_URL = "https://www.sprejnamedveda.sk/wp-json/wp/v2/posts";
 const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://kdejemedved.sk)";
@@ -145,31 +145,7 @@ export function normalizeSprejnamedvedaRow(row, article = null) {
   const id = stableId(row);
   const lat = Number(row.lat);
   const lng = Number(row.lng);
-  const articleUrl = article?.url ? String(article.url) : null;
   const note = cleanSprejnamedvedaDescription(row.description) || cleanArticleExcerpt(article?.excerpt);
-  const sourceLinks = articleUrl
-    ? [
-        {
-          key: "sprejnamedveda",
-          label: "sprejnamedveda.sk – článok",
-          url: articleUrl,
-          sourceId: id,
-        },
-        {
-          key: "sprejnamedveda",
-          label: "sprejnamedveda.sk – mapa",
-          url: MAP_URL,
-          sourceId: id,
-        },
-      ]
-    : [
-        {
-          key: "sprejnamedveda",
-          label: "sprejnamedveda.sk",
-          url: MAP_URL,
-          sourceId: id,
-        },
-      ];
   return {
     id: `sprejnamedveda-${id}`,
     source: "sprejnamedveda.sk",
@@ -181,8 +157,15 @@ export function normalizeSprejnamedvedaRow(row, article = null) {
     hasCoords: Number.isFinite(lat) && Number.isFinite(lng),
     reportedAt: dateOnlyToIso(row.observed_at),
     datePrecision: "date",
-    url: articleUrl || MAP_URL,
-    sourceLinks,
+    url: ACTUALITY_URL,
+    sourceLinks: [
+      {
+        key: "sprejnamedveda",
+        label: "sprejnamedveda.sk",
+        url: ACTUALITY_URL,
+        sourceId: id,
+      },
+    ],
   };
 }
 
