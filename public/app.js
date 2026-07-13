@@ -208,6 +208,44 @@ function addLocationControl() {
   new LocationControl().addTo(map);
 }
 
+function centerMapOnVisibleMarkers() {
+  const points = [];
+  state.markers.forEach((marker) => {
+    const point = marker.getLatLng?.();
+    if (point) points.push(point);
+  });
+
+  map.closePopup();
+  if (points.length > 0) {
+    map.flyToBounds(points, { padding: [40, 40], maxZoom: 9, duration: 0.6 });
+  } else {
+    map.flyTo(SK_CENTER, 7, { duration: 0.6 });
+  }
+}
+
+function addCenterMapControl() {
+  const CenterMapControl = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const container = L.DomUtil.create("div", "map-center-control");
+      const button = L.DomUtil.create("button", "map-center-button", container);
+
+      button.type = "button";
+      button.title = "Vycentrovať mapu";
+      button.setAttribute("aria-label", "Vycentrovať mapu na viditeľné značky");
+      button.innerHTML = '<i class="ph ph-corners-in" aria-hidden="true"></i>';
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      L.DomEvent.on(button, "click", centerMapOnVisibleMarkers);
+
+      return container;
+    },
+  });
+
+  new CenterMapControl().addTo(map);
+}
+
 // --- Téma (svetlá / tmavá) ---
 const themeBtn = $("themeBtn");
 
@@ -1092,6 +1130,7 @@ contentSearch.addEventListener("input", (e) => {
 syncThemeButton(currentTheme());
 setTiles(state.mapLayer);
 addLocationControl();
+addCenterMapControl();
 elSightings.innerHTML = skeletons(5);
 elNews.innerHTML = skeletons(5);
 loadData();

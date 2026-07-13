@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
+import { decodeHtmlEntities } from "../html-text.js";
 import { dedupeSightings, sightingSourceLinks } from "../sightings-dedupe.js";
 
 const WRITE_CHUNK_SIZE = 200;
@@ -376,11 +377,11 @@ export async function loadNewsLogs() {
       return {
         id: row.id,
         source: row.source,
-        title: row.title,
+        title: decodeHtmlEntities(row.title),
         link: row.link,
         googleNewsUrl: row.google_news_url,
         articleUrl: row.article_url,
-        snippet: row.snippet || "",
+        snippet: decodeHtmlEntities(row.snippet || ""),
         date: row.published_at,
         place: row.place,
         lat,

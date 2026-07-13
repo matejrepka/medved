@@ -8,6 +8,7 @@
 
 import Parser from "rss-parser";
 import { geocodeNews } from "../geo/geocode.js";
+import { htmlToText } from "../html-text.js";
 import { fetchArticleBodies, googleNewsWebUrl } from "./article.js";
 
 const parser = new Parser({
@@ -31,18 +32,6 @@ const FEED_URL = (q) =>
   )}&hl=sk&gl=SK&ceid=SK:sk`;
 
 const MAX_ITEMS = 60;
-
-function stripHtml(html) {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function stripTrailingSource(text) {
   return (text || "")
@@ -122,11 +111,11 @@ async function fetchPozormedvedPosts() {
     if (!Array.isArray(batch) || batch.length === 0) break;
 
     for (const post of batch) {
-      const title = stripHtml(post.title?.rendered);
+      const title = htmlToText(post.title?.rendered);
       if (!title) continue;
 
-      const body = stripHtml(post.content?.rendered || "");
-      const snippet = stripHtml(post.excerpt?.rendered || "").slice(0, 500) || body.slice(0, 500);
+      const body = htmlToText(post.content?.rendered || "");
+      const snippet = htmlToText(post.excerpt?.rendered || "").slice(0, 500) || body.slice(0, 500);
       const dateGmt = post.date_gmt ? new Date(post.date_gmt + "Z").toISOString() : null;
 
       items.push({
@@ -170,7 +159,7 @@ export async function fetchNews() {
       const { title, source: titleSource } = splitTitleSource(item.title);
       if (!title) continue;
 
-      const snippet = stripTrailingSource(stripHtml(item.contentSnippet || item.content));
+      const snippet = stripTrailingSource(htmlToText(item.contentSnippet || item.content));
       if (!isBearRelated(title, snippet)) continue;
 
       const key = dedupeKey(title);

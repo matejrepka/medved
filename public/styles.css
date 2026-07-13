@@ -410,6 +410,50 @@ main {
   max-width: 60ch;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: clamp(20px, 3vw, 28px);
+}
+
+.hero-actions .btn,
+.hero-secondary-btn {
+  min-height: 46px;
+  padding-inline: 20px;
+  justify-content: center;
+}
+
+.hero-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
+}
+
+.hero-secondary-btn:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+  border-color: var(--ink-3);
+  text-decoration: none;
+}
+
+.hero-secondary-btn:active {
+  transform: translateY(1px);
+}
+
+.hero-secondary-btn i {
+  color: var(--accent);
+  font-size: 17px;
+}
+
 /* ---------- Stats (airy, hairline-divided — no boxes) ---------- */
 .stats {
   display: flex;
@@ -462,26 +506,17 @@ main {
   min-width: 0;
 }
 
-.stat-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--accent);
-  font-size: 0.85rem;
-  font-weight: 650;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.stat-more:hover {
-  color: var(--accent-hover);
-}
-
-.stat-more i {
-  font-size: 0.95em;
-}
-
 @media (max-width: 520px) {
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions .btn,
+  .hero-secondary-btn {
+    width: 100%;
+  }
+
   .home-insights .stat {
     padding-right: clamp(14px, 4vw, 22px);
     margin-right: clamp(14px, 4vw, 22px);
@@ -739,11 +774,13 @@ main {
   z-index: 0;
 }
 
-.map-location-control {
+.map-location-control,
+.map-center-control {
   position: relative;
 }
 
-.map-location-button {
+.map-location-button,
+.map-center-button {
   display: grid;
   place-items: center;
   width: 34px;
@@ -759,12 +796,15 @@ main {
 }
 
 .map-location-button:hover,
-.map-location-button:focus-visible {
+.map-location-button:focus-visible,
+.map-center-button:hover,
+.map-center-button:focus-visible {
   color: var(--accent);
   background: #f4f4f4;
 }
 
-.map-location-button:focus-visible {
+.map-location-button:focus-visible,
+.map-center-button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -773,7 +813,8 @@ main {
   cursor: wait;
 }
 
-.map-location-button i {
+.map-location-button i,
+.map-center-button i {
   font-size: 19px;
 }
 
