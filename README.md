@@ -68,7 +68,7 @@ SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
 # voliteľné, toto je predvolená hodnota:
-OPENROUTER_MODEL=google/gemma-4-31b-it:free
+OPENROUTER_MODEL=openrouter/free
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
 ```

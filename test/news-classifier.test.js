@@ -42,24 +42,28 @@ test("classifyFreshNews prefills warning location and clears article coordinates
     },
   ];
 
-  const fetchImpl = async () => ({
-    ok: true,
-    status: 200,
-    json: async () => ({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              results: [
-                { index: 0, category: "warning", place: "Morské oko", confidence: 0.98 },
-                { index: 1, category: "article", place: null, confidence: 0.91 },
-              ],
-            }),
+  let requestedModel;
+  const fetchImpl = async (_url, options) => {
+    requestedModel = JSON.parse(options.body).model;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                results: [
+                  { index: 0, category: "warning", place: "Morské oko", confidence: 0.98 },
+                  { index: 1, category: "article", place: null, confidence: 0.91 },
+                ],
+              }),
+            },
           },
-        },
-      ],
-    }),
-  });
+        ],
+      }),
+    };
+  };
 
   await classifyFreshNews(items, {
     apiKey: "test-key",
@@ -67,6 +71,7 @@ test("classifyFreshNews prefills warning location and clears article coordinates
     resolveLocation: async (name) => ({ name, lat: 48.9150886, lng: 22.1978148 }),
   });
 
+  assert.equal(requestedModel, "openrouter/free");
   assert.equal(items[0].category, "warning");
   assert.equal(items[0].place, "Morské oko");
   assert.equal(items[0].lat, 48.9150886);

@@ -2,7 +2,7 @@ import { loadPlaces, lookupPlaceByName } from "../geo/geocode.js";
 import { searchSlovakLocations } from "../geo/search.js";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemma-4-31b-it:free";
+const DEFAULT_MODEL = "openrouter/free";
 const BATCH_SIZE = 6;
 const MAX_BODY_CHARS = 7000;
 const MAX_SNIPPET_CHARS = 1200;

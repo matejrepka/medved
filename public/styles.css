@@ -1078,6 +1078,10 @@ main {
   border-radius: 8px;
 }
 
+.list-load-more {
+  display: none;
+}
+
 .card {
   padding: 14px 16px;
   background: var(--surface);
@@ -2025,12 +2029,11 @@ main {
 @media (max-width: 720px) {
   .mascot-masthead {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 0;
   }
 
   .mascot-hero {
-    justify-self: start;
-    width: min(220px, 62vw);
+    display: none;
   }
 
   .report-cta-inner {
@@ -2669,6 +2672,43 @@ main {
     padding-bottom: 0;
   }
 
+  /* Hero štatistiky zostávajú na mobile v jednom kompaktnom riadku. */
+  .home-insights .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 0;
+  }
+
+  .home-insights .stat {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0 6px;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .home-insights .stat:first-child {
+    padding-left: 0;
+  }
+
+  .home-insights .stat:last-child {
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .home-insights .stat-num {
+    font-size: 1.1rem;
+  }
+
+  .home-insights .stat-label {
+    margin-top: 4px;
+    font-size: clamp(0.58rem, 2.7vw, 0.7rem);
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
   .chart-container {
     padding: 12px;
   }
@@ -2832,6 +2872,59 @@ canvas,
     height: 42px;
   }
 
+  /* Dve karty naraz bez vnoreného scrollovania; ďalšie pridá tlačidlo. */
+  .list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    padding-bottom: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .list-load-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 46px;
+    margin-top: 4px;
+    padding: 9px 16px;
+    color: var(--accent);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, transform 0.1s ease;
+  }
+
+  .list-load-more:hover,
+  .list-load-more:focus-visible {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+  }
+
+  .list-load-more:active {
+    transform: translateY(1px);
+  }
+
+  .list-load-more-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding-inline: 6px;
+    color: var(--ink-2);
+    background: var(--accent-soft);
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Mapa: viac výšky pomerom k obrazovke */
   #map {
     height: 60vh;
@@ -2852,6 +2945,39 @@ canvas,
   /* Sekcie nadpisy o niečo menšie */
   .section-head h2 {
     font-size: 1.25rem;
+  }
+
+  /* Úvod mapy: nadpis, súhrn a vysvetlenie majú na mobile vlastné riadky. */
+  .map-section > .section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    justify-content: start;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .map-section > .section-head h2 {
+    width: 100%;
+    font-size: clamp(1.2rem, 5.5vw, 1.35rem);
+    line-height: 1.2;
+  }
+
+  .map-section > .section-head .muted {
+    display: block;
+    padding-left: 30px;
+    color: var(--ink-2);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .map-section > .map-context {
+    max-width: none;
+    margin: 0 0 16px;
+    color: var(--ink-2);
+    font-size: 0.86rem;
+    line-height: 1.5;
   }
 
   /* Legenda pod mapou nech sa zalomí pekne */
@@ -2923,7 +3049,22 @@ canvas,
 
 /* ---------- Veľmi úzky mobil (max 360px) ---------- */
 @media (max-width: 360px) {
+  .site-header {
+    padding-inline: 12px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+
+  .brand-mark {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
   .brand-name {
-    display: none;
+    display: block;
+    font-size: 1.05rem;
   }
 }

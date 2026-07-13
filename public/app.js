@@ -23,12 +23,91 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const elSightings = $("sightingsList");
 const elNews = $("newsList");
+const MOBILE_LIST_PAGE_SIZE = 2;
+const mobileListMedia = window.matchMedia("(max-width: 620px)");
+const mobileListVisible = {
+  sightings: MOBILE_LIST_PAGE_SIZE,
+  news: MOBILE_LIST_PAGE_SIZE,
+};
+
+function resetMobileListLimits() {
+  mobileListVisible.sightings = MOBILE_LIST_PAGE_SIZE;
+  mobileListVisible.news = MOBILE_LIST_PAGE_SIZE;
+}
+
+function visibleListItems(items, listName) {
+  if (!mobileListMedia.matches) return items;
+  return items.slice(0, mobileListVisible[listName]);
+}
+
+function loadMoreButtonHtml(listName, shownCount, totalCount) {
+  if (!mobileListMedia.matches || shownCount >= totalCount) return "";
+  const listId = listName === "sightings" ? "sightingsList" : "newsList";
+  const listLabel = listName === "sightings" ? "medvedie varovania" : "správy o medveďoch";
+  return `
+    <button
+      class="list-load-more"
+      type="button"
+      data-load-more="${listName}"
+      aria-controls="${listId}"
+      aria-label="Načítať ďalšie ${listLabel}"
+    >
+      <span>Načítať ďalšie</span>
+      <span class="list-load-more-count">${totalCount - shownCount}</span>
+      <i class="ph ph-caret-down" aria-hidden="true"></i>
+    </button>`;
+}
 
 // --- Mapa ---
 const map = L.map("map", { scrollWheelZoom: true, zoomControl: true }).setView(
   SK_CENTER,
   7
 );
+let mapFitFrame = null;
+
+function mapMarkerPoints() {
+  const points = [];
+  state.markers.forEach((marker) => {
+    const point = marker.getLatLng?.();
+    if (point) points.push(point);
+  });
+  return points;
+}
+
+function fitMapToPoints(points, { animate = false } = {}) {
+  if (!points.length) return;
+  if (mapFitFrame !== null) cancelAnimationFrame(mapFitFrame);
+
+  const fit = () => {
+    mapFitFrame = null;
+    const isMobile = mobileListMedia.matches;
+    map.options.zoomSnap = isMobile ? 0.25 : 1;
+    map.invalidateSize({ pan: false });
+    const options = {
+      padding: isMobile ? [24, 24] : [40, 40],
+      maxZoom: 9,
+      ...(animate ? { duration: 0.6 } : {}),
+    };
+
+    if (animate) {
+      map.flyToBounds(points, options);
+    } else {
+      map.fitBounds(points, options);
+    }
+  };
+
+  if (animate) {
+    fit();
+  } else {
+    // Leaflet dostane finálne rozmery responzívneho mapového kontajnera.
+    mapFitFrame = requestAnimationFrame(fit);
+  }
+}
+
+function refitMapOnVisibleMarkers() {
+  const points = mapMarkerPoints();
+  if (points.length) fitMapToPoints(points);
+}
 
 const TILES = {
   standard: {
@@ -209,15 +288,11 @@ function addLocationControl() {
 }
 
 function centerMapOnVisibleMarkers() {
-  const points = [];
-  state.markers.forEach((marker) => {
-    const point = marker.getLatLng?.();
-    if (point) points.push(point);
-  });
+  const points = mapMarkerPoints();
 
   map.closePopup();
   if (points.length > 0) {
-    map.flyToBounds(points, { padding: [40, 40], maxZoom: 9, duration: 0.6 });
+    fitMapToPoints(points, { animate: true });
   } else {
     map.flyTo(SK_CENTER, 7, { duration: 0.6 });
   }
@@ -711,6 +786,7 @@ function updateDateFilters(changedInput) {
 }
 
 function renderFilteredViews() {
+  resetMobileListLimits();
   renderMarkers();
   renderSightings();
   renderNews();
@@ -803,7 +879,8 @@ function renderSightings() {
     return;
   }
 
-  elSightings.innerHTML = items
+  const visibleItems = visibleListItems(items, "sightings");
+  elSightings.innerHTML = visibleItems
     .map(
       (s, i) => {
         const sourceLabel = warningSourceLabel(s);
@@ -825,7 +902,7 @@ function renderSightings() {
       </article>`;
       }
     )
-    .join("");
+    .join("") + loadMoreButtonHtml("sightings", visibleItems.length, items.length);
 
   elSightings.querySelectorAll(".card.sighting").forEach((card) => {
     card.addEventListener("click", (e) => {
@@ -834,6 +911,14 @@ function renderSightings() {
       if (s && s.hasCoords) focusMapMarker(s.id, s.lat, s.lng);
     });
   });
+
+  const loadMoreButton = elSightings.querySelector('[data-load-more="sightings"]');
+  if (loadMoreButton) {
+    loadMoreButton.addEventListener("click", () => {
+      mobileListVisible.sightings += MOBILE_LIST_PAGE_SIZE;
+      renderSightings();
+    });
+  }
 }
 
 // --- Značky na mape ---
@@ -885,7 +970,7 @@ function renderMarkers() {
   }
 
   if (bounds.length > 0) {
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
+    fitMapToPoints(bounds);
   } else if (hasDateFilter() || hasSearchFilter()) {
     map.setView(SK_CENTER, 7);
   }
@@ -904,7 +989,8 @@ function renderNews() {
     }</div>`;
     return;
   }
-  elNews.innerHTML = items
+  const visibleItems = visibleListItems(items, "news");
+  elNews.innerHTML = visibleItems
     .map(
       (n, i) => {
         const point = newsMapPoint(n);
@@ -943,7 +1029,7 @@ function renderNews() {
       </article>`
       }
     )
-    .join("");
+    .join("") + loadMoreButtonHtml("news", visibleItems.length, items.length);
 
   elNews.querySelectorAll(".card.news.has-place").forEach((card) => {
     card.addEventListener("click", (e) => {
@@ -953,6 +1039,14 @@ function renderNews() {
       if (n && point) focusMapMarker(n.id, point.lat, point.lng);
     });
   });
+
+  const loadMoreButton = elNews.querySelector('[data-load-more="news"]');
+  if (loadMoreButton) {
+    loadMoreButton.addEventListener("click", () => {
+      mobileListVisible.news += MOBILE_LIST_PAGE_SIZE;
+      renderNews();
+    });
+  }
 }
 
 // --- Štatistiky ---
@@ -1053,6 +1147,33 @@ contentSearch.addEventListener("input", (e) => {
   renderFilteredViews();
 });
 
+function handleMobileListModeChange() {
+  resetMobileListLimits();
+  if (state.sightings.length) renderSightings();
+  if (state.news.length) renderNews();
+  refitMapOnVisibleMarkers();
+}
+
+if (typeof mobileListMedia.addEventListener === "function") {
+  mobileListMedia.addEventListener("change", handleMobileListModeChange);
+} else {
+  mobileListMedia.addListener(handleMobileListModeChange);
+}
+
+let lastMapContainerWidth = map.getContainer().clientWidth;
+function handleMapContainerResize() {
+  const nextWidth = map.getContainer().clientWidth;
+  if (nextWidth === lastMapContainerWidth) return;
+  lastMapContainerWidth = nextWidth;
+  if (mobileListMedia.matches) refitMapOnVisibleMarkers();
+}
+
+if ("ResizeObserver" in window) {
+  const mapResizeObserver = new ResizeObserver(handleMapContainerResize);
+  mapResizeObserver.observe(map.getContainer());
+}
+window.addEventListener("resize", handleMapContainerResize);
+
 // --- Upozorni ma (email subscription) ---
 (function () {
   const form = document.getElementById("notifyForm");
@@ -1131,8 +1252,9 @@ syncThemeButton(currentTheme());
 setTiles(state.mapLayer);
 addLocationControl();
 addCenterMapControl();
-elSightings.innerHTML = skeletons(5);
-elNews.innerHTML = skeletons(5);
+const initialSkeletonCount = mobileListMedia.matches ? MOBILE_LIST_PAGE_SIZE : 5;
+elSightings.innerHTML = skeletons(initialSkeletonCount);
+elNews.innerHTML = skeletons(initialSkeletonCount);
 loadData();
 // Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).
 setInterval(loadData, 15 * 60 * 1000);
