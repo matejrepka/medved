@@ -1254,7 +1254,7 @@
                 <i class="ph ph-arrows-clockwise"></i> Obnoviť
               </button>
             </div>
-            <p class="section-lede">Všetky uložené správy a hlásenia — vyhľadávateľné, zoraditeľné a editovateľné. Kliknutím na hlavičku stĺpca zoradíš, tlačidlom upravíš ktorýkoľvek záznam.</p>
+            <p class="section-lede">Všetky uložené správy a hlásenia môžeš vyhľadávať, zoraďovať a upravovať. Kliknutím na hlavičku stĺpca obsah zoradíš, tlačidlom upravíš ktorýkoľvek záznam.</p>
 
             <div class="content-toolbar">
               <div class="seg-toggle" id="contentTypeToggle">
@@ -1398,14 +1398,14 @@
       const statusMsg = document.getElementById('statusMessage');
 
       const formatDateTime = (value) => {
-        if (!value) return '—';
+        if (!value) return 'Neuvedené';
         const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return '—';
+        if (Number.isNaN(date.getTime())) return 'Neuvedené';
         return new Intl.DateTimeFormat('sk-SK', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
       };
 
       const formatCount = (value) => {
-        if (!Number.isFinite(value)) return '—';
+        if (!Number.isFinite(value)) return 'Neuvedené';
         return value.toLocaleString('sk-SK');
       };
 
@@ -1447,7 +1447,7 @@
         if (sightings.error || news.error) {
           details.push('Chyba: ' + (sightings.error || news.error));
         } else {
-          details.push('Režim: ' + (status?.refreshMode || '—'));
+          details.push('Režim: ' + (status?.refreshMode || 'neuvedený'));
         }
         if (statsMeta) statsMeta.textContent = details.join('  ·  ');
       };
@@ -1559,7 +1559,7 @@
         card.innerHTML =
           '<div class="review-card-head">' +
             '<div>' +
-              '<p class="review-card-title">' + esc(item.location || '—') + '</p>' +
+              '<p class="review-card-title">' + esc(item.location || 'Bez lokality') + '</p>' +
               '<p class="review-card-meta">' +
                 '<span class="sub-type-badge area">tumedved.sk</span> · ' +
                 formatDateTime(item.reported_at) +
@@ -1888,8 +1888,8 @@
           el.hidden = !vis[el.dataset.field];
         });
         addPlaceHint.textContent = type === 'news-warning'
-          ? 'Povinné — súradnice sa doplnia automaticky z názvu obce a varovanie sa zobrazí na mape.'
-          : 'Voliteľné — ak zadáte obec, položka dostane súradnice a zobrazí sa aj na mape.';
+          ? 'Povinné: súradnice sa doplnia automaticky z názvu obce a varovanie sa zobrazí na mape.'
+          : 'Voliteľné: ak zadáte obec, položka dostane súradnice a zobrazí sa aj na mape.';
       }
 
       addForm.querySelectorAll('input[name="addType"]').forEach(r => {
@@ -2018,7 +2018,7 @@
             tr.innerHTML =
               '<td>' + esc(sub.email) + '</td>' +
               '<td>' + typeBadge + '</td>' +
-              '<td>' + esc(sub.area_name || '—') + '</td>' +
+              '<td>' + esc(sub.area_name || 'Všetky oblasti') + '</td>' +
               '<td>' + formatDateTime(sub.created_at) + '</td>' +
               '<td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>';
             tr.querySelector('.sub-delete').addEventListener('click', () => deleteSub(sub.id, tr));
@@ -2049,20 +2049,20 @@
 
       const COLUMNS = {
         news: [
-          { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || '—') + '</strong>' },
-          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || '—') },
+          { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || 'Bez titulku') + '</strong>' },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
           { key: 'published_at', label: 'Dátum', render: (r) => formatDateTime(r.published_at) },
-          { key: 'place', label: 'Lokalita', render: (r) => esc(r.place || '—') },
+          { key: 'place', label: 'Lokalita', render: (r) => esc(r.place || 'Bez lokality') },
           { key: 'category', label: 'Kategória', render: (r) => catBadge(r.category) },
           { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status) },
         ],
         sightings: [
-          { key: 'location', label: 'Lokalita', render: (r) => '<strong>' + esc(r.location || '—') + '</strong>' },
-          { key: 'note', label: 'Poznámka', render: (r) => '<span class="cell-truncate">' + esc(r.note || '—') + '</span>' },
+          { key: 'location', label: 'Lokalita', render: (r) => '<strong>' + esc(r.location || 'Bez lokality') + '</strong>' },
+          { key: 'note', label: 'Poznámka', render: (r) => '<span class="cell-truncate">' + esc(r.note || 'Bez poznámky') + '</span>' },
           { key: 'reported_at', label: 'Dátum', render: (r) => formatDateTime(r.reported_at) },
           { key: 'has_coords', label: 'Súradnice', render: (r) => coordsCell(r) },
           { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status || 'approved') },
-          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || '—') },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
         ],
       };
 
