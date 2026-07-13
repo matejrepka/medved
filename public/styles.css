@@ -196,6 +196,10 @@ h3 {
   object-fit: contain;
 }
 
+[data-theme="dark"] .brand-mark img {
+  content: url("/assets/mascot/bear-head-mark-dark.png?v=20260713-2");
+}
+
 .brand-name {
   min-width: 0;
   overflow: hidden;

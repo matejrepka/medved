@@ -17,7 +17,7 @@ const SRC = path.join(ROOT, "assets-src");
 const OUT_MASCOT = path.join(ROOT, "public", "assets", "mascot");
 
 // Cieľové šírky vychádzajú zo skutočnej zobrazovanej veľkosti × ~2 (retina).
-//   brand-mark sa zobrazuje 38px, hero max 340px, cta max-height 150px.
+//   brand-mark sa zobrazuje 42px, hero max 340px, cta max-height 150px.
 const MASCOTS = [
   { name: "bear-head-mark", size: 128, webp: false },               // logo v hlavičke
   { name: "bear-map-mascot-transparent", size: 700, webp: true },   // hero (above-the-fold)
@@ -56,6 +56,32 @@ async function buildMascots() {
   }
 }
 
+async function buildDarkLogo() {
+  const src = path.join(SRC, "mascot", "bear-head-mark.png");
+  const out = path.join(OUT_MASCOT, "bear-head-mark-dark.png");
+  const image = sharp(src).resize(128, 128, { fit: "inside", withoutEnlargement: true }).ensureAlpha();
+  const { data, info } = await image.raw().toBuffer({ resolveWithObject: true });
+  const white = [0xf1, 0xf0, 0xe8];
+  const mutedWhite = [0xb2, 0xb1, 0xa6];
+
+  for (let i = 0; i < data.length; i += info.channels) {
+    if (data[i + 3] === 0) continue;
+
+    const luminance = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    const target = luminance > 105 ? mutedWhite : white;
+    data[i] = target[0];
+    data[i + 1] = target[1];
+    data[i + 2] = target[2];
+  }
+
+  await sharp(data, {
+    raw: { width: info.width, height: info.height, channels: info.channels },
+  })
+    .png({ compressionLevel: 9 })
+    .toFile(out);
+  console.log(`  bear-head-mark-dark.png -> ${await fileSize(out)}`);
+}
+
 async function buildFavicon() {
   const src = path.join(SRC, "mascot", "bear-head-mark.png");
   const out = path.join(ROOT, "public", "favicon.png");
@@ -68,5 +94,6 @@ async function buildFavicon() {
 
 console.log("Optimalizujem obrázky…");
 await buildMascots();
+await buildDarkLogo();
 await buildFavicon();
 console.log("Hotovo.");
