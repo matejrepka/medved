@@ -32,16 +32,16 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260702-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260713-3" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png?v=20260702-2" alt="" aria-hidden="true" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="" aria-hidden="true" />
         </span>
-        <span class="brand-name">Kde je Medveď</span>
+        <span class="brand-name">Kde je Medve&#271;</span>
       </a>
       <a class="ghost-btn legal-back" href="/">
         <i class="ph ph-arrow-left" aria-hidden="true"></i>
@@ -53,7 +53,7 @@
       <article class="legal-content">
         <p class="legal-kicker">Právne informácie</p>
         <h1>Podmienky používania</h1>
-        <p class="legal-updated">Posledná aktualizácia: 25. jún 2026</p>
+        <p class="legal-updated">Posledná aktualizácia: 13. júl 2026</p>
 
         <section>
           <h2>Charakter služby</h2>
@@ -72,6 +72,31 @@
             Google News. Prevádzkovateľ tejto aplikácie nevytvára pôvodný obsah týchto
             hlásení a správ, nekontroluje ich úplnosť a nevie garantovať ich presnosť,
             aktuálnosť ani pravdivosť.
+          </p>
+        </section>
+
+        <section>
+          <h2>Hlásenia používateľov</h2>
+          <p>
+            Odoslaním hlásenia potvrdzujete, že podľa vášho najlepšieho vedomia je
+            pravdivé, že máte právo poskytnúť jeho obsah a že ním neporušujete práva
+            iných osôb. Neuvádzajte citlivé osobné údaje ani údaje, ktoré nie sú
+            potrebné na opísanie výskytu medveďa.
+          </p>
+          <p>
+            Prevádzkovateľ môže hlásenie pred zverejnením skontrolovať, upraviť jeho
+            formát alebo lokalitu, odmietnuť ho či odstrániť. Odoslaním udeľujete
+            prevádzkovateľovi nevýhradné a bezodplatné oprávnenie zobraziť neosobný
+            obsah hlásenia v rozsahu potrebnom na prevádzku služby.
+          </p>
+        </section>
+
+        <section>
+          <h2>E-mailové upozornenia</h2>
+          <p>
+            Funkcia e-mailových upozornení sa pripravuje. Zadaním e-mailovej adresy
+            požiadate o evidovanie záujmu o túto funkciu; samotné odosielanie upozornení
+            ešte nemusí byť aktívne. Súhlas s odberom môžete kedykoľvek odvolať.
           </p>
         </section>
 
@@ -102,10 +127,20 @@
         <section>
           <h2>Obmedzenie zodpovednosti</h2>
           <p>
-            Prevádzkovateľ aplikácie nezodpovedá za škody, straty, rozhodnutia,
-            zásahy, opomenutia ani iné následky, ktoré vzniknú použitím, výpadkom alebo
-            nesprávnym výkladom údajov zobrazených v aplikácii. Používanie aplikácie je
-            na vlastné riziko používateľa.
+            V rozsahu dovolenom platnými právnymi predpismi prevádzkovateľ nezodpovedá
+            za následky rozhodnutí založených výlučne na neoverených alebo oneskorených
+            informáciách z aplikácie. Nič v týchto podmienkach nevylučuje ani neobmedzuje
+            zodpovednosť, ktorú podľa záväzných právnych predpisov nemožno vylúčiť alebo
+            obmedziť.
+          </p>
+        </section>
+
+        <section>
+          <h2>Primerané používanie</h2>
+          <p>
+            Je zakázané narúšať bezpečnosť alebo dostupnosť služby, automatizovane ju
+            neprimerane zaťažovať, obchádzať ochranné opatrenia, odosielať klamlivé či
+            nezákonné hlásenia alebo zneužívať kontaktné a osobné údaje iných osôb.
           </p>
         </section>
 
@@ -121,15 +156,23 @@
         <section>
           <h2>Zmeny podmienok</h2>
           <p>
-            Tieto podmienky môžu byť priebežne upravené. Pokračovaním v používaní
-            aplikácie po ich zverejnení vyjadrujete súhlas s aktuálnym znením.
+            Tieto podmienky môžu byť primerane upravené pri zmene služby alebo právnych
+            požiadaviek. Nové znenie a dátum aktualizácie budú zverejnené na tejto
+            stránke. Zmena neobmedzuje práva, ktoré vám priznávajú záväzné právne
+            predpisy.
+          </p>
+        </section>
+
+        <section>
+          <h2>Rozhodné právo a kontakt</h2>
+          <p>
+            Tieto podmienky sa riadia právom Slovenskej republiky, pričom tým nie sú
+            dotknuté kogentné práva spotrebiteľa. Identifikačné a kontaktné údaje
+            prevádzkovateľa musia byť doplnené pred verejným spustením služby.
           </p>
         </section>
       </article>
     </main>
-    <script type="module">
-      import { inject } from "/vendor/analytics/index.mjs";
-      inject();
-    </script>
+    <script src="/consent.js?v=20260713-1" defer></script>
   </body>
 </html>

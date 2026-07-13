@@ -32,16 +32,16 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260702-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260713-3" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png?v=20260702-2" alt="" aria-hidden="true" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="" aria-hidden="true" />
         </span>
-        <span class="brand-name">Kde je Medveď</span>
+        <span class="brand-name">Kde je Medve&#271;</span>
       </a>
       <a class="ghost-btn legal-back" href="/">
         <i class="ph ph-arrow-left" aria-hidden="true"></i>
@@ -53,72 +53,134 @@
       <article class="legal-content">
         <p class="legal-kicker">Právne informácie</p>
         <h1>Ochrana súkromia</h1>
-        <p class="legal-updated">Posledná aktualizácia: 25. jún 2026</p>
+        <p class="legal-updated">Posledná aktualizácia: 13. júl 2026</p>
 
         <section>
-          <h2>Aké údaje spracúvame</h2>
+          <h2>Prevádzkovateľ</h2>
           <p>
-            Kde je Medveď nevyžaduje registráciu, účet ani prihlasovanie. Pri bežnom
-            používaní nám vedome neposkytujete meno, e-mail ani iné kontaktné údaje.
+            Prevádzkovateľom a správcom osobných údajov je prevádzkovateľ služby
+            Kde je Medveď. Jeho úplné identifikačné údaje, adresa a kontaktný e-mail
+            musia byť doplnené pred verejným spustením služby.
+          </p>
+          <!-- TODO pred produkčným spustením: doplniť meno/názov, adresu, IČO (ak existuje)
+               a funkčný kontaktný e-mail prevádzkovateľa. -->
+        </section>
+
+        <section>
+          <h2>Aké údaje spracúvame a prečo</h2>
+          <p>
+            Účet ani registrácia nie sú potrebné. Podľa toho, ktoré funkcie použijete,
+            môžeme spracúvať tieto údaje:
+          </p>
+          <ul>
+            <li>
+              <strong>Odber upozornení:</strong> e-mailová adresa, zvolený typ odberu
+              a prípadne názov oblasti. Účelom je evidovať váš záujem o pripravované
+              e-mailové upozornenia. Právnym základom je váš súhlas, ktorý môžete
+              kedykoľvek odvolať.
+            </li>
+            <li>
+              <strong>Hlásenie výskytu:</strong> lokalita, súradnice, dátum, opis a
+              nepovinné meno a e-mail oznamovateľa. Účelom je overiť hlásenie, prípadne
+              kontaktovať oznamovateľa a po schválení zobraziť neosobné údaje hlásenia.
+              Pri kontaktných údajoch je právnym základom váš súhlas; pri spracovaní
+              obsahu hlásenia oprávnený záujem na prevádzke informačnej služby.
+            </li>
+            <li>
+              <strong>Prevádzkové záznamy:</strong> požadovaná cesta, čas, stav odpovede,
+              čas odozvy, typ prehliadača, odkazujúca stránka a jednosmerný hash IP
+              adresy. Účelom je bezpečnosť, diagnostika a spoľahlivá prevádzka. Právnym
+              základom je oprávnený záujem prevádzkovateľa.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Verejné a externé údaje</h2>
+          <p>
+            Aplikácia zobrazuje verejne dostupné hlásenia a správy získané najmä z
+            tumedved.sk a Google News. Môžu obsahovať lokality, časové údaje, titulky,
+            úryvky a odkazy, ktoré už zverejnili tretie strany. Ak sa domnievate, že
+            zobrazený obsah neoprávnene obsahuje vaše osobné údaje, kontaktujte
+            prevádzkovateľa a požiadajte o preverenie alebo odstránenie.
+          </p>
+        </section>
+
+        <section id="cookies">
+          <h2>Cookies, lokálne úložisko a analytika</h2>
+          <p>
+            Kde je Medveď nepoužíva reklamné cookies. V nevyhnutnom lokálnom úložisku
+            prehliadača sa uchováva zvolená téma, mapová vrstva a vaša voľba súkromia.
+            Tieto nastavenia sú potrebné na požadované fungovanie stránky.
           </p>
           <p>
-            Aplikácia zobrazuje verejne dostupné informácie získané z externých zdrojov,
-            najmä z tumedved.sk a Google News. Tieto údaje môžu obsahovať lokality,
-            časové údaje, titulky, úryvky správ, odkazy a ďalšie informácie, ktoré už
-            zverejnili tretie strany.
+            Vercel Web Analytics sa načíta len vtedy, ak s analytikou súhlasíte.
+            Vercel uvádza, že táto služba nepoužíva cookies a pracuje s anonymizovanými,
+            agregovanými údajmi o návštevách. Súhlas môžete kedykoľvek zmeniť; odvolanie
+            súhlasu nemá vplyv na zákonnosť predchádzajúceho spracúvania.
+          </p>
+          <button type="button" class="ghost-btn legal-settings-button" data-open-privacy-settings>
+            Zmeniť nastavenie súkromia
+          </button>
+        </section>
+
+        <section>
+          <h2>Príjemcovia a externé služby</h2>
+          <p>
+            Údaje môžu v nevyhnutnom rozsahu spracúvať poskytovatelia hostingu a
+            infraštruktúry, najmä Supabase (databáza) a Vercel (hosting a voliteľná
+            analytika). Pri načítaní mapy alebo ďalších prvkov sa vaše technické údaje,
+            najmä IP adresa, môžu preniesť poskytovateľom CARTO, OpenStreetMap,
+            OpenTopoMap, Esri, Google Fonts, unpkg a jsDelivr. Pri vyhľadávaní lokality
+            na stránke hlásenia sa používa služba Nominatim/OpenStreetMap.
+          </p>
+          <p>
+            Niektorí poskytovatelia môžu spracúvať údaje mimo Európskeho hospodárskeho
+            priestoru. V takom prípade sa prenos musí opierať o príslušný právny
+            mechanizmus podľa GDPR, napríklad rozhodnutie o primeranosti alebo štandardné
+            zmluvné doložky.
           </p>
         </section>
 
         <section>
-          <h2>Technické údaje</h2>
+          <h2>Doba uchovávania</h2>
           <p>
-            Server môže pri vybavovaní požiadaviek spracovať bežné technické údaje,
-            napríklad IP adresu, typ prehliadača, čas požiadavky, navštívenú URL alebo
-            chybové hlásenia. Tieto údaje slúžia na prevádzku, bezpečnosť a diagnostiku
-            aplikácie.
+            Osobné údaje uchovávame len počas obdobia potrebného na uvedené účely.
+            Údaje odberu uchovávame do odvolania súhlasu alebo ukončenia služby.
+            Kontaktné údaje pripojené k hláseniu uchovávame počas overovania a primeranú
+            dobu potrebnú na riešenie súvisiacich otázok. Prevádzkové záznamy sa majú
+            pravidelne mazať alebo anonymizovať po skončení bezpečnostnej a diagnostickej
+            potreby. Zákon alebo riešenie právnych nárokov môže vyžadovať dlhšiu dobu.
           </p>
         </section>
 
         <section>
-          <h2>Lokálne nastavenia</h2>
+          <h2>Vaše práva</h2>
           <p>
-            Aplikácia môže v prehliadači uložiť iba jednoduché nastavenia, napríklad
-            zvolený svetlý alebo tmavý režim a vybranú mapovú vrstvu. Tieto údaje sú
-            uložené lokálne vo vašom zariadení a neslúžia na identifikáciu používateľa.
+            Za podmienok GDPR máte právo na prístup k údajom, opravu, vymazanie,
+            obmedzenie spracúvania, prenosnosť údajov, namietať proti spracúvaniu
+            založenému na oprávnenom záujme a kedykoľvek odvolať súhlas. Nepoužívame
+            automatizované rozhodovanie ani profilovanie, ktoré by voči vám malo právne
+            alebo podobne významné účinky.
+          </p>
+          <p>
+            Máte tiež právo podať návrh na začatie konania na
+            <a href="https://dataprotection.gov.sk/" target="_blank" rel="noopener noreferrer">
+              Úrad na ochranu osobných údajov Slovenskej republiky</a>.
           </p>
         </section>
 
         <section>
-          <h2>Externé služby</h2>
+          <h2>Bezpečnosť a zmeny</h2>
           <p>
-            Pri používaní aplikácie sa môžu načítavať služby tretích strán, napríklad
-            mapové podklady, písma, ikony, knižnica mapy a odkazy na pôvodné články.
-            Tieto služby môžu spracúvať údaje podľa vlastných pravidiel ochrany súkromia.
-          </p>
-        </section>
-
-        <section>
-          <h2>Zdroje údajov</h2>
-          <p>
-            Nezhromažďujeme ani nevytvárame vlastné hlásenia o výskyte medveďov. Dáta
-            preberáme automatizovane z verejne dostupných externých webov. Za obsah,
-            presnosť, úplnosť a aktuálnosť týchto externých údajov zodpovedajú ich
-            pôvodní autori alebo prevádzkovatelia.
-          </p>
-        </section>
-
-        <section>
-          <h2>Zmeny</h2>
-          <p>
-            Tieto pravidlá môžu byť priebežne upravené, najmä ak sa zmení spôsob
-            fungovania aplikácie, zdroje údajov alebo používané externé služby.
+            Používame primerané technické a organizačné opatrenia na ochranu údajov.
+            Tieto informácie môžeme aktualizovať pri zmene služby alebo právnych
+            požiadaviek. Aktuálna verzia je vždy zverejnená na tejto stránke spolu s
+            dátumom poslednej aktualizácie.
           </p>
         </section>
       </article>
     </main>
-    <script type="module">
-      import { inject } from "/vendor/analytics/index.mjs";
-      inject();
-    </script>
+    <script src="/consent.js?v=20260713-1" defer></script>
   </body>
 </html>

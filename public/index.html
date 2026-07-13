@@ -71,16 +71,16 @@
       />
     </noscript>
 
-    <link rel="stylesheet" href="/styles.css" />
-    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260702-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260713-3" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png?v=20260702-2" alt="" aria-hidden="true" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="" aria-hidden="true" />
         </span>
-        <span class="brand-name">Kde je Medveď</span>
+        <span class="brand-name">Kde je Medve&#271;</span>
       </a>
 
       <nav class="main-nav" aria-label="Hlavné menu">
@@ -304,6 +304,11 @@
               <i class="ph ph-bell" aria-hidden="true"></i>
               <span>Prihlásiť sa na odber</span>
             </button>
+            <p class="notify-privacy">
+              Prihlásením súhlasíte so spracovaním e-mailu na evidenciu odberu.
+              Súhlas môžete kedykoľvek odvolať.
+              <a href="/privacy">Ako chránime vaše údaje</a>
+            </p>
             <div id="notifyMessage" class="form-message" role="alert"></div>
           </form>
         </div>
@@ -329,10 +334,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=news-map-v6"></script>
-    <script type="module">
-      import { inject } from "/vendor/analytics/index.mjs";
-      inject();
-    </script>
+    <script src="/app.js?v=news-map-v7"></script>
+    <script src="/consent.js?v=20260713-1" defer></script>
   </body>
 </html>

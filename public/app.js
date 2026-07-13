@@ -3,7 +3,7 @@
 // (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
-const API_VERSION = "news-map-v6";
+const API_VERSION = "news-map-v7";
 const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
 const state = {
   sightings: [],
@@ -387,14 +387,17 @@ const clearFiltersBtn = $("clearFiltersBtn");
 const contentSearch = $("contentSearch");
 const layerInputs = Array.from(document.querySelectorAll('input[name="mapLayer"]'));
 
-function todayInputDate() {
+function todayInputDate(offsetDays = 0) {
   const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 10);
 }
 
-// „Do" je predvolene dnešný dátum.
+// Predvolene zobrazujeme hlásenia za posledný týždeň vrátane dneška.
+filterStart.value = todayInputDate(-7);
 filterEnd.value = todayInputDate();
+state.filters.startDate = filterStart.value;
 state.filters.endDate = filterEnd.value;
 
 function dateInputToTime(value, endOfDay = false) {
@@ -913,7 +916,8 @@ contentSearch.addEventListener("input", (e) => {
       const data = await res.json();
 
       if (res.ok && data.ok) {
-        msg.textContent = "Odber bol úspešne zaregistrovaný.";
+        msg.textContent =
+          "Ďakujeme, váš email sme uložili. Emailové upozornenia spustíme už čoskoro.";
         msg.className = "form-message success";
         form.reset();
         areaWrap.hidden = true;
