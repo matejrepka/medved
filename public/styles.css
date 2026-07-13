@@ -1422,6 +1422,10 @@ main {
   border-bottom: 1px solid var(--line-strong);
 }
 
+.knowledge-hero > .section-kicker {
+  margin-bottom: clamp(14px, 2vw, 18px);
+}
+
 .knowledge-hero h1 {
   font-size: clamp(2.25rem, 6vw, 4rem);
   line-height: 1.02;

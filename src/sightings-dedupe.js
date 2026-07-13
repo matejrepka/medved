@@ -107,9 +107,17 @@ function normalizeSourceLink(link) {
   if (!link || typeof link !== "object") return null;
   const url = String(link.url || "").trim();
   if (!url) return null;
+  const key = String(link.key || "source").trim() || "source";
+  let label = String(link.label || link.key || "Zdroj").trim() || "Zdroj";
+  if (key === "sprejnamedveda") {
+    if (/\/aktuality\//i.test(url)) label = "sprejnamedveda.sk – článok";
+    else if (/sprejnamedveda\.sk\/medvede-na-mape\/?/i.test(url)) {
+      label = "sprejnamedveda.sk – mapa";
+    }
+  }
   return {
-    key: String(link.key || "source").trim() || "source",
-    label: String(link.label || link.key || "Zdroj").trim() || "Zdroj",
+    key,
+    label,
     url,
     ...(link.sourceId ? { sourceId: String(link.sourceId) } : {}),
   };
