@@ -102,6 +102,112 @@ const newsPinIcon = L.divIcon({
   popupAnchor: [0, -8],
 });
 
+// --- Poloha používateľa ---
+// Súradnice sa používajú iba lokálne v prehliadači na vycentrovanie mapy.
+let userLocationLayer = null;
+let locationMessageTimer = null;
+
+function locationErrorMessage(error) {
+  if (error?.code === 1) {
+    return "Prístup k polohe bol zamietnutý. Povoľte ho v nastaveniach prehliadača.";
+  }
+  if (error?.code === 2) {
+    return "Vašu polohu sa nepodarilo určiť. Skontrolujte, či máte zapnuté GPS.";
+  }
+  if (error?.code === 3) {
+    return "Zisťovanie polohy trvalo príliš dlho. Skúste to znova.";
+  }
+  return "Vašu polohu sa nepodarilo zistiť. Skúste to znova.";
+}
+
+function addLocationControl() {
+  const LocationControl = L.Control.extend({
+    options: { position: "topleft" },
+    onAdd() {
+      const container = L.DomUtil.create("div", "map-location-control");
+      const button = L.DomUtil.create("button", "map-location-button", container);
+      const message = L.DomUtil.create("span", "map-location-message", container);
+
+      button.type = "button";
+      button.title = "Zobraziť moju polohu";
+      button.setAttribute("aria-label", "Zobraziť moju polohu");
+      button.setAttribute("aria-describedby", "mapLocationMessage");
+      button.innerHTML = '<i class="ph ph-crosshair" aria-hidden="true"></i>';
+      message.id = "mapLocationMessage";
+      message.setAttribute("role", "status");
+      message.setAttribute("aria-live", "polite");
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+
+      const resetButton = () => {
+        button.disabled = false;
+        button.classList.remove("is-loading");
+        button.innerHTML = '<i class="ph ph-crosshair" aria-hidden="true"></i>';
+      };
+
+      const showMessage = (text, type = "", duration = 5000) => {
+        clearTimeout(locationMessageTimer);
+        message.textContent = text;
+        message.className = `map-location-message is-visible${type ? ` is-${type}` : ""}`;
+        if (duration) {
+          locationMessageTimer = setTimeout(() => {
+            message.className = "map-location-message";
+          }, duration);
+        }
+      };
+
+      L.DomEvent.on(button, "click", () => {
+        if (!navigator.geolocation) {
+          showMessage("Váš prehliadač nepodporuje zisťovanie polohy.", "error", 7000);
+          return;
+        }
+
+        button.disabled = true;
+        button.classList.add("is-loading");
+        button.innerHTML = '<i class="ph ph-spinner" aria-hidden="true"></i>';
+        showMessage("Zisťujem vašu polohu…", "", 0);
+
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => {
+            const { latitude, longitude, accuracy } = coords;
+            const position = [latitude, longitude];
+            const roundedAccuracy = Math.max(1, Math.round(accuracy));
+
+            if (userLocationLayer) map.removeLayer(userLocationLayer);
+            userLocationLayer = L.layerGroup([
+              L.circle(position, {
+                radius: roundedAccuracy,
+                className: "user-location-accuracy",
+                interactive: false,
+              }),
+              L.circleMarker(position, {
+                radius: 8,
+                className: "user-location-marker",
+              }).bindPopup(
+                `<p class="popup-loc">Vaša poloha</p><p class="popup-meta">Presnosť približne ${roundedAccuracy.toLocaleString("sk-SK")} m</p>`
+              ),
+            ]).addTo(map);
+
+            map.flyTo(position, Math.max(map.getZoom(), 14), { duration: 0.7 });
+            showMessage(`Poloha nájdená s presnosťou približne ${roundedAccuracy.toLocaleString("sk-SK")} m.`, "success");
+            resetButton();
+          },
+          (error) => {
+            showMessage(locationErrorMessage(error), "error", 8000);
+            resetButton();
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+        );
+      });
+
+      return container;
+    },
+  });
+
+  new LocationControl().addTo(map);
+}
+
 // --- Téma (svetlá / tmavá) ---
 const themeBtn = $("themeBtn");
 
@@ -938,6 +1044,7 @@ contentSearch.addEventListener("input", (e) => {
 // --- Štart ---
 syncThemeButton(currentTheme());
 setTiles(state.mapLayer);
+addLocationControl();
 elSightings.innerHTML = skeletons(5);
 elNews.innerHTML = skeletons(5);
 loadData();
