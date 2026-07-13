@@ -347,6 +347,8 @@
         padding: 10px 14px;
         border-radius: var(--radius-sm);
         font-size: 0.88rem;
+        line-height: 1.55;
+        white-space: pre-line;
         display: none;
       }
       .status-msg.success {
@@ -1498,6 +1500,28 @@
         el.classList.toggle('has-items', count > 0);
       }
 
+      const refreshStageLabels = {
+        fetch: 'sťahovanie',
+        save: 'ukladanie',
+        reload: 'načítanie uložených dát',
+        record: 'zápis záznamu o obnove',
+      };
+
+      function describeSourceRun(label, meta) {
+        const run = meta?.lastRun;
+        if (!run) {
+          if (!meta?.error) return null;
+          const stage = refreshStageLabels[meta.errorStage];
+          return `${label}: chyba${stage ? ` pri ${stage}` : ''} – ${meta.error}`;
+        }
+        if (run.status === 'success') {
+          const count = Number.isInteger(run.itemCount) ? ` (${run.itemCount})` : '';
+          return `${label}: načítané${count}`;
+        }
+        const stage = refreshStageLabels[run.stage || meta.errorStage] || 'obnova';
+        return `${label}: zlyhalo pri ${stage} – ${run.error || meta.error || 'Neznáma chyba'}`;
+      }
+
       // --- Stats ---
       const renderStats = (status) => {
         const sightings = status?.sightings || {};
@@ -1514,8 +1538,12 @@
 
         const details = [];
         details.push('Posledná aktualizácia: ' + formatDateTime(latestUpdate));
-        if (sightings.error || news.error) {
-          details.push('Chyba: ' + (sightings.error || news.error));
+        const sourceRuns = [
+          describeSourceRun('TuMedveď', sightings),
+          describeSourceRun('Správy', news),
+        ].filter(Boolean);
+        if (sourceRuns.length) {
+          details.push(...sourceRuns);
         } else {
           details.push('Režim: ' + (status?.refreshMode || 'neuvedený'));
         }
@@ -1544,18 +1572,19 @@
           const res = await authFetch('/api/admin/refresh', { method: 'POST' });
           const data = await res.json();
 
-          if (res.ok && data.ok) {
-            const failed = data.errors ? Object.keys(data.errors) : [];
-            statusMsg.textContent = data.message || 'Sťahovanie úspešne dokončené.';
-            statusMsg.className = failed.length ? 'status-msg error' : 'status-msg success';
+          const failed = data.sources
+            ? Object.values(data.sources).some(source => !source.ok)
+            : Boolean(data.errors);
+          statusMsg.textContent = data.message || data.error || 'Neznámy výsledok sťahovania.';
+          statusMsg.className = res.ok && data.ok && !failed
+            ? 'status-msg success'
+            : 'status-msg error';
+
+          if (data.sightings || data.news) {
             renderStats(data);
+          }
+          if (data.ok) {
             loadPending();
-          } else {
-            const detail = data.errors
-              ? Object.entries(data.errors).map(([k, v]) => k + ': ' + v).join(' · ')
-              : (data.error || 'Neznáma chyba');
-            statusMsg.textContent = 'Chyba: ' + detail;
-            statusMsg.className = 'status-msg error';
           }
         } catch (err) {
           statusMsg.textContent = 'Chyba siete: ' + err.message;

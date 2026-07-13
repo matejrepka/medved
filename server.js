@@ -557,26 +557,77 @@ function isValidCronRequest(req) {
 // Obnoví obidva zdroje nezávisle. Keď jeden zlyhá (napr. tumedved.sk je za
 // Cloudflare výzvou), druhý sa aj tak obnoví a uloží — a v odpovedi vidíme,
 // ktorý zdroj zlyhal a prečo.
+const REFRESH_PHASE_LABELS = {
+  fetch: "sťahovaní",
+  save: "ukladaní",
+  reload: "načítaní uložených dát",
+  record: "zápise záznamu o obnove",
+};
+
+function refreshSourceOutcome(result, store, label) {
+  const meta = store.meta;
+  const ok = result.status === "fulfilled";
+  const error = ok
+    ? null
+    : result.reason?.message || String(result.reason || "Neznáma chyba");
+  const stage = ok
+    ? null
+    : result.reason?.refreshStage || meta.errorStage || "refresh";
+
+  return {
+    label,
+    ok,
+    status: ok ? "success" : "error",
+    itemCount: ok ? meta.lastRun?.itemCount ?? null : null,
+    fetchedAt: ok ? meta.fetchedAt : null,
+    stage,
+    error,
+  };
+}
+
+function refreshResultMessage(result) {
+  const outcomes = Object.values(result.sources);
+  const successful = outcomes.filter((source) => source.ok).length;
+  const header = successful === outcomes.length
+    ? "Sťahovanie úspešne dokončené."
+    : successful > 0
+      ? "Sťahovanie čiastočne dokončené."
+      : "Sťahovanie zlyhalo.";
+  const details = outcomes.map((source) => {
+    if (source.ok) {
+      const count = Number.isInteger(source.itemCount) ? ` (${source.itemCount})` : "";
+      return `${source.label}: načítané${count}.`;
+    }
+    const phase = REFRESH_PHASE_LABELS[source.stage] || "obnove";
+    return `${source.label}: zlyhalo pri ${phase} – ${source.error}`;
+  });
+  return [header, ...details].join("\n");
+}
+
 async function refreshAll(reason) {
   const [sightingsResult, newsResult] = await Promise.allSettled([
     sightingsStore.refresh(reason),
     newsStore.refresh(reason),
   ]);
 
-  const errors = {};
-  if (sightingsResult.status === "rejected") {
-    errors.sightings = sightingsResult.reason?.message || String(sightingsResult.reason);
-  }
-  if (newsResult.status === "rejected") {
-    errors.news = newsResult.reason?.message || String(newsResult.reason);
-  }
+  const sources = {
+    sightings: refreshSourceOutcome(sightingsResult, sightingsStore, "TuMedveď"),
+    news: refreshSourceOutcome(newsResult, newsStore, "Správy"),
+  };
+  const errors = Object.fromEntries(
+    Object.entries(sources)
+      .filter(([, source]) => !source.ok)
+      .map(([key, source]) => [key, source.error])
+  );
 
   return {
-    ok: sightingsResult.status === "fulfilled" || newsResult.status === "fulfilled",
+    ok: sources.sightings.ok || sources.news.ok,
+    complete: sources.sightings.ok && sources.news.ok,
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
     sightings: sightingsStore.meta,
     news: newsStore.meta,
+    sources,
     errors: Object.keys(errors).length ? errors : null,
   };
 }
@@ -589,7 +640,7 @@ app.all("/api/cron/refresh", async (req, res) => {
   const result = await refreshAll("cron");
   res.status(result.ok ? 200 : 502).json({
     ...result,
-    message: result.ok ? "Cron refresh completed." : "Cron refresh failed.",
+    message: refreshResultMessage(result),
   });
 });
 
@@ -1154,14 +1205,10 @@ app.delete("/api/admin/subscriptions/:id", adminAuth, async (req, res) => {
 
 app.post("/api/admin/refresh", adminAuth, async (_req, res) => {
   const result = await refreshAll("admin");
-  const failed = result.errors ? Object.keys(result.errors) : [];
-
-  let message;
-  if (!result.ok) message = "Sťahovanie zlyhalo.";
-  else if (failed.length) message = `Čiastočne dokončené — zlyhalo: ${failed.join(", ")}.`;
-  else message = "Sťahovanie úspešne dokončené.";
-
-  res.status(result.ok ? 200 : 502).json({ ...result, message });
+  res.status(result.ok ? 200 : 502).json({
+    ...result,
+    message: refreshResultMessage(result),
+  });
 });
 
 // Servíruje @vercel/analytics ako ES modul priamo z node_modules, nech ho

@@ -11,6 +11,8 @@ export class ScheduledDataStore {
     this.loadedAt = 0;
     this.inFlight = null;
     this.lastError = null;
+    this.lastErrorStage = null;
+    this.lastRun = null;
   }
 
   async start() {
@@ -42,29 +44,57 @@ export class ScheduledDataStore {
 
     const startedAt = new Date().toISOString();
     this.inFlight = (async () => {
+      let stage = "fetch";
       try {
         const data = await this.fetcher();
         const finishedAt = new Date().toISOString();
         this.value = data;
         this.fetchedAt = Date.now();
         this.lastError = null;
+        this.lastErrorStage = null;
 
         if (this.saveFresh) {
+          stage = "save";
           await this.saveFresh(data, finishedAt);
         }
         if (this.loadStored) {
+          stage = "reload";
           await this.loadFromDatabase();
         }
+        stage = "record";
         await this.record("success", reason, data.length, null, startedAt, finishedAt);
+        this.lastRun = {
+          status: "success",
+          reason,
+          itemCount: data.length,
+          startedAt,
+          finishedAt,
+        };
 
         console.log(`[${this.name}] refreshed ${data.length} items (${reason})`);
         return this.value || data;
       } catch (err) {
         const finishedAt = new Date().toISOString();
-        this.lastError = err;
-        await this.record("error", reason, null, err.message, startedAt, finishedAt);
-        console.error(`[${this.name}] refresh failed:`, err.message);
-        throw err;
+        const failure = err instanceof Error ? err : new Error(String(err));
+        failure.refreshSource ||= this.name;
+        failure.refreshStage ||= stage;
+        this.lastError = failure;
+        this.lastErrorStage = failure.refreshStage;
+        this.lastRun = {
+          status: "error",
+          reason,
+          itemCount: null,
+          stage: failure.refreshStage,
+          error: failure.message,
+          startedAt,
+          finishedAt,
+        };
+        await this.record("error", reason, null, failure.message, startedAt, finishedAt);
+        console.error(
+          `[${this.name}] refresh failed during ${failure.refreshStage}:`,
+          failure.message
+        );
+        throw failure;
       } finally {
         this.inFlight = null;
       }
@@ -109,6 +139,8 @@ export class ScheduledDataStore {
       refreshing: Boolean(this.inFlight),
       count: Array.isArray(this.value) ? this.value.length : null,
       error: this.lastError ? this.lastError.message : null,
+      errorStage: this.lastErrorStage,
+      lastRun: this.lastRun,
     };
   }
 }
