@@ -198,7 +198,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
   }
 
   // Drahšie/limitované spracovanie (AI) beží až po odfiltrovaní známych ID,
-  // takže sa pri hodinovom crone neopakuje nad tými istými článkami.
+  // takže sa pri pravidelnom crone neopakuje nad tými istými článkami.
   if (typeof options.prepareFresh === "function") {
     try {
       await options.prepareFresh(freshItems);

@@ -1,7 +1,7 @@
 // Medveď Sledovač — server.
 //
 // Dáta sa sťahujú výhradne cez externý cron job (cron-job.org), ktorý volá
-// /api/cron/refresh každú hodinu. Server pri štarte načíta existujúce dáta
+// /api/cron/refresh. Server pri štarte načíta existujúce dáta
 // zo Supabase a servíruje ich cez JSON API + frontend zo zložky /public.
 
 import "dotenv/config";
@@ -72,7 +72,6 @@ const PUBLIC_PAGES = {
     description:
       "Aktuálna mapa hláseného výskytu medveďov na Slovensku. Moderované hlásenia, správy, dátumy, lokality a bezpečnostné odporúčania na jednom mieste.",
     schemaType: "CollectionPage",
-    changefreq: "hourly",
     priority: "1.0",
   },
   "/stats": {
@@ -164,7 +163,7 @@ function faqEntities() {
     {
       question: "Je mapa výskytu medveďov aktuálna?",
       answer:
-        "Dáta sa automaticky kontrolujú každú hodinu. Na mape sa zobrazia až položky, ktoré prešli moderovaním; čas poslednej aktualizácie je uvedený priamo na stránke.",
+        "Dáta sa automaticky kontrolujú. Na mape sa zobrazia až položky, ktoré prešli moderovaním; čas poslednej aktualizácie je uvedený priamo na stránke.",
     },
     {
       question: "Znamená bod na mape, že medveď je stále na danom mieste?",
@@ -174,12 +173,13 @@ function faqEntities() {
     {
       question: "Sú hlásenia na mape overené?",
       answer:
-        "Každá zverejnená položka prejde kontrolou relevantnosti a dostupných údajov. Moderovanie však nie je potvrdením aktuálnej polohy zvieraťa ani odborným terénnym overením každého pozorovania.",
+        "Hlásenia sú kontrolované iba z hľadiska spamu. Jednotlivé pozorovania a varovania pochádzajú od používateľov, z iných webových stránok a zo správ; nejde o profesionálne ani terénne overené informácie.",
     },
     {
       question: "Ako nahlásiť výskyt medveďa?",
       answer:
-        "Vo formulári Nahlásiť výskyt označte miesto na mape, uveďte dátum a stručne opíšte okolnosti. Hlásenie sa zverejní až po kontrole.",
+        "Kontaktovať Zásahový tím pre medveďa hnedého ŠOP SR. Ak chcete nahlásiť výskyt do tejto mapy, použite formulár na nahlásenie výskytu.",
+      answerUrl: "https://zasahovytim.sopsr.sk/",
     },
     {
       question: "Čo robiť, keď stretnem medveďa?",
@@ -734,7 +734,10 @@ app.get("/sitemap.xml", async (req, res) => {
       lastmod = "2026-07-13T00:00:00.000Z";
     }
     if (pathname === "/" && latestContentDate()) lastmod = latestContentDate();
-    return `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod)}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
+    const changefreq = page.changefreq
+      ? `\n    <changefreq>${page.changefreq}</changefreq>`
+      : "";
+    return `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod)}</lastmod>${changefreq}\n    <priority>${page.priority}</priority>\n  </url>`;
   }));
 
   res

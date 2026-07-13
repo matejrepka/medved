@@ -33,8 +33,8 @@ mape Slovenska a v prehľadných zoznamoch.
 - **Svetlý a tmavý režim** – prepínač v hlavičke, voľba sa pamätá; dá sa vynútiť aj cez
   URL parameter `?theme=light` / `?theme=dark`. Štandardná mapová vrstva mení dlaždice podľa
   režimu a zvolená vrstva mapy sa pamätá samostatne.
-- **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org) každú
-  hodinu, výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
+- **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org),
+  výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
 
 ## Odkiaľ pochádzajú dáta / Data sources
 
@@ -163,7 +163,7 @@ Príklad odpovede `/api/sightings`:
 medved/
 ├── server.js              # Express server + API + servírovanie frontendu
 ├── src/
-│   ├── scheduled-store.js # hodinový serverový refresh + pamäťová kópia dát
+│   ├── scheduled-store.js # serverový refresh + pamäťová kópia dát
 │   ├── ai/
 │   │   └── news-classifier.js # OpenRouter klasifikácia nových správ + lokalita
 │   ├── db/
@@ -184,7 +184,7 @@ medved/
 
 ## Ako často sa dáta obnovujú / Refresh interval
 
-- Scraping spúšťa **externý cron job** (cron-job.org) každú **hodinu** cez `/api/cron/refresh`.
+- Scraping spúšťa **externý cron job** (cron-job.org) cez `/api/cron/refresh`.
 - Server pri štarte len načíta existujúce dáta zo Supabase — sám nescrapuje.
 - Hlásenia sa ukladajú do `tumedved_logs`, správy do `news_logs`, behy scraperov do
   `scrape_runs` a návštevy/API requesty používateľov do `website_logs`.
