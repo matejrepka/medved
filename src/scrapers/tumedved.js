@@ -78,17 +78,28 @@ function normalize(post) {
 
   const location = stripHtml(acf.lokalita) || stripHtml(post.title?.rendered) || "Neznáma lokalita";
   const note = stripHtml(acf.poznamka) || stripHtml(post.content?.rendered);
+  const url = post.link || `https://tumedved.sk/?p=${post.id}`;
 
   return {
     id: `tm-${post.id}`,
     source: "tumedved.sk",
+    sourceKey: "tumedved",
     location,
     note,
     lat,
     lng,
     hasCoords: lat !== null && lng !== null,
     reportedAt,
-    url: post.link || `https://tumedved.sk/?p=${post.id}`,
+    datePrecision: acf.cas ? "datetime" : "date",
+    url,
+    sourceLinks: [
+      {
+        key: "tumedved",
+        label: "tumedved.sk",
+        url,
+        sourceId: String(post.id),
+      },
+    ],
   };
 }
 

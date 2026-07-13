@@ -45,8 +45,10 @@ export class ScheduledDataStore {
     const startedAt = new Date().toISOString();
     this.inFlight = (async () => {
       let stage = "fetch";
+      let sourceOutcomes = null;
       try {
         const data = await this.fetcher();
+        sourceOutcomes = data.sourceOutcomes || null;
         const finishedAt = new Date().toISOString();
         this.value = data;
         this.fetchedAt = Date.now();
@@ -67,6 +69,7 @@ export class ScheduledDataStore {
           status: "success",
           reason,
           itemCount: data.length,
+          sourceOutcomes,
           startedAt,
           finishedAt,
         };
@@ -86,6 +89,7 @@ export class ScheduledDataStore {
           itemCount: null,
           stage: failure.refreshStage,
           error: failure.message,
+          sourceOutcomes: failure.sourceOutcomes || sourceOutcomes,
           startedAt,
           finishedAt,
         };

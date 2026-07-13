@@ -1522,6 +1522,26 @@
         return `${label}: zlyhalo pri ${stage} – ${run.error || meta.error || 'Neznáma chyba'}`;
       }
 
+      function describeSourceRuns(label, meta) {
+        const children = meta?.lastRun?.sourceOutcomes;
+        if (!children) return [describeSourceRun(label, meta)].filter(Boolean);
+        return Object.values(children).map((source) => {
+          if (source.ok) {
+            const count = Number.isInteger(source.itemCount) ? ` (${source.itemCount})` : '';
+            return `${source.label}: načítané${count}`;
+          }
+          const stage = refreshStageLabels[source.stage] || 'sťahovanie';
+          return `${source.label}: zlyhalo pri ${stage} – ${source.error || 'Neznáma chyba'}`;
+        });
+      }
+
+      function refreshSourceFailed(source) {
+        if (!source?.ok) return true;
+        return source.children
+          ? Object.values(source.children).some(child => !child.ok)
+          : false;
+      }
+
       // --- Stats ---
       const renderStats = (status) => {
         const sightings = status?.sightings || {};
@@ -1539,9 +1559,9 @@
         const details = [];
         details.push('Posledná aktualizácia: ' + formatDateTime(latestUpdate));
         const sourceRuns = [
-          describeSourceRun('TuMedveď', sightings),
-          describeSourceRun('Správy', news),
-        ].filter(Boolean);
+          ...describeSourceRuns('Hlásenia', sightings),
+          ...describeSourceRuns('Správy', news),
+        ];
         if (sourceRuns.length) {
           details.push(...sourceRuns);
         } else {
@@ -1573,7 +1593,7 @@
           const data = await res.json();
 
           const failed = data.sources
-            ? Object.values(data.sources).some(source => !source.ok)
+            ? Object.values(data.sources).some(refreshSourceFailed)
             : Boolean(data.errors);
           statusMsg.textContent = data.message || data.error || 'Neznámy výsledok sťahovania.';
           statusMsg.className = res.ok && data.ok && !failed

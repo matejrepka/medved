@@ -913,6 +913,17 @@ main {
   font-size: 0.78rem;
   font-weight: 600;
 }
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  align-items: center;
+}
+.source-links .popup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
 
 /* ---------- Columns ---------- */
 .columns {
@@ -1134,6 +1145,9 @@ main {
 }
 .card-link i {
   font-size: 14px;
+}
+.source-links .card-link {
+  margin-top: 9px;
 }
 
 /* ---------- Skeleton loading ---------- */

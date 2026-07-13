@@ -500,6 +500,16 @@ function todayInputDate(offsetDays = 0) {
   return date.toISOString().slice(0, 10);
 }
 
+function newsWarningMerged(n) {
+  const id = String(n?.id || "");
+  if (!id) return false;
+  return state.sightings.some((sighting) =>
+    warningSourceLinks(sighting).some((link) =>
+      String(link.sourceId || "") === id && String(link.key || "").startsWith("news:")
+    )
+  );
+}
+
 // Predvolene zobrazujeme hlásenia za posledný týždeň vrátane dneška.
 filterStart.value = todayInputDate(-7);
 filterEnd.value = todayInputDate();
@@ -613,7 +623,12 @@ function filteredSightings() {
   return state.sightings.filter(
     (s) =>
       matchesDateRange(s.reportedAt) &&
-      matchesSearchQuery([s.location, s.note, s.source])
+      matchesSearchQuery([
+        s.location,
+        s.note,
+        s.source,
+        ...(Array.isArray(s.sourceLinks) ? s.sourceLinks.map((link) => link.label) : []),
+      ])
   );
 }
 
@@ -694,12 +709,59 @@ for (const input of layerInputs) {
 }
 
 // --- Vykreslenie varovaní ---
-// Každé varovanie nesie sourceType — štítok ukáže pôvod (tumedved.sk /
-// moderované hlásenie od používateľa), ale zoznam je jeden spoločný.
+function warningSourceLinks(s) {
+  const links = Array.isArray(s?.sourceLinks) ? s.sourceLinks : [];
+  const normalized = links
+    .map((link) => {
+      try {
+        const url = new URL(link?.url || "", window.location.href);
+        return ["http:", "https:"].includes(url.protocol) ? { ...link, url: url.href } : null;
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .map((link) => ({
+      key: link.key || "source",
+      label: link.label || link.key || "Zdroj",
+      url: link.url,
+      sourceId: link.sourceId || null,
+    }));
+  if (!normalized.length && s?.url) {
+    try {
+      const url = new URL(s.url, window.location.href);
+      if (["http:", "https:"].includes(url.protocol)) {
+        normalized.push({ key: "source", label: s.source || "Zdroj", url: url.href, sourceId: null });
+      }
+    } catch (e) {
+      // Neplatný alebo nebezpečný odkaz sa nezobrazí.
+    }
+  }
+  const seen = new Set();
+  return normalized.filter((link) => {
+    const key = `${link.label}|${link.url}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// Zlúčené varovanie ukáže všetky weby, ktoré evidujú rovnakú udalosť.
 function warningSourceLabel(s) {
+  const labels = [...new Set(warningSourceLinks(s).map((link) => link.label))];
+  if (labels.length) return labels.join(" · ");
   if (s.sourceType === "tumedved") return "tumedved.sk";
   if (s.sourceType === "report") return "moderované hlásenie";
   return s.source || "";
+}
+
+function warningSourceLinksHtml(s, className) {
+  const links = warningSourceLinks(s);
+  if (!links.length) return "";
+  return `<div class="source-links">${links.map((link) => `
+    <a class="${className}" href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">
+      ${esc(link.label)} <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+    </a>`).join("")}</div>`;
 }
 
 function renderSightings() {
@@ -717,6 +779,7 @@ function renderSightings() {
     .map(
       (s, i) => {
         const sourceLabel = warningSourceLabel(s);
+        const sourceLinks = warningSourceLinksHtml(s, "card-link");
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         <p class="card-title">${esc(s.location)}</p>
@@ -730,13 +793,7 @@ function renderSightings() {
           }
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        ${
-          s.url
-            ? `<a class="card-link" href="${esc(s.url)}" target="_blank" rel="noopener">
-          Detail zdroja <i class="ph ph-arrow-up-right"></i>
-        </a>`
-            : ""
-        }
+        ${sourceLinks}
       </article>`;
       }
     )
@@ -765,7 +822,7 @@ function renderMarkers() {
       <p class="popup-loc">${esc(s.location)}</p>
       <p class="popup-meta">${esc(sourceLabel)}${sourceLabel ? " · " : ""}${esc(fmtDate(s.reportedAt, true))}</p>
       ${s.note ? `<p class="popup-note">${esc(s.note)}</p>` : ""}
-      ${s.url ? `<a class="popup-link" href="${esc(s.url)}" target="_blank" rel="noopener">Detail zdroja →</a>` : ""}
+      ${warningSourceLinksHtml(s, "popup-link")}
     `);
     state.markers.set(s.id, marker);
     bounds.push([s.lat, s.lng]);
@@ -776,6 +833,7 @@ function renderMarkers() {
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
+    if (newsWarningMerged(n)) continue;
     const point = newsMapPoint(n);
     if (!point) continue;
     const href = newsUrl(n);
@@ -890,7 +948,7 @@ function renderStats() {
     currentWeekStart
   );
   const mappedSightings = state.sightings.filter((s) => s.hasCoords).length;
-  const warningsOnMap = state.news.filter((n) => newsMapPoint(n)).length;
+  const warningsOnMap = state.news.filter((n) => newsMapPoint(n) && !newsWarningMerged(n)).length;
   const mapPoints = mappedSightings + warningsOnMap;
   const topPlace = topSightingPlace();
 

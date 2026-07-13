@@ -11,9 +11,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile, stat } from "node:fs/promises";
 
-import { fetchTumedved } from "./src/scrapers/tumedved.js";
+import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
+import { sightingSourceLinks } from "./src/sightings-dedupe.js";
+import { mergeWarnings } from "./src/warnings.js";
 import { classifyFreshNews } from "./src/ai/news-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
@@ -346,18 +348,36 @@ function formatSlovakDate(value, withTime = false) {
   }).format(date);
 }
 
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
 function renderSsrWarnings(items) {
   if (!items.length) return '<p class="empty">Hlásenia sa načítavajú…</p>';
   return items.slice(0, 15).map((item) => {
-    const source = item.sourceType === "report" ? "moderované hlásenie" : item.source || "verejný zdroj";
+    const sourceLinks = sightingSourceLinks(item)
+      .map((entry) => ({ ...entry, url: safeHttpUrl(entry.url) }))
+      .filter((entry) => entry.url);
+    const source = sourceLinks.length
+      ? [...new Set(sourceLinks.map((entry) => entry.label))].join(" · ")
+      : item.sourceType === "report"
+        ? "moderované hlásenie"
+        : item.source || "verejný zdroj";
     const note = item.note ? `<p class="card-note">${escapeHtml(String(item.note).slice(0, 240))}</p>` : "";
-    const link = item.url
-      ? `<a class="card-link" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Detail pôvodného zdroja <span aria-hidden="true">→</span></a>`
+    const links = sourceLinks.length
+      ? `<div class="source-links">${sourceLinks.map((entry) =>
+          `<a class="card-link" href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.label)} <span aria-hidden="true">→</span></a>`
+        ).join("")}</div>`
       : "";
     return `<article class="card sighting" data-id="${escapeHtml(item.id)}">
       <h3 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h3>
       <div class="card-meta"><span class="meta-source">${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}">${escapeHtml(formatSlovakDate(item.reportedAt, true))}</time></div>
-      ${note}${link}
+      ${note}${links}
     </article>`;
   }).join("\n");
 }
@@ -385,8 +405,8 @@ async function getPageTemplate(file) {
 }
 
 const sightingsStore = new ScheduledDataStore({
-  name: "tumedved",
-  fetcher: fetchTumedved,
+  name: "sightings",
+  fetcher: fetchSightings,
   loadStored: loadTumedvedLogs,
   saveFresh: saveTumedvedLogs,
   recordRun: recordScrapeRun,
@@ -465,26 +485,27 @@ app.get("/api/sightings", async (_req, res) => {
     res.set("Cache-Control", "public, max-age=300");
     res.json({ updatedAt: sightingsStore.meta.fetchedAt, count: data.length, items: data });
   } catch (err) {
-    res.status(502).json({ error: "Nepodarilo sa stiahnuť hlásenia z tumedved.sk", detail: err.message });
+    res.status(502).json({ error: "Nepodarilo sa načítať externé hlásenia", detail: err.message });
   }
 });
 
-// Zlúčený zoznam medvedích varovaní: scrapované hlásenia (tumedved) + schválené
+// Zlúčený zoznam medvedích varovaní: externé mapy + schválené
 // hlásenia od používateľov / manuálne pridané varovania. Každá položka nesie
-// sourceType, nech frontend vie zobraziť pôvod (napr. štítok "tumedved.sk").
+// všetky sourceLinks, aby sa pri zhodnom pozorovaní nestratili odkazy na zdroje.
 async function loadWarnings() {
-  const [scraped, reports] = await Promise.all([
+  const [scraped, reports, news] = await Promise.all([
     sightingsStore.get(),
     loadApprovedBearReports().catch((err) => {
       console.error("[warnings] reports load failed:", err.message);
       return [];
     }),
+    newsStore.get().catch((err) => {
+      console.error("[warnings] news merge failed:", err.message);
+      return [];
+    }),
   ]);
 
-  return [
-    ...scraped.map((item) => ({ sourceType: "tumedved", ...item })),
-    ...reports,
-  ].sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
+  return mergeWarnings({ sightings: scraped, reports, news });
 }
 
 app.get("/api/warnings", async (_req, res) => {
@@ -582,11 +603,14 @@ function refreshSourceOutcome(result, store, label) {
     fetchedAt: ok ? meta.fetchedAt : null,
     stage,
     error,
+    children: meta.lastRun?.sourceOutcomes || null,
   };
 }
 
 function refreshResultMessage(result) {
-  const outcomes = Object.values(result.sources);
+  const outcomes = Object.values(result.sources).flatMap((source) =>
+    source.children ? Object.values(source.children) : [source]
+  );
   const successful = outcomes.filter((source) => source.ok).length;
   const header = successful === outcomes.length
     ? "Sťahovanie úspešne dokončené."
@@ -611,18 +635,25 @@ async function refreshAll(reason) {
   ]);
 
   const sources = {
-    sightings: refreshSourceOutcome(sightingsResult, sightingsStore, "TuMedveď"),
+    sightings: refreshSourceOutcome(sightingsResult, sightingsStore, "Hlásenia"),
     news: refreshSourceOutcome(newsResult, newsStore, "Správy"),
   };
   const errors = Object.fromEntries(
-    Object.entries(sources)
-      .filter(([, source]) => !source.ok)
-      .map(([key, source]) => [key, source.error])
+    Object.entries(sources).flatMap(([key, source]) => {
+      if (!source.ok) return [[key, source.error]];
+      if (!source.children) return [];
+      return Object.entries(source.children)
+        .filter(([, child]) => !child.ok)
+        .map(([childKey, child]) => [`${key}.${childKey}`, child.error]);
+    })
+  );
+  const leafOutcomes = Object.values(sources).flatMap((source) =>
+    source.children ? Object.values(source.children) : [source]
   );
 
   return {
     ok: sources.sightings.ok || sources.news.ok,
-    complete: sources.sightings.ok && sources.news.ok,
+    complete: leafOutcomes.every((source) => source.ok),
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
     sightings: sightingsStore.meta,
@@ -1247,7 +1278,7 @@ app.listen(PORT, () => {
     `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron`
   );
   sightingsStore.start().catch((err) => {
-    console.error("[tumedved] startup load failed:", err.message);
+    console.error("[sightings] startup load failed:", err.message);
   });
   newsStore.start().catch((err) => {
     console.error("[news] startup load failed:", err.message);

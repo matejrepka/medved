@@ -1,11 +1,11 @@
 # 🐻 Medveď Sledovač
 
-Web app, ktorá zbiera **hlásenia o výskyte medveďov** z [tumedved.sk](https://tumedved.sk)
+Web app, ktorá zbiera **hlásenia o výskyte medveďov** z viacerých verejných máp
 a **slovenské správy o medveďoch**, a zobrazuje ich na jednom mieste — na interaktívnej
-mape Slovenska a v prehľadných zoznamoch.
+mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
 
-> A web app that scrapes bear-sighting reports from tumedved.sk and Slovak news about
-> bears, then displays them together on an interactive map of Slovakia.
+> A web app that aggregates bear-sighting reports from several public maps and Slovak
+> news, then displays deduplicated events on an interactive map of Slovakia.
 
 | Svetlý režim | Tmavý režim |
 |---|---|
@@ -13,8 +13,10 @@ mape Slovenska a v prehľadných zoznamoch.
 
 ## Čo to robí / What it does
 
-- **Hlásenia o výskyte** – sťahuje všetky hlásenia z tumedved.sk (lokalita, dátum, čas,
-  poznámka, GPS súradnice) a zobrazí ich ako značky na mape + zoznam.
+- **Hlásenia o výskyte** – sťahuje hlásenia z tumedved.sk, používateľské hlásenia z
+  mapamedvedov.sk a aktuálnu mapu sprejnamedveda.sk (lokalita, dátum, poznámka a GPS).
+- **Zlučovanie zdrojov** – podobné udalosti porovná podľa dátumu, času, lokality,
+  súradníc a komentára. Na mape ostane jeden bod s odkazmi na všetky zhodné zdroje.
 - **Správy** – agreguje slovenské spravodajstvo o medveďoch z viacerých vyhľadávaní cez
   Google News (výskyt, útok, stretnutie turistu…), odstráni duplicity a zoradí podľa dátumu.
   Relevančný filter vyhodí články, ktoré medveďa len spomenú/odkazujú naň (medvedí výraz
@@ -27,7 +29,7 @@ mape Slovenska a v prehľadných zoznamoch.
   a pri varovaní doplní najpresnejšiu lokalitu; admin výsledok pred schválením skontroluje.
 - **Mapa** – Leaflet + prepínateľné vrstvy: štandardná, turistická (OpenTopoMap) a satelitná
   (Esri). Kliknutie na hlásenie/správu v zozname vycentruje mapu na dané miesto. Dva druhy
-  značiek: **hlásenia** z tumedved.sk (presné GPS) a **správy** geokódované z textu článku.
+  značiek: **hlásenia** z verejných máp a **správy** geokódované z textu článku.
 - **Filtrovanie mapy podľa dátumu** – rozsah Od/Do filtruje značky na mape aj súvisiace zoznamy.
 - **Vyhľadávanie** v hláseniach podľa lokality alebo poznámky.
 - **Svetlý a tmavý režim** – prepínač v hlavičke, voľba sa pamätá; dá sa vynútiť aj cez
@@ -41,6 +43,8 @@ mape Slovenska a v prehľadných zoznamoch.
 | Zdroj | Ako | Endpoint |
 |-------|-----|----------|
 | **tumedved.sk** | oficiálne WordPress REST API (typ príspevku `vyskyt-medveda`) — žiadne krehké HTML scrapovanie | `https://tumedved.sk/wp-json/wp/v2/vyskyt-medveda` |
+| **mapamedvedov.sk** | schválené príspevky používateľov vložené v dátach aktuálnej mapy | `https://mapamedvedov.sk/` |
+| **sprejnamedveda.sk** | strojovo čitateľné dáta aktuálnej verejnej mapy | `https://www.sprejnamedveda.sk/mapa-2/` |
 | **Slovenské správy** | Google News RSS pre viaceré dopyty, slovenská edícia (`hl=sk&gl=SK&ceid=SK:sk`) | `https://news.google.com/rss/search?q=…` |
 
 ## Spustenie / Run
@@ -151,7 +155,11 @@ Príklad odpovede `/api/sightings`:
       "lng": 19.0766,
       "hasCoords": true,
       "reportedAt": "2026-06-25T18:00:00.000Z",
-      "url": "https://tumedved.sk/vyskyt-medveda/sutovo-25-06-2026/"
+      "url": "https://tumedved.sk/vyskyt-medveda/sutovo-25-06-2026/",
+      "sourceLinks": [
+        { "label": "tumedved.sk", "url": "https://tumedved.sk/vyskyt-medveda/sutovo-25-06-2026/" },
+        { "label": "sprejnamedveda.sk", "url": "https://www.sprejnamedveda.sk/medvede-na-mape/" }
+      ]
     }
   ]
 }
@@ -174,8 +182,11 @@ medved/
 │   │   ├── sk-places.json      # gazetteer: slovenské obce/mestá/regióny + súradnice
 │   │   └── build-gazetteer.mjs # jednorazový build gazetteera cez Nominatim
 │   └── scrapers/
-│       ├── tumedved.js    # hlásenia z tumedved.sk (WP REST API)
-│       └── news.js        # slovenské správy (Google News RSS) + geokódovanie
+│       ├── sightings.js       # nezávislé načítanie a zlúčenie mapových zdrojov
+│       ├── tumedved.js        # hlásenia z tumedved.sk (WP REST API)
+│       ├── mapamedvedov.js    # používateľské hlásenia z mapamedvedov.sk
+│       ├── sprejnamedveda.js  # aktuálna mapa sprejnamedveda.sk
+│       └── news.js            # slovenské správy (Google News RSS) + geokódovanie
 └── public/
     ├── index.html         # frontend
     ├── styles.css
@@ -185,8 +196,8 @@ medved/
 ## Ako často sa dáta obnovujú / Refresh interval
 
 - Scraping spúšťa **externý cron job** (cron-job.org) cez `/api/cron/refresh`.
-- Server pri štarte len načíta existujúce dáta zo Supabase — sám nescrapuje.
-- Hlásenia sa ukladajú do `tumedved_logs`, správy do `news_logs`, behy scraperov do
+- Server pri štarte načíta existujúce dáta zo Supabase a spustí počiatočnú obnovu.
+- Zlúčené hlásenia sa ukladajú do historicky pomenovanej tabuľky `tumedved_logs`, správy do `news_logs`, behy scraperov do
   `scrape_runs` a návštevy/API requesty používateľov do `website_logs`.
 - Frontend si dáta automaticky načíta každých 15 minút z API.
 

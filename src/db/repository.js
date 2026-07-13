@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
-import { dedupeSightings } from "../sightings-dedupe.js";
+import { dedupeSightings, sightingSourceLinks } from "../sightings-dedupe.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
@@ -22,6 +22,46 @@ function asNullableNumber(value) {
 
 function hasCoordinates(lat, lng) {
   return asNullableNumber(lat) !== null && asNullableNumber(lng) !== null;
+}
+
+function rowToSighting(row) {
+  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
+  const item = {
+    id: row.id,
+    source: row.source,
+    sourceKey: payload.sourceKey,
+    sourceType: payload.sourceType,
+    location: row.location,
+    note: row.note || "",
+    lat: row.lat,
+    lng: row.lng,
+    hasCoords: Boolean(row.has_coords),
+    reportedAt: row.reported_at,
+    datePrecision: payload.datePrecision,
+    url: row.url,
+    sourceLinks: payload.sourceLinks,
+    _scrapedAt: row.scraped_at,
+  };
+  item.sourceLinks = sightingSourceLinks(item);
+  return item;
+}
+
+function sourceLinkIdentity(link) {
+  return link.sourceId
+    ? `${link.key}|id:${link.sourceId}`
+    : `${link.key}|url:${link.url}`;
+}
+
+async function loadSightingsForMerge() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("tumedved_logs")
+    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,payload,scraped_at")
+    .order("reported_at", { ascending: false, nullsFirst: false })
+    .limit(2000);
+  if (error) throw error;
+  return (data || []).map(rowToSighting);
 }
 
 function normalizeText(value) {
@@ -123,7 +163,15 @@ async function loadSightingStatuses(ids) {
 }
 
 export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
-  const deduped = dedupeSightings(items);
+  // Porovnaj čerstvé dáta aj s databázou. Ak je napr. TuMedveď dočasne
+  // nedostupný, záznam z ďalšej mapy sa stále pripojí k už uloženému bodu.
+  const stored = await loadSightingsForMerge();
+  const incomingIds = new Set(items.map((item) => String(item.id || "")).filter(Boolean));
+  const incomingLinks = new Set(items.flatMap(sightingSourceLinks).map(sourceLinkIdentity));
+  const deduped = dedupeSightings([...stored, ...items]).filter((item) =>
+    incomingIds.has(String(item.id || "")) ||
+    sightingSourceLinks(item).some((link) => incomingLinks.has(sourceLinkIdentity(link)))
+  );
 
   // Hlásenia, ktoré admin ručne upravil, pri scrapingu NEprepisujeme — inak by
   // sa úprava stratila hneď pri ďalšom behu (tabuľka sa inak prepisuje upsertom).
@@ -243,7 +291,7 @@ export async function loadTumedvedLogs() {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const columns = "id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at";
+  const columns = "id,source,location,note,lat,lng,has_coords,reported_at,url,payload,scraped_at";
   // Na mape/API zobrazujeme len schválené hlásenia.
   let { data, error } = await supabase
     .from("tumedved_logs")
@@ -264,18 +312,7 @@ export async function loadTumedvedLogs() {
   if (error) throw error;
 
   const items = (data || [])
-    .map((row) => ({
-      id: row.id,
-      source: row.source,
-      location: row.location,
-      note: row.note || "",
-      lat: row.lat,
-      lng: row.lng,
-      hasCoords: Boolean(row.has_coords),
-      reportedAt: row.reported_at,
-      url: row.url,
-      _scrapedAt: row.scraped_at,
-    }))
+    .map(rowToSighting)
     .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
 
   return dedupeSightings(items);
@@ -472,7 +509,13 @@ export async function saveManualTumedved(item) {
     has_coords: hasCoordinates(item.lat, item.lng),
     reported_at: toIso(item.reportedAt) || now,
     url: item.url || null,
-    payload: { manual: true },
+    payload: {
+      manual: true,
+      sourceKey: "tumedved",
+      sourceLinks: item.url
+        ? [{ key: "tumedved", label: "tumedved.sk", url: item.url, sourceId: item.id }]
+        : [],
+    },
     scraped_at: now,
     updated_at: now,
   });
@@ -509,7 +552,7 @@ export async function updateBearReportStatus(id, status) {
   if (error) throw error;
 }
 
-// --- Tumedved sightings moderation ---
+// --- Moderácia externých hlásení (tabuľka má historický názov tumedved_logs) ---
 
 // Scrapované hlásenia čakajúce na schválenie (rovnaká sekcia ako hlásenia od
 // používateľov). Ak stĺpec status ešte neexistuje (migrácia 004), vráti [].
