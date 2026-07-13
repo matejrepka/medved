@@ -1,0 +1,19 @@
+{
+  "name": "Kde je Medveď – mapa výskytu medveďov",
+  "short_name": "Kde je Medveď",
+  "description": "Aktuálna mapa hláseného výskytu medveďov na Slovensku.",
+  "lang": "sk",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f3",
+  "theme_color": "#1f4b30",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

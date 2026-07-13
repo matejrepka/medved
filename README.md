@@ -54,11 +54,16 @@ Potom otvor **http://localhost:3000**.
 Pred produkčným spustením vyplň `.env`:
 
 ```bash
+SITE_URL=https://tvoja-domena.sk
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
 ```
+
+`SITE_URL` musí byť presný verejný HTTPS origin bez cesty a bez lomky na konci.
+Server ho používa pre kanonické URL, Open Graph, JSON-LD, sitemapu, RSS a `llms.txt`.
+Ak nie je nastavený, lokálny vývoj použije origin aktuálnej požiadavky.
 
 Ak appku hostuješ na Verceli a chceš pravidelný refresh cez cron-job.org, nastav v cron-job.org
 volanie na:
@@ -96,6 +101,30 @@ Server poskytuje aj vlastné čisté JSON API:
 | `/api/news` | GET | slovenské správy o medveďoch |
 | `/api/status` | GET | stav serverového obnovovania dát |
 | `/api/cron/refresh?secret=...` | ALL | chránený endpoint pre cron-job.org, spustí fresh scraping |
+
+## SEO / GEO / AEO po nasadení
+
+Server poskytuje crawl-ready HTML, absolútne canonical odkazy, Open Graph/Twitter metadata,
+schema.org (`WebSite`, `WebApplication`, `Dataset`, `FAQPage`, `Article`, breadcrumbs),
+`/sitemap.xml`, `/robots.txt`, `/feed.xml` a `/llms.txt`. Domovská stránka vykresľuje
+najnovšie hlásenia aj na serveri, takže hlavný obsah nie je závislý od vykonania JavaScriptu.
+
+Po nasadení treba jednorazovo dokončiť kroky, ktoré sa nedajú urobiť v repozitári:
+
+1. Nastaviť `SITE_URL` a presmerovať všetky HTTP/www varianty na jeden HTTPS hostname.
+2. Overiť doménu v Google Search Console a Bing Webmaster Tools.
+3. Odoslať `https://tvoja-domena.sk/sitemap.xml` a skontrolovať URL Inspection pre `/`,
+   `/bezpecnost`, `/o-mape` a `/stats`.
+4. Doplniť skutočné identifikačné a kontaktné údaje prevádzkovateľa v dokumente o súkromí.
+5. Budovať legitímne odkazy a citácie: obce, turistické organizácie, správy národných parkov,
+   regionálne médiá a dátové katalógy. Nekupovať odkazy ani nevytvárať doorway stránky.
+6. Priebežne publikovať vlastné, metodicky vysvetlené analýzy dát a opravovať nepresné záznamy.
+
+Lokálna kontrola technických SEO podmienok:
+
+```bash
+npm run check
+```
 
 Príklad odpovede `/api/sightings`:
 

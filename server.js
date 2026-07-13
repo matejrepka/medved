@@ -9,6 +9,7 @@ import express from "express";
 import compression from "compression";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readFile, stat } from "node:fs/promises";
 
 import { fetchTumedved } from "./src/scrapers/tumedved.js";
 import { fetchNews } from "./src/scrapers/news.js";
@@ -45,8 +46,342 @@ import {
 } from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
+
+function normalizeSiteOrigin(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value).trim());
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+const CONFIGURED_SITE_ORIGIN = normalizeSiteOrigin(process.env.SITE_URL);
+
+const PUBLIC_PAGES = {
+  "/": {
+    file: "index.html",
+    title: "Aktuálna mapa výskytu medveďov na Slovensku | Kde je Medveď",
+    description:
+      "Aktuálna mapa hláseného výskytu medveďov na Slovensku. Moderované hlásenia, správy, dátumy, lokality a bezpečnostné odporúčania na jednom mieste.",
+    schemaType: "CollectionPage",
+    changefreq: "hourly",
+    priority: "1.0",
+  },
+  "/stats": {
+    file: "stats.html",
+    title: "Štatistiky výskytu medveďov na Slovensku | Kde je Medveď",
+    description:
+      "Aktuálne štatistiky hlásení výskytu medveďov na Slovensku: vývoj v čase, najčastejšie lokality a čas hlásení.",
+    schemaType: "CollectionPage",
+    changefreq: "daily",
+    priority: "0.8",
+  },
+  "/nahlas": {
+    file: "nahlas.html",
+    title: "Nahlásiť výskyt medveďa na Slovensku | Kde je Medveď",
+    description:
+      "Nahláste pozorovanie medveďa na Slovensku, označte miesto na mape a doplňte čas a okolnosti. Hlásenie pred zverejnením skontrolujeme.",
+    schemaType: "WebPage",
+    changefreq: "monthly",
+    priority: "0.7",
+  },
+  "/bezpecnost": {
+    file: "bezpecnost.html",
+    title: "Čo robiť pri stretnutí s medveďom | Oficiálne odporúčania",
+    description:
+      "Stručný postup pri stretnutí alebo útoku medveďa podľa odporúčaní Zásahového tímu ŠOP SR. Prevencia, tiesňová linka 112 a dôležité kontakty.",
+    schemaType: "Article",
+    changefreq: "monthly",
+    priority: "0.9",
+  },
+  "/o-mape": {
+    file: "o-mape.html",
+    title: "O mape, zdroje a metodika údajov | Kde je Medveď",
+    description:
+      "Ako vzniká mapa výskytu medveďov: zdroje údajov, moderovanie, aktualizácia, práca s polohou a obmedzenia hlásení.",
+    schemaType: "AboutPage",
+    changefreq: "monthly",
+    priority: "0.7",
+  },
+  "/privacy": {
+    file: "privacy.html",
+    title: "Ochrana súkromia | Kde je Medveď",
+    description: "Informácie o ochrane súkromia pri používaní služby Kde je Medveď.",
+    schemaType: "WebPage",
+    changefreq: "yearly",
+    priority: "0.2",
+  },
+  "/terms": {
+    file: "terms.html",
+    title: "Podmienky používania | Kde je Medveď",
+    description: "Podmienky používania mapy a služby Kde je Medveď.",
+    schemaType: "WebPage",
+    changefreq: "yearly",
+    priority: "0.2",
+  },
+};
+
+const pageTemplateCache = new Map();
+
+function siteOrigin(req) {
+  if (CONFIGURED_SITE_ORIGIN) return CONFIGURED_SITE_ORIGIN;
+  const host = req.get("host") || `localhost:${PORT}`;
+  // Host sa zapisuje do HTML, preto povoľ iba znaky platné v hostname/porte.
+  const safeHost = /^[a-z0-9.:[\]-]+$/i.test(host) ? host : `localhost:${PORT}`;
+  return normalizeSiteOrigin(`${req.protocol}://${safeHost}`) || `http://localhost:${PORT}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function absoluteUrl(origin, pathname = "/") {
+  return new URL(pathname, `${origin}/`).toString();
+}
+
+function latestContentDate() {
+  return [sightingsStore.meta.fetchedAt, newsStore.meta.fetchedAt]
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
+}
+
+function faqEntities() {
+  return [
+    {
+      question: "Je mapa výskytu medveďov aktuálna?",
+      answer:
+        "Dáta sa automaticky kontrolujú každú hodinu. Na mape sa zobrazia až položky, ktoré prešli moderovaním; čas poslednej aktualizácie je uvedený priamo na stránke.",
+    },
+    {
+      question: "Znamená bod na mape, že medveď je stále na danom mieste?",
+      answer:
+        "Nie. Bod označuje miesto a čas nahláseného pozorovania alebo varovania. Medvede sa pohybujú a môžu sa vyskytnúť aj mimo vyznačených miest.",
+    },
+    {
+      question: "Sú hlásenia na mape overené?",
+      answer:
+        "Každá zverejnená položka prejde kontrolou relevantnosti a dostupných údajov. Moderovanie však nie je potvrdením aktuálnej polohy zvieraťa ani odborným terénnym overením každého pozorovania.",
+    },
+    {
+      question: "Ako nahlásiť výskyt medveďa?",
+      answer:
+        "Vo formulári Nahlásiť výskyt označte miesto na mape, uveďte dátum a stručne opíšte okolnosti. Hlásenie sa zverejní až po kontrole.",
+    },
+    {
+      question: "Čo robiť, keď stretnem medveďa?",
+      answer:
+        "Zachovajte pokoj, neutekajte, neotáčajte sa chrbtom a pomaly cúvajte smerom, odkiaľ ste prišli. Medveďa neprovokujte a riaďte sa aktuálnymi odporúčaniami Zásahového tímu ŠOP SR.",
+    },
+    {
+      question: "Kedy volať tiesňovú linku 112?",
+      answer:
+        "Linku 112 volajte pri bezprostrednom ohrození zdravia alebo života, prípadne ak vzniká alebo môže vzniknúť škoda na majetku. Neurgentné pozorovania pri obývaných oblastiach rieši príslušný Zásahový tím.",
+    },
+  ];
+}
+
+function structuredDataForPage(pathname, page, origin) {
+  const canonical = absoluteUrl(origin, pathname);
+  const websiteId = `${origin}/#website`;
+  const organizationId = `${origin}/#organization`;
+  const modified = latestContentDate() || "2026-07-13T00:00:00+02:00";
+  const graph = [
+    {
+      "@type": "Organization",
+      "@id": organizationId,
+      name: "Kde je Medveď",
+      url: `${origin}/`,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl(origin, "/assets/mascot/bear-head-mark.png"),
+        width: 256,
+        height: 256,
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": websiteId,
+      name: "Kde je Medveď",
+      alternateName: "Mapa medveďov Slovensko",
+      url: `${origin}/`,
+      inLanguage: "sk-SK",
+      publisher: { "@id": organizationId },
+    },
+    {
+      "@type": page.schemaType,
+      "@id": `${canonical}#webpage`,
+      url: canonical,
+      name: page.title,
+      description: page.description,
+      inLanguage: "sk-SK",
+      isPartOf: { "@id": websiteId },
+      dateModified: modified,
+    },
+  ];
+
+  if (pathname !== "/") {
+    graph.push({
+      "@type": "BreadcrumbList",
+      "@id": `${canonical}#breadcrumb`,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Mapa", item: `${origin}/` },
+        { "@type": "ListItem", position: 2, name: page.title.split("|")[0].trim(), item: canonical },
+      ],
+    });
+  }
+
+  if (pathname === "/") {
+    graph.push(
+      {
+        "@type": "WebApplication",
+        "@id": `${origin}/#application`,
+        name: "Kde je Medveď – mapa výskytu medveďov",
+        url: `${origin}/`,
+        applicationCategory: "TravelApplication",
+        operatingSystem: "Web",
+        browserRequirements: "Requires JavaScript for the interactive map",
+        inLanguage: "sk-SK",
+        description: page.description,
+        isAccessibleForFree: true,
+        publisher: { "@id": organizationId },
+      },
+      {
+        "@type": "Dataset",
+        "@id": `${origin}/#dataset`,
+        name: "Hlásený výskyt medveďov na Slovensku",
+        description:
+          "Priebežne aktualizovaný súbor moderovaných hlásení a verejných varovaní s dátumom, lokalitou a dostupnými súradnicami.",
+        url: `${origin}/`,
+        distribution: {
+          "@type": "DataDownload",
+          encodingFormat: "application/json",
+          contentUrl: absoluteUrl(origin, "/api/warnings"),
+        },
+        spatialCoverage: { "@type": "Place", name: "Slovensko" },
+        creator: { "@id": organizationId },
+        inLanguage: "sk-SK",
+        isAccessibleForFree: true,
+        dateModified: modified,
+        license: absoluteUrl(origin, "/terms"),
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${origin}/#faq`,
+        mainEntity: faqEntities().map(({ question, answer }) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      }
+    );
+  }
+
+  if (pathname === "/bezpecnost") {
+    const article = graph.find((item) => item["@id"] === `${canonical}#webpage`);
+    Object.assign(article, {
+      headline: "Čo robiť pri stretnutí s medveďom",
+      author: { "@id": organizationId },
+      publisher: { "@id": organizationId },
+      datePublished: "2026-07-13T00:00:00+02:00",
+      citation: [
+        "https://zasahovytim.sopsr.sk/bezpecnost/",
+        "https://zasahovytim.sopsr.sk/1887-2/",
+      ],
+    });
+  }
+
+  return { "@context": "https://schema.org", "@graph": graph };
+}
+
+function buildSeoHead(pathname, page, origin) {
+  const canonical = absoluteUrl(origin, pathname);
+  const image = absoluteUrl(origin, "/assets/mascot/bear-map-mascot-transparent.png");
+  const schema = JSON.stringify(structuredDataForPage(pathname, page, origin)).replaceAll("<", "\\u003c");
+  return [
+    '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />',
+    `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
+    '<meta property="og:locale" content="sk_SK" />',
+    '<meta property="og:type" content="website" />',
+    '<meta property="og:site_name" content="Kde je Medveď" />',
+    `<meta property="og:title" content="${escapeHtml(page.title)}" />`,
+    `<meta property="og:description" content="${escapeHtml(page.description)}" />`,
+    `<meta property="og:url" content="${escapeHtml(canonical)}" />`,
+    `<meta property="og:image" content="${escapeHtml(image)}" />`,
+    '<meta property="og:image:width" content="700" />',
+    '<meta property="og:image:height" content="700" />',
+    '<meta property="og:image:alt" content="Ilustrácia medveďa pri mape Slovenska" />',
+    '<meta name="twitter:card" content="summary_large_image" />',
+    `<meta name="twitter:title" content="${escapeHtml(page.title)}" />`,
+    `<meta name="twitter:description" content="${escapeHtml(page.description)}" />`,
+    `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
+    '<meta name="theme-color" content="#1f4b30" />',
+    '<link rel="manifest" href="/manifest.webmanifest" />',
+    '<link rel="alternate" type="application/rss+xml" title="Aktuálne hlásenia – Kde je Medveď" href="/feed.xml" />',
+    `<script type="application/ld+json">${schema}</script>`,
+  ].join("\n    ");
+}
+
+function formatSlovakDate(value, withTime = false) {
+  const date = new Date(value || 0);
+  if (Number.isNaN(date.getTime())) return "Dátum neuvedený";
+  return new Intl.DateTimeFormat("sk-SK", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    timeZone: "Europe/Bratislava",
+  }).format(date);
+}
+
+function renderSsrWarnings(items) {
+  if (!items.length) return '<p class="empty">Hlásenia sa načítavajú…</p>';
+  return items.slice(0, 15).map((item) => {
+    const source = item.sourceType === "report" ? "moderované hlásenie" : item.source || "verejný zdroj";
+    const note = item.note ? `<p class="card-note">${escapeHtml(String(item.note).slice(0, 240))}</p>` : "";
+    const link = item.url
+      ? `<a class="card-link" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Detail pôvodného zdroja <span aria-hidden="true">→</span></a>`
+      : "";
+    return `<article class="card sighting" data-id="${escapeHtml(item.id)}">
+      <h3 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h3>
+      <div class="card-meta"><span class="meta-source">${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}">${escapeHtml(formatSlovakDate(item.reportedAt, true))}</time></div>
+      ${note}${link}
+    </article>`;
+  }).join("\n");
+}
+
+function renderSsrNews(items) {
+  if (!items.length) return '<p class="empty">Správy sa načítavajú…</p>';
+  return items.slice(0, 12).map((item) => {
+    const href = item.articleUrl || item.link || item.googleNewsUrl || "";
+    const link = href
+      ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať správu <span aria-hidden="true">→</span></a>`
+      : "";
+    return `<article class="card news" data-id="${escapeHtml(item.id)}">
+      <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
+      <div class="card-meta"><span class="meta-source">${escapeHtml(item.source || "verejný zdroj")}</span><time datetime="${escapeHtml(item.date || "")}">${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      ${link}
+    </article>`;
+  }).join("\n");
+}
+
+async function getPageTemplate(file) {
+  if (!pageTemplateCache.has(file)) {
+    pageTemplateCache.set(file, await readFile(path.join(PUBLIC_DIR, file), "utf8"));
+  }
+  return pageTemplateCache.get(file);
+}
 
 const sightingsStore = new ScheduledDataStore({
   name: "tumedved",
@@ -73,6 +408,18 @@ app.set("trust proxy", process.env.TRUST_PROXY === "true");
 app.use(compression());
 
 app.use(express.json());
+
+// Základné bezpečnostné a indexačné hlavičky. Verejné JSON API ostáva dostupné,
+// administračné a cron URL sa však nemajú objavovať vo výsledkoch vyhľadávania.
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(self), camera=(), microphone=()");
+  if (req.path === "/admin" || req.path.startsWith("/api/admin") || req.path.startsWith("/api/cron")) {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+  next();
+});
 
 // Malý logger.
 app.use((req, _res, next) => {
@@ -298,21 +645,148 @@ app.post("/api/subscriptions", async (req, res) => {
   }
 });
 
-// --- Frontend ---
-app.get("/nahlas", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "nahlas.html"));
+// --- Frontend + technické SEO ---
+
+async function renderPublicPage(req, res, pathname, page) {
+  try {
+    const origin = siteOrigin(req);
+    let html = await getPageTemplate(page.file);
+    html = html.replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, page, origin));
+
+    // Domovská stránka dostane aj serverom vykreslené najnovšie dáta. Interaktívny
+    // klient ich po načítaní prevezme, no crawlery a návštevníci bez JS už nevidia
+    // prázdny app shell.
+    if (pathname === "/") {
+      const [warnings, news] = await Promise.all([
+        loadWarnings().catch((err) => {
+          console.error("[seo] warnings SSR failed:", err.message);
+          return [];
+        }),
+        newsStore.get().catch((err) => {
+          console.error("[seo] news SSR failed:", err.message);
+          return [];
+        }),
+      ]);
+      html = html
+        .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(warnings))
+        .replace("<!-- SSR_NEWS -->", renderSsrNews(news))
+        .replace("<!-- SSR_UPDATED -->", escapeHtml(latestContentDate() || ""));
+    }
+
+    const canonical = absoluteUrl(origin, pathname);
+    res.set({
+      "Cache-Control": "no-cache",
+      "Content-Language": "sk",
+      Link: `<${canonical}>; rel="canonical"`,
+    });
+    const modified = latestContentDate();
+    if (modified && pathname === "/") res.set("Last-Modified", new Date(modified).toUTCString());
+    res.type("html").send(html);
+  } catch (err) {
+    console.error(`[frontend] ${pathname} render failed:`, err.message);
+    res.status(500).type("text").send("Stránku sa nepodarilo načítať.");
+  }
+}
+
+for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
+  app.get(pathname, (req, res) => renderPublicPage(req, res, pathname, page));
+}
+
+// Jednoznačná kanonická URL pre staré alebo opisné varianty adresy.
+app.get(
+  [
+    "/index.html",
+    "/mapa-vyskytu-medvedov",
+    "/mapa-vyskytu-medvedov-na-slovensku",
+  ],
+  (_req, res) => res.redirect(301, "/")
+);
+for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
+  if (pathname !== "/") app.get(`/${page.file}`, (_req, res) => res.redirect(301, pathname));
+}
+
+app.get("/robots.txt", (req, res) => {
+  const origin = siteOrigin(req);
+  res
+    .type("text/plain")
+    .set("Cache-Control", "public, max-age=3600")
+    .send([
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /admin",
+      "Disallow: /api/admin/",
+      "Disallow: /api/cron/",
+      "",
+      `Sitemap: ${absoluteUrl(origin, "/sitemap.xml")}`,
+      "",
+    ].join("\n"));
 });
 
-app.get("/privacy", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "privacy.html"));
+app.get("/sitemap.xml", async (req, res) => {
+  const origin = siteOrigin(req);
+  const rows = await Promise.all(Object.entries(PUBLIC_PAGES).map(async ([pathname, page]) => {
+    let lastmod;
+    try {
+      lastmod = (await stat(path.join(PUBLIC_DIR, page.file))).mtime.toISOString();
+    } catch {
+      lastmod = "2026-07-13T00:00:00.000Z";
+    }
+    if (pathname === "/" && latestContentDate()) lastmod = latestContentDate();
+    return `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod)}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
+  }));
+
+  res
+    .type("application/xml")
+    .set("Cache-Control", "public, max-age=3600")
+    .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${rows.join("\n")}\n</urlset>\n`);
 });
 
-app.get("/terms", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "terms.html"));
+// Stručný strojovo čitateľný opis pre generatívne vyhľadávače a asistentov.
+// Nie je náhradou za HTML; odkazuje výhradne na rovnaký verejný obsah a API.
+app.get("/llms.txt", (req, res) => {
+  const origin = siteOrigin(req);
+  res
+    .type("text/plain")
+    .set("Cache-Control", "public, max-age=3600")
+    .send(`# Kde je Medveď
+
+> Slovenská interaktívna mapa hláseného výskytu medveďov. Spája moderované hlásenia používateľov, verejné zdroje a relevantné slovenské správy.
+
+## Najdôležitejšie stránky
+- [Aktuálna mapa](${absoluteUrl(origin, "/")})
+- [Štatistiky hlásení](${absoluteUrl(origin, "/stats")})
+- [Bezpečnosť pri stretnutí s medveďom](${absoluteUrl(origin, "/bezpecnost")})
+- [Zdroje, metodika a obmedzenia](${absoluteUrl(origin, "/o-mape")})
+- [Nahlásiť pozorovanie](${absoluteUrl(origin, "/nahlas")})
+
+## Strojovo čitateľné dáta
+- [Aktuálne varovania – JSON](${absoluteUrl(origin, "/api/warnings")})
+- [Aktuálne správy – JSON](${absoluteUrl(origin, "/api/news")})
+- [Štatistiky – JSON](${absoluteUrl(origin, "/api/stats")})
+- [RSS najnovších hlásení](${absoluteUrl(origin, "/feed.xml")})
+
+## Dôležité obmedzenie
+Bod na mape označuje miesto a čas nahláseného pozorovania alebo verejného varovania. Nejde o GPS sledovanie zvierat, potvrdenie ich aktuálnej polohy ani úplnú mapu populácie. Dáta sú orientačné a nenahrádzajú pokyny ŠOP SR, Zásahového tímu ani tiesňových zložiek.
+`);
 });
 
-app.get("/stats", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "stats.html"));
+app.get("/feed.xml", async (req, res) => {
+  const origin = siteOrigin(req);
+  const warnings = await loadWarnings().catch(() => []);
+  const items = warnings.slice(0, 50).map((item) => {
+    const title = `${item.location || "Slovensko"} – hlásený výskyt medveďa`;
+    const description = [
+      `Lokalita: ${item.location || "neuvedená"}.`,
+      `Čas hlásenia: ${formatSlovakDate(item.reportedAt, true)}.`,
+      item.note ? String(item.note).slice(0, 400) : "",
+      "Údaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa.",
+    ].filter(Boolean).join(" ");
+    return `  <item>\n    <title>${escapeHtml(title)}</title>\n    <link>${escapeHtml(`${origin}/`)}</link>\n    <guid isPermaLink="false">${escapeHtml(item.id)}</guid>\n    <pubDate>${new Date(item.reportedAt || Date.now()).toUTCString()}</pubDate>\n    <description>${escapeHtml(description)}</description>\n  </item>`;
+  }).join("\n");
+  res
+    .type("application/rss+xml")
+    .set("Cache-Control", "public, max-age=300")
+    .send(`<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n  <title>Kde je Medveď – aktuálne hlásenia</title>\n  <link>${escapeHtml(`${origin}/`)}</link>\n  <description>Najnovšie moderované hlásenia výskytu medveďov na Slovensku.</description>\n  <language>sk-SK</language>\n  <lastBuildDate>${new Date(latestContentDate() || Date.now()).toUTCString()}</lastBuildDate>\n${items}\n</channel>\n</rss>\n`);
 });
 
 // --- Basic Auth pre administráciu ---

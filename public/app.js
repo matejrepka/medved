@@ -85,7 +85,7 @@ function setTiles(layerId) {
   syncMapLayerControls();
 }
 
-// Čisté značky namiesto emoji. Kruhová = medvedie varovanie (overené hlásenie),
+// Čisté značky namiesto emoji. Kruhová = medvedie varovanie (moderované hlásenie),
 // hranatá inej farby = medvedie varovanie zo správ — vizuálne odlíšené.
 const pinIcon = L.divIcon({
   className: "",
@@ -695,10 +695,10 @@ for (const input of layerInputs) {
 
 // --- Vykreslenie varovaní ---
 // Každé varovanie nesie sourceType — štítok ukáže pôvod (tumedved.sk /
-// overené hlásenie od používateľa), ale zoznam je jeden spoločný.
+// moderované hlásenie od používateľa), ale zoznam je jeden spoločný.
 function warningSourceLabel(s) {
   if (s.sourceType === "tumedved") return "tumedved.sk";
-  if (s.sourceType === "report") return "overené hlásenie";
+  if (s.sourceType === "report") return "moderované hlásenie";
   return s.source || "";
 }
 
@@ -772,7 +772,7 @@ function renderMarkers() {
   }
 
   // Medvedie varovania zo správ — admin im priradil lokalitu. Na mape majú
-  // vlastnú (hranatú, inak sfarbenú) značku, odlíšenú od overených hlásení.
+  // vlastnú (hranatú, inak sfarbenú) značku, odlíšenú od moderovaných hlásení.
   // Bežné články (category !== "warning") sa na mape nezobrazujú.
   let warningsOnMap = 0;
   for (const n of filteredNews()) {
