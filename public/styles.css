@@ -1456,6 +1456,43 @@ main {
   margin-top: clamp(48px, 7vw, 80px);
 }
 
+.location-directory {
+  max-width: 900px;
+  margin-top: clamp(48px, 7vw, 80px);
+}
+
+.location-directory > p:not(.section-kicker) {
+  max-width: 76ch;
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+.location-links a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 9px 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.location-links a:hover,
+.location-links a:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.location-record-list {
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
 .faq-list {
   margin-top: 20px;
   border-top: 1px solid var(--line-strong);

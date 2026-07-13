@@ -9,7 +9,7 @@ import express from "express";
 import compression from "compression";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
@@ -53,6 +53,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
+const CONTENT_UPDATED = "2026-07-13T00:00:00+02:00";
+const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
+const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
+const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
 
 function normalizeSiteOrigin(value) {
   if (!value) return null;
@@ -70,10 +75,11 @@ const CONFIGURED_SITE_ORIGIN = normalizeSiteOrigin(process.env.SITE_URL);
 const PUBLIC_PAGES = {
   "/": {
     file: "index.html",
-    title: "Aktuálna mapa výskytu medveďov na Slovensku | Kde je Medveď",
+    title: "Kde je Medveď? Aktuálna mapa medveďov na Slovensku",
     description:
-      "Aktuálna mapa hláseného výskytu medveďov na Slovensku. Moderované hlásenia, správy, dátumy, lokality a bezpečnostné odporúčania na jednom mieste.",
+      "Kde je medveď? Aktuálna mapa spája hlásenia, varovania a správy z viacerých slovenských zdrojov. Overte lokalitu, dátum a pôvod informácie.",
     schemaType: "CollectionPage",
+    dynamicLastmod: true,
     priority: "1.0",
   },
   "/stats": {
@@ -82,6 +88,7 @@ const PUBLIC_PAGES = {
     description:
       "Aktuálne štatistiky hlásení výskytu medveďov na Slovensku: vývoj v čase, najčastejšie lokality a čas hlásení.",
     schemaType: "CollectionPage",
+    dynamicLastmod: true,
     changefreq: "daily",
     priority: "0.8",
   },
@@ -91,6 +98,7 @@ const PUBLIC_PAGES = {
     description:
       "Nahláste pozorovanie medveďa na Slovensku, označte miesto na mape a doplňte čas a okolnosti. Hlásenie pred zverejnením skontrolujeme.",
     schemaType: "WebPage",
+    lastmod: CONTENT_UPDATED,
     changefreq: "monthly",
     priority: "0.7",
   },
@@ -100,31 +108,37 @@ const PUBLIC_PAGES = {
     description:
       "Stručný postup pri stretnutí alebo útoku medveďa podľa odporúčaní Zásahového tímu ŠOP SR. Prevencia, tiesňová linka 112 a dôležité kontakty.",
     schemaType: "Article",
+    lastmod: CONTENT_UPDATED,
     changefreq: "monthly",
     priority: "0.9",
   },
   "/o-mape": {
     file: "o-mape.html",
-    title: "O mape, zdroje a metodika údajov | Kde je Medveď",
+    title: "Zdroje a metodika mapy medveďov | Kde je Medveď",
     description:
-      "Ako vzniká mapa výskytu medveďov: zdroje údajov, moderovanie, aktualizácia, práca s polohou a obmedzenia hlásení.",
+      "Ako Kde je Medveď spája hlásenia, mapy, verejné varovania a slovenské správy: zdroje údajov, moderovanie, aktualizácia a obmedzenia.",
     schemaType: "AboutPage",
+    lastmod: CONTENT_UPDATED,
     changefreq: "monthly",
     priority: "0.7",
   },
   "/privacy": {
     file: "privacy.html",
     title: "Ochrana súkromia | Kde je Medveď",
-    description: "Informácie o ochrane súkromia pri používaní služby Kde je Medveď.",
+    description:
+      "Ako služba Kde je Medveď spracúva kontaktné, technické a analytické údaje, používa cookies a chráni súkromie návštevníkov a oznamovateľov.",
     schemaType: "WebPage",
+    lastmod: CONTENT_UPDATED,
     changefreq: "yearly",
     priority: "0.2",
   },
   "/terms": {
     file: "terms.html",
     title: "Podmienky používania | Kde je Medveď",
-    description: "Podmienky používania mapy a služby Kde je Medveď.",
+    description:
+      "Pravidlá používania služby Kde je Medveď, externých zdrojov, používateľských hlásení, e-mailových upozornení a orientačných údajov mapy.",
     schemaType: "WebPage",
+    lastmod: CONTENT_UPDATED,
     changefreq: "yearly",
     priority: "0.2",
   },
@@ -153,6 +167,54 @@ function absoluteUrl(origin, pathname = "/") {
   return new URL(pathname, `${origin}/`).toString();
 }
 
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLocaleLowerCase("sk")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replaceAll("ľ", "l")
+    .replaceAll("ĺ", "l")
+    .replaceAll("ŕ", "r")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function locationSlug(value) {
+  return normalizeSearchText(value).replaceAll(" ", "-");
+}
+
+function locationPath(value) {
+  return `${LOCATION_ROUTE_PREFIX}${encodeURIComponent(locationSlug(value))}`;
+}
+
+async function notifyIndexNow(paths, requestOrigin = null) {
+  const submissionOrigin = CONFIGURED_SITE_ORIGIN || normalizeSiteOrigin(requestOrigin);
+  if (!submissionOrigin || !INDEXNOW_KEY) {
+    return { ok: false, skipped: true, reason: "Verejná URL alebo INDEXNOW_KEY nie je nastavený" };
+  }
+
+  const originUrl = new URL(submissionOrigin);
+  const urlList = [...new Set(paths.map((pathname) => absoluteUrl(originUrl.origin, pathname)))];
+  try {
+    const response = await fetch("https://api.indexnow.org/indexnow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({
+        host: originUrl.host,
+        key: INDEXNOW_KEY,
+        keyLocation: absoluteUrl(originUrl.origin, `/${INDEXNOW_KEY}.txt`),
+        urlList,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error(`IndexNow vrátil HTTP ${response.status}`);
+    return { ok: true, submitted: urlList.length };
+  } catch (err) {
+    console.error("[indexnow] submission failed:", err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
 function latestContentDate() {
   return [sightingsStore.meta.fetchedAt, newsStore.meta.fetchedAt]
     .filter(Boolean)
@@ -162,6 +224,21 @@ function latestContentDate() {
 
 function faqEntities() {
   return [
+    {
+      question: "Kde je medveď na Slovensku?",
+      answer:
+        "Najnovšie hlásené pozorovania a verejné varovania nájdete na aktuálnej mape Kde je Medveď. Každý bod uvádza lokalitu, čas a dostupný pôvod informácie; nejde však o živé GPS sledovanie zvieraťa.",
+    },
+    {
+      question: "Čo je Kde je Medveď?",
+      answer:
+        "Kde je Medveď je nezávislý slovenský agregátor. Na jednom mieste spája moderované hlásenia, verejné mapy a varovania, relevantné správy, štatistiky a bezpečnostné odporúčania.",
+    },
+    {
+      question: "Z akých zdrojov pochádzajú informácie o medveďoch?",
+      answer:
+        "Prehľad spája používateľské hlásenia, verejne dostupné záznamy zo slovenských máp výskytu, upozornenia ŠOP SR a relevantné slovenské správy. Pri každej položke zachováva názov a odkaz na pôvodný zdroj.",
+    },
     {
       question: "Je mapa výskytu medveďov aktuálna?",
       answer:
@@ -195,13 +272,27 @@ function structuredDataForPage(pathname, page, origin) {
   const canonical = absoluteUrl(origin, pathname);
   const websiteId = `${origin}/#website`;
   const organizationId = `${origin}/#organization`;
-  const modified = latestContentDate() || "2026-07-13T00:00:00+02:00";
+  const modified = page.dateModified || (
+    page.dynamicLastmod
+      ? latestContentDate() || CONTENT_UPDATED
+      : page.lastmod || CONTENT_UPDATED
+  );
+  const bearEntity = {
+    "@type": "Thing",
+    name: "Medveď hnedý",
+    alternateName: "Ursus arctos",
+    sameAs: "https://www.wikidata.org/wiki/Q36341",
+  };
   const graph = [
     {
       "@type": "Organization",
       "@id": organizationId,
       name: "Kde je Medveď",
       url: `${origin}/`,
+      description:
+        "Nezávislý slovenský agregátor hlásení, verejných varovaní a správ o výskyte medveďov.",
+      areaServed: { "@type": "Country", name: "Slovensko" },
+      knowsAbout: [bearEntity, "Výskyt medveďov na Slovensku", "Medvedie varovania"],
       logo: {
         "@type": "ImageObject",
         url: absoluteUrl(origin, "/assets/mascot/bear-head-mark.png"),
@@ -213,9 +304,16 @@ function structuredDataForPage(pathname, page, origin) {
       "@type": "WebSite",
       "@id": websiteId,
       name: "Kde je Medveď",
-      alternateName: "Mapa medveďov Slovensko",
+      alternateName: ["Kde je medved", "Mapa medveďov Slovensko", "Mapa výskytu medveďov"],
       url: `${origin}/`,
       inLanguage: "sk-SK",
+      about: bearEntity,
+      keywords: [
+        "kde je medveď",
+        "mapa medveďov na Slovensku",
+        "výskyt medveďa",
+        "medvedie varovania",
+      ],
       publisher: { "@id": organizationId },
     },
     {
@@ -226,6 +324,9 @@ function structuredDataForPage(pathname, page, origin) {
       description: page.description,
       inLanguage: "sk-SK",
       isPartOf: { "@id": websiteId },
+      about: page.location
+        ? [{ "@type": "Place", name: page.location.name }, bearEntity]
+        : bearEntity,
       dateModified: modified,
     },
   ];
@@ -236,7 +337,12 @@ function structuredDataForPage(pathname, page, origin) {
       "@id": `${canonical}#breadcrumb`,
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Mapa", item: `${origin}/` },
-        { "@type": "ListItem", position: 2, name: page.title.split("|")[0].trim(), item: canonical },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: page.breadcrumbName || page.title.split("|")[0].trim(),
+          item: canonical,
+        },
       ],
     });
   }
@@ -249,6 +355,7 @@ function structuredDataForPage(pathname, page, origin) {
         name: "Kde je Medveď – mapa výskytu medveďov",
         url: `${origin}/`,
         applicationCategory: "TravelApplication",
+        applicationSubCategory: "Mapa výskytu medveďov a verejných varovaní",
         operatingSystem: "Web",
         browserRequirements: "Requires JavaScript for the interactive map",
         inLanguage: "sk-SK",
@@ -261,7 +368,7 @@ function structuredDataForPage(pathname, page, origin) {
         "@id": `${origin}/#dataset`,
         name: "Hlásený výskyt medveďov na Slovensku",
         description:
-          "Priebežne aktualizovaný súbor moderovaných hlásení a verejných varovaní s dátumom, lokalitou a dostupnými súradnicami.",
+          "Priebežne aktualizovaný súbor hlásení a verejných varovaní z viacerých slovenských zdrojov s dátumom, lokalitou, pôvodom informácie a dostupnými súradnicami.",
         url: `${origin}/`,
         distribution: {
           "@type": "DataDownload",
@@ -269,6 +376,28 @@ function structuredDataForPage(pathname, page, origin) {
           contentUrl: absoluteUrl(origin, "/api/warnings"),
         },
         spatialCoverage: { "@type": "Place", name: "Slovensko" },
+        about: bearEntity,
+        keywords: [
+          "výskyt medveďa",
+          "mapa medveďov",
+          "medvedie varovania",
+          "Slovensko",
+        ],
+        variableMeasured: [
+          "lokalita hlásenia",
+          "dátum a čas hlásenia",
+          "zdroj informácie",
+          "súradnice, ak sú dostupné",
+        ],
+        measurementTechnique:
+          "Agregácia verejných zdrojov a používateľských hlásení, zjednotenie údajov, odstránenie duplicít a moderovanie pred zverejnením.",
+        citation: [
+          "https://tumedved.sk/",
+          "https://mapamedvedov.sk/",
+          "https://www.sprejnamedveda.sk/medvede-na-mape/",
+          "https://www.pozormedved.sk/",
+          "https://zasahovytim.sopsr.sk/",
+        ],
         creator: { "@id": organizationId },
         inLanguage: "sk-SK",
         isAccessibleForFree: true,
@@ -291,6 +420,41 @@ function structuredDataForPage(pathname, page, origin) {
     );
   }
 
+  if (page.location) {
+    const datasetId = `${canonical}#dataset`;
+    const webpage = graph.find((item) => item["@id"] === `${canonical}#webpage`);
+    webpage.mainEntity = { "@id": datasetId };
+    graph.push({
+      "@type": "Dataset",
+      "@id": datasetId,
+      name: `Hlásený výskyt medveďa – ${page.location.name}`,
+      description: page.description,
+      url: canonical,
+      about: [
+        bearEntity,
+        { "@type": "Place", name: page.location.name },
+      ],
+      spatialCoverage: { "@type": "Place", name: page.location.name },
+      variableMeasured: ["hlásenia výskytu", "verejné varovania", "súvisiace správy"],
+      creator: { "@id": organizationId },
+      inLanguage: "sk-SK",
+      isAccessibleForFree: true,
+      dateModified: modified,
+      license: absoluteUrl(origin, "/terms"),
+    });
+  }
+
+  if (pathname === "/o-mape") {
+    const aboutPage = graph.find((item) => item["@id"] === `${canonical}#webpage`);
+    aboutPage.citation = [
+      "https://tumedved.sk/",
+      "https://mapamedvedov.sk/",
+      "https://www.sprejnamedveda.sk/medvede-na-mape/",
+      "https://www.pozormedved.sk/",
+      "https://zasahovytim.sopsr.sk/",
+    ];
+  }
+
   if (pathname === "/bezpecnost") {
     const article = graph.find((item) => item["@id"] === `${canonical}#webpage`);
     Object.assign(article, {
@@ -311,17 +475,20 @@ function structuredDataForPage(pathname, page, origin) {
 function buildSeoHead(pathname, page, origin) {
   const canonical = absoluteUrl(origin, pathname);
   const image = absoluteUrl(origin, "/assets/mascot/bear-map-mascot-transparent.png");
+  const ogType = page.schemaType === "Article" ? "article" : "website";
   const schema = JSON.stringify(structuredDataForPage(pathname, page, origin)).replaceAll("<", "\\u003c");
   return [
     '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />',
     `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
     '<meta property="og:locale" content="sk_SK" />',
-    '<meta property="og:type" content="website" />',
+    `<meta property="og:type" content="${ogType}" />`,
     '<meta property="og:site_name" content="Kde je Medveď" />',
     `<meta property="og:title" content="${escapeHtml(page.title)}" />`,
     `<meta property="og:description" content="${escapeHtml(page.description)}" />`,
     `<meta property="og:url" content="${escapeHtml(canonical)}" />`,
     `<meta property="og:image" content="${escapeHtml(image)}" />`,
+    `<meta property="og:image:secure_url" content="${escapeHtml(image)}" />`,
+    '<meta property="og:image:type" content="image/png" />',
     '<meta property="og:image:width" content="700" />',
     '<meta property="og:image:height" content="700" />',
     '<meta property="og:image:alt" content="Ilustrácia medveďa pri mape Slovenska" />',
@@ -329,6 +496,7 @@ function buildSeoHead(pathname, page, origin) {
     `<meta name="twitter:title" content="${escapeHtml(page.title)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(page.description)}" />`,
     `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
+    '<meta name="twitter:image:alt" content="Ilustrácia medveďa pri mape Slovenska" />',
     '<meta name="theme-color" content="#1f4b30" />',
     '<link rel="manifest" href="/manifest.webmanifest" />',
     '<link rel="alternate" type="application/rss+xml" title="Aktuálne hlásenia – Kde je Medveď" href="/feed.xml" />',
@@ -357,8 +525,8 @@ function safeHttpUrl(value) {
   }
 }
 
-function renderSsrWarnings(items) {
-  if (!items.length) return '<p class="empty">Hlásenia sa načítavajú…</p>';
+function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…") {
+  if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
   return items.slice(0, 15).map((item) => {
     const sourceLinks = sightingSourceLinks(item)
       .map((entry) => ({ ...entry, url: safeHttpUrl(entry.url) }))
@@ -382,8 +550,8 @@ function renderSsrWarnings(items) {
   }).join("\n");
 }
 
-function renderSsrNews(items) {
-  if (!items.length) return '<p class="empty">Správy sa načítavajú…</p>';
+function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…") {
+  if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
   return items.slice(0, 12).map((item) => {
     const href = item.articleUrl || item.link || item.googleNewsUrl || "";
     const link = href
@@ -395,6 +563,112 @@ function renderSsrNews(items) {
       ${link}
     </article>`;
   }).join("\n");
+}
+
+function includesLocation(value, locationName) {
+  const haystack = normalizeSearchText(value);
+  const needle = normalizeSearchText(locationName);
+  return Boolean(needle) && ` ${haystack} `.includes(` ${needle} `);
+}
+
+function itemBelongsToLocation(item, locationName, type) {
+  if (type === "warning") return includesLocation(item.location, locationName);
+  return [item.place, item.title, item.snippet].some((value) =>
+    includesLocation(value, locationName)
+  );
+}
+
+const locationOverviewCache = {
+  value: null,
+  version: null,
+  expiresAt: 0,
+  inFlight: null,
+};
+
+async function loadLocationOverview() {
+  const version = latestContentDate();
+  if (
+    locationOverviewCache.value &&
+    locationOverviewCache.version === version &&
+    locationOverviewCache.expiresAt > Date.now()
+  ) {
+    return locationOverviewCache.value;
+  }
+  if (locationOverviewCache.inFlight) return locationOverviewCache.inFlight;
+
+  locationOverviewCache.inFlight = (async () => {
+    const [warnings, news, gz] = await Promise.all([
+      loadWarnings(),
+      newsStore.get(),
+      loadPlaces(),
+    ]);
+    const report = buildStatsReport({
+      sightings: warnings,
+      news,
+      gz,
+      includeAllLocations: true,
+    });
+    const locations = report.allLocations.map((location) => {
+      const warningItems = warnings.filter((item) =>
+        itemBelongsToLocation(item, location.name, "warning")
+      );
+      const newsItems = news.filter((item) =>
+        itemBelongsToLocation(item, location.name, "news")
+      );
+      const latest = [
+        ...warningItems.map((item) => item.reportedAt),
+        ...newsItems.map((item) => item.date),
+      ].filter(Boolean).sort().pop() || latestContentDate() || CONTENT_UPDATED;
+      return {
+        ...location,
+        sightings: warningItems.length,
+        news: newsItems.length,
+        total: warningItems.length + newsItems.length,
+        slug: locationSlug(location.name),
+        path: locationPath(location.name),
+        warningItems,
+        newsItems,
+        latest,
+      };
+    }).filter((location) => location.total >= 2);
+    const overview = {
+      warnings,
+      news,
+      report,
+      locations,
+      topLocations: locations.slice(0, 12),
+    };
+    locationOverviewCache.value = overview;
+    locationOverviewCache.version = latestContentDate();
+    locationOverviewCache.expiresAt = Date.now() + 5 * 60 * 1000;
+    return overview;
+  })();
+
+  try {
+    return await locationOverviewCache.inFlight;
+  } finally {
+    locationOverviewCache.inFlight = null;
+  }
+}
+
+function renderLocationLinks(locations, currentSlug = "") {
+  return locations
+    .filter((location) => location.slug !== currentSlug)
+    .map((location) =>
+      `<a href="${escapeHtml(location.path)}">${escapeHtml(location.name)} <span aria-label="${location.total} záznamov">(${location.total})</span></a>`
+    )
+    .join("\n");
+}
+
+function renderSsrUpdated(value) {
+  if (!value) return "";
+  return `Aktualizované <time datetime="${escapeHtml(value)}">${escapeHtml(formatSlovakDate(value, true))}</time>`;
+}
+
+function slovakCount(value, one, few, many) {
+  const count = Number(value) || 0;
+  const word = count === 1 ? one : count >= 2 && count <= 4 ? few : many;
+  return `${count} ${word}`;
 }
 
 async function getPageTemplate(file) {
@@ -450,8 +724,11 @@ app.use((req, _res, next) => {
 });
 
 function shouldLogWebsiteRequest(req) {
+  if (DISABLE_WEBSITE_LOGS) return false;
   if (req.path.startsWith("/api")) return true;
-  return req.method === "GET" && ["/", "/privacy", "/terms", "/stats", "/nahlas"].includes(req.path);
+  return req.method === "GET" && (
+    Object.hasOwn(PUBLIC_PAGES, req.path) || req.path.startsWith(LOCATION_ROUTE_PREFIX)
+  );
 }
 
 app.use((req, res, next) => {
@@ -624,7 +901,7 @@ function refreshResultMessage(result) {
   return [header, ...details].join("\n");
 }
 
-async function refreshAll(reason) {
+async function refreshAll(reason, requestOrigin = null) {
   const [sightingsResult, newsResult] = await Promise.allSettled([
     sightingsStore.refresh(reason),
     newsStore.refresh(reason),
@@ -647,6 +924,18 @@ async function refreshAll(reason) {
     source.children ? Object.values(source.children) : [source]
   );
 
+  let indexNow = null;
+  if ((sources.sightings.ok || sources.news.ok) && reason !== "startup") {
+    const changedPaths = ["/", "/stats"];
+    try {
+      const { locations } = await loadLocationOverview();
+      changedPaths.push(...locations.map((location) => location.path));
+    } catch (err) {
+      console.error("[indexnow] location URLs unavailable:", err.message);
+    }
+    indexNow = await notifyIndexNow(changedPaths, requestOrigin);
+  }
+
   return {
     ok: sources.sightings.ok || sources.news.ok,
     complete: leafOutcomes.every((source) => source.ok),
@@ -655,6 +944,7 @@ async function refreshAll(reason) {
     sightings: sightingsStore.meta,
     news: newsStore.meta,
     sources,
+    indexNow,
     errors: Object.keys(errors).length ? errors : null,
   };
 }
@@ -664,7 +954,7 @@ app.all("/api/cron/refresh", async (req, res) => {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  const result = await refreshAll("cron");
+  const result = await refreshAll("cron", siteOrigin(req));
   res.status(result.ok ? 200 : 502).json({
     ...result,
     message: refreshResultMessage(result),
@@ -737,20 +1027,15 @@ async function renderPublicPage(req, res, pathname, page) {
     // klient ich po načítaní prevezme, no crawlery a návštevníci bez JS už nevidia
     // prázdny app shell.
     if (pathname === "/") {
-      const [warnings, news] = await Promise.all([
-        loadWarnings().catch((err) => {
-          console.error("[seo] warnings SSR failed:", err.message);
-          return [];
-        }),
-        newsStore.get().catch((err) => {
-          console.error("[seo] news SSR failed:", err.message);
-          return [];
-        }),
-      ]);
+      const overview = await loadLocationOverview().catch((err) => {
+        console.error("[seo] homepage SSR failed:", err.message);
+        return { warnings: [], news: [], locations: [], topLocations: [] };
+      });
       html = html
-        .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(warnings))
-        .replace("<!-- SSR_NEWS -->", renderSsrNews(news))
-        .replace("<!-- SSR_UPDATED -->", escapeHtml(latestContentDate() || ""));
+        .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings))
+        .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news))
+        .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
+        .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
     }
 
     const canonical = absoluteUrl(origin, pathname);
@@ -768,14 +1053,83 @@ async function renderPublicPage(req, res, pathname, page) {
   }
 }
 
+async function renderLocationPage(req, res) {
+  try {
+    const overview = await loadLocationOverview();
+    const requestedSlug = locationSlug(req.params.slug);
+    const location = overview.locations.find((item) => item.slug === requestedSlug);
+    if (!location) {
+      return res
+        .status(404)
+        .set("X-Robots-Tag", "noindex, follow")
+        .type("text")
+        .send("Pre túto lokalitu zatiaľ nemáme samostatný prehľad.");
+    }
+
+    if (req.path !== location.path) return res.redirect(301, location.path);
+
+    const pathname = location.path;
+    const origin = siteOrigin(req);
+    const page = {
+      title: `Výskyt medveďa – ${location.name} | Aktuálne hlásenia`,
+      description:
+        `Aktuálne hlásenia, varovania a správy o výskyte medveďa v lokalite ${location.name}. ` +
+        "Prehľad z viacerých zdrojov s dátumami a pôvodnými odkazmi.",
+      schemaType: "CollectionPage",
+      breadcrumbName: `Výskyt medveďa – ${location.name}`,
+      dateModified: location.latest,
+      location,
+    };
+    let html = await getPageTemplate("location.html");
+    html = html
+      .replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, page, origin))
+      .replaceAll("{{LOCATION_NAME}}", escapeHtml(location.name))
+      .replaceAll("<!-- LOCATION_NAME -->", escapeHtml(location.name))
+      .replace(
+        "<!-- LOCATION_COUNTS -->",
+        `${slovakCount(location.sightings, "hlásenie", "hlásenia", "hlásení")} a ` +
+        `${slovakCount(location.news, "súvisiaca správa", "súvisiace správy", "súvisiacich správ")} ` +
+        "v aktuálnom súbore údajov"
+      )
+      .replace("<!-- LOCATION_UPDATED -->", renderSsrUpdated(location.latest))
+      .replace(
+        "<!-- LOCATION_WARNINGS -->",
+        renderSsrWarnings(location.warningItems, "Pre túto lokalitu zatiaľ nemáme samostatné hlásenie; súvisí však s ňou spravodajský záznam.")
+      )
+      .replace(
+        "<!-- LOCATION_NEWS -->",
+        renderSsrNews(location.newsItems, "Pre túto lokalitu zatiaľ nemáme samostatnú súvisiacu správu.")
+      )
+      .replace(
+        "<!-- LOCATION_RELATED -->",
+        renderLocationLinks(overview.topLocations, location.slug)
+      );
+
+    const canonical = absoluteUrl(origin, pathname);
+    res.set({
+      "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+      "Content-Language": "sk",
+      "Last-Modified": new Date(location.latest).toUTCString(),
+      Link: `<${canonical}>; rel="canonical"`,
+    });
+    return res.type("html").send(html);
+  } catch (err) {
+    console.error("[seo] location page render failed:", err.message);
+    return res.status(500).type("text").send("Stránku sa nepodarilo načítať.");
+  }
+}
+
 for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
   app.get(pathname, (req, res) => renderPublicPage(req, res, pathname, page));
 }
+
+app.get(`${LOCATION_ROUTE_PREFIX}:slug`, renderLocationPage);
 
 // Jednoznačná kanonická URL pre staré alebo opisné varianty adresy.
 app.get(
   [
     "/index.html",
+    "/location.html",
     "/mapa-vyskytu-medvedov",
     "/mapa-vyskytu-medvedov-na-slovensku",
   ],
@@ -804,19 +1158,26 @@ app.get("/robots.txt", (req, res) => {
 
 app.get("/sitemap.xml", async (req, res) => {
   const origin = siteOrigin(req);
-  const rows = await Promise.all(Object.entries(PUBLIC_PAGES).map(async ([pathname, page]) => {
-    let lastmod;
-    try {
-      lastmod = (await stat(path.join(PUBLIC_DIR, page.file))).mtime.toISOString();
-    } catch {
-      lastmod = "2026-07-13T00:00:00.000Z";
-    }
-    if (pathname === "/" && latestContentDate()) lastmod = latestContentDate();
+  const rows = Object.entries(PUBLIC_PAGES).map(([pathname, page]) => {
+    const lastmod = page.dynamicLastmod
+      ? latestContentDate() || CONTENT_UPDATED
+      : page.lastmod || CONTENT_UPDATED;
     const changefreq = page.changefreq
       ? `\n    <changefreq>${page.changefreq}</changefreq>`
       : "";
     return `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod)}</lastmod>${changefreq}\n    <priority>${page.priority}</priority>\n  </url>`;
-  }));
+  });
+
+  try {
+    const { locations } = await loadLocationOverview();
+    for (const location of locations) {
+      rows.push(
+        `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, location.path))}</loc>\n    <lastmod>${escapeHtml(location.latest)}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>`
+      );
+    }
+  } catch (err) {
+    console.error("[seo] location sitemap generation failed:", err.message);
+  }
 
   res
     .type("application/xml")
@@ -826,14 +1187,23 @@ app.get("/sitemap.xml", async (req, res) => {
 
 // Stručný strojovo čitateľný opis pre generatívne vyhľadávače a asistentov.
 // Nie je náhradou za HTML; odkazuje výhradne na rovnaký verejný obsah a API.
-app.get("/llms.txt", (req, res) => {
+app.get("/llms.txt", async (req, res) => {
   const origin = siteOrigin(req);
+  let locationLinks = "";
+  try {
+    const { topLocations } = await loadLocationOverview();
+    locationLinks = `\n## Najčastejšie lokality v aktuálnych dátach\n${topLocations
+      .map((location) => `- [Výskyt medveďa – ${location.name}](${absoluteUrl(origin, location.path)})`)
+      .join("\n")}\n`;
+  } catch (err) {
+    console.error("[seo] llms location links failed:", err.message);
+  }
   res
     .type("text/plain")
     .set("Cache-Control", "public, max-age=3600")
     .send(`# Kde je Medveď
 
-> Slovenská interaktívna mapa hláseného výskytu medveďov. Spája moderované hlásenia používateľov, verejné zdroje a relevantné slovenské správy.
+> Nezávislý slovenský agregátor informácií o hlásenom výskyte medveďov. Na jednom mieste spája moderované hlásenia, verejné mapy a varovania, relevantné slovenské správy, štatistiky a bezpečnostné odporúčania.
 
 ## Najdôležitejšie stránky
 - [Aktuálna mapa](${absoluteUrl(origin, "/")})
@@ -841,6 +1211,12 @@ app.get("/llms.txt", (req, res) => {
 - [Bezpečnosť pri stretnutí s medveďom](${absoluteUrl(origin, "/bezpecnost")})
 - [Zdroje, metodika a obmedzenia](${absoluteUrl(origin, "/o-mape")})
 - [Nahlásiť pozorovanie](${absoluteUrl(origin, "/nahlas")})
+${locationLinks}
+## Pokryté typy zdrojov
+- Používateľské hlásenia odoslané priamo cez Kde je Medveď
+- Verejné záznamy z TuMedved.sk, MapaMedvedov.sk a SprejNaMedveda.sk
+- Verejné upozornenia ŠOP SR publikované cez PozorMedved.sk
+- Relevantné slovenské správy s odkazom na pôvodný článok
 
 ## Strojovo čitateľné dáta
 - [Aktuálne varovania – JSON](${absoluteUrl(origin, "/api/warnings")})
@@ -1230,8 +1606,8 @@ app.delete("/api/admin/subscriptions/:id", adminAuth, async (req, res) => {
   }
 });
 
-app.post("/api/admin/refresh", adminAuth, async (_req, res) => {
-  const result = await refreshAll("admin");
+app.post("/api/admin/refresh", adminAuth, async (req, res) => {
+  const result = await refreshAll("admin", siteOrigin(req));
   res.status(result.ok ? 200 : 502).json({
     ...result,
     message: refreshResultMessage(result),
@@ -1280,7 +1656,7 @@ app.listen(PORT, () => {
     console.error("[news] startup load failed:", err.message);
   });
 
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && !DISABLE_STARTUP_REFRESH) {
     Promise.all([
       sightingsStore.refresh("startup"),
       newsStore.refresh("startup"),

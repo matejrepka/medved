@@ -71,6 +71,8 @@ OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
 OPENROUTER_MODEL=openrouter/free
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
+# voliteľné; predvolený kľúč je už publikovaný v /public:
+INDEXNOW_KEY=03a59456ce8341fba7b18cf916aa32e8
 ```
 
 `SITE_URL` musí byť presný verejný HTTPS origin bez cesty a bez lomky na konci.
@@ -88,7 +90,8 @@ https://tvoja-domena.sk/api/cron/refresh?secret=CRON_REFRESH_SECRET
 ```
 
 Táto URL spustí fresh scraping tumedved.sk a správ, uloží výsledky do Supabase a vráti JSON
-odpoveď. Secret musí sedieť s hodnotou v `.env`.
+odpoveď. Secret musí sedieť s hodnotou v `.env`. Po úspešnej obnove server odošle zmenené
+hlavné a lokalitné URL do IndexNow, aby ich Bing a ďalšie zapojené vyhľadávače objavili rýchlejšie.
 
 Databázové tabuľky vytvoríš jednorazovo SQL skriptom
 [`docs/supabase-schema.sql`](docs/supabase-schema.sql) v Supabase SQL editore.
@@ -123,6 +126,8 @@ Server poskytuje crawl-ready HTML, absolútne canonical odkazy, Open Graph/Twitt
 schema.org (`WebSite`, `WebApplication`, `Dataset`, `FAQPage`, `Article`, breadcrumbs),
 `/sitemap.xml`, `/robots.txt`, `/feed.xml` a `/llms.txt`. Domovská stránka vykresľuje
 najnovšie hlásenia aj na serveri, takže hlavný obsah nie je závislý od vykonania JavaScriptu.
+Pre lokality s aspoň dvomi relevantnými záznamami vytvára server unikátne prehľady pod
+`/vyskyt-medveda/:lokalita`; sú zahrnuté v sitemape a aktualizujú sa spolu so zdrojovými dátami.
 
 Po nasadení treba jednorazovo dokončiť kroky, ktoré sa nedajú urobiť v repozitári:
 

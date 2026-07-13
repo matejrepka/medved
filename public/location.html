@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Výskyt medveďa – {{LOCATION_NAME}} | Aktuálne hlásenia</title>
+    <meta
+      name="description"
+      content="Aktuálne hlásenia, varovania a správy o výskyte medveďa v lokalite {{LOCATION_NAME}} z viacerých slovenských zdrojov."
+    />
+    <!-- SEO_HEAD -->
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260713-seo1" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Kde je Medveď, domov">
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
+        </span>
+        <span class="brand-name">Kde je Medve&#271;</span>
+      </a>
+      <nav class="main-nav" aria-label="Hlavné menu">
+        <a href="/">Mapa</a>
+        <a href="/stats">Štatistiky</a>
+        <a href="/o-mape">O mape</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
+          <i class="ph ph-moon" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="knowledge-page">
+      <nav class="breadcrumbs" aria-label="Navigácia v hierarchii">
+        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>Výskyt medveďa – <!-- LOCATION_NAME --></span>
+      </nav>
+
+      <article class="knowledge-article">
+        <header class="knowledge-hero">
+          <p class="section-kicker">Aktuálny lokalitný prehľad</p>
+          <h1>Výskyt medveďa – <!-- LOCATION_NAME --></h1>
+          <p class="answer-lead">
+            Kde je Medveď sústreďuje na jednom mieste dostupné hlásenia, verejné varovania
+            a súvisiace slovenské správy pre lokalitu <strong><!-- LOCATION_NAME --></strong>.
+            Pri každom zázname uvádzame dátum a pôvodný zdroj, ak je dostupný.
+          </p>
+          <p class="review-note"><!-- LOCATION_COUNTS -->. <!-- LOCATION_UPDATED --></p>
+        </header>
+
+        <section aria-labelledby="locationWarningsHeading">
+          <h2 id="locationWarningsHeading">Hlásenia a varovania – <!-- LOCATION_NAME --></h2>
+          <p>
+            Nasledujúce záznamy opisujú hlásený výskyt v konkrétnom čase. Nepotvrdzujú,
+            že sa medveď na uvedenom mieste nachádza aj teraz.
+          </p>
+          <div class="list location-record-list">
+            <!-- LOCATION_WARNINGS -->
+          </div>
+        </section>
+
+        <section aria-labelledby="locationNewsHeading">
+          <h2 id="locationNewsHeading">Súvisiace správy o medveďoch</h2>
+          <p>
+            Relevantné správy pomáhajú doplniť kontext hlásení. Detail a prípadné oficiálne
+            pokyny si vždy overte v pôvodnom článku alebo ozname.
+          </p>
+          <div class="list location-record-list">
+            <!-- LOCATION_NEWS -->
+          </div>
+        </section>
+
+        <section class="limitations" aria-labelledby="locationMeaningHeading">
+          <p class="section-kicker">Ako čítať údaje</p>
+          <h2 id="locationMeaningHeading">Čo znamená výskyt medveďa v tejto lokalite?</h2>
+          <p>
+            Znamená to iba to, že zdroj uviedol pozorovanie, stopu, incident alebo verejné
+            varovanie spojené s lokalitou <!-- LOCATION_NAME -->. Nejde o živú polohu zvieraťa,
+            úplný monitoring populácie ani predpoveď bezpečnosti konkrétnej trasy.
+          </p>
+          <ul>
+            <li>Najprv skontrolujte dátum a čas záznamu.</li>
+            <li>Otvorte pôvodný zdroj a overte presný opis okolností.</li>
+            <li>Sledujte aktuálne oznamy obce, správcu územia a ŠOP SR.</li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="otherLocationsHeading">
+          <h2 id="otherLocationsHeading">Ďalšie lokality s hláseným výskytom</h2>
+          <p>Prehľady vznikajú automaticky z najčastejšie spomínaných lokalít v aktuálnych dátach.</p>
+          <div class="api-links location-links">
+            <!-- LOCATION_RELATED -->
+          </div>
+        </section>
+
+        <div class="source-actions">
+          <a class="btn" href="/#map">Otvoriť aktuálnu mapu</a>
+          <a class="ghost-btn" href="/o-mape">Zdroje a metodika</a>
+        </div>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <p>
+          Kde je Medveď je nezávislý agregátor. Údaje sú orientačné a nenahrádzajú
+          pokyny ŠOP SR, Zásahového tímu ani tiesňových zložiek.
+        </p>
+        <nav class="footer-links" aria-label="Dôležité odkazy">
+          <a href="/">Aktuálna mapa</a>
+          <a href="/bezpecnost">Bezpečnosť</a>
+          <a href="/stats">Štatistiky</a>
+          <a href="/o-mape">O mape</a>
+          <a href="/privacy">Ochrana súkromia</a>
+          <a href="/terms">Podmienky používania</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="/page.js?v=20260713-1" defer></script>
+    <script src="/consent.js?v=20260713-1" defer></script>
+  </body>
+</html>

@@ -51,9 +51,9 @@ function addTimeOfDay(acc, hour) {
 
 /**
  * Zostaví štatistický report z hlásení a správ.
- * @param {{sightings:Array, news:Array, gz:{index:Map}}} input
+ * @param {{sightings:Array, news:Array, gz:{index:Map}, includeAllLocations?:boolean}} input
  */
-export function buildStatsReport({ sightings, news, gz }) {
+export function buildStatsReport({ sightings, news, gz, includeAllLocations = false }) {
   const today = localParts(new Date().toISOString());
 
   const timeline = new Map(); // "YYYY-MM" -> { sightings, news }
@@ -134,6 +134,7 @@ export function buildStatsReport({ sightings, news, gz }) {
       places: places.size,
     },
     topPlace: topLocations.length ? topLocations[0].name : null,
+    ...(includeAllLocations ? { allLocations: topLocations } : {}),
     topLocations: topLocations.slice(0, 12),
     timeline: timelineArr,
     timeOfDay,

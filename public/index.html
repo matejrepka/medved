@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Aktuálna mapa výskytu medveďov na Slovensku | Kde je Medveď</title>
+    <title>Kde je Medveď? Aktuálna mapa medveďov na Slovensku</title>
     <meta
       name="description"
-      content="Aktuálna mapa hláseného výskytu medveďov na Slovensku. Moderované hlásenia, správy, dátumy, lokality a bezpečnostné odporúčania na jednom mieste."
+      content="Kde je medveď? Aktuálna mapa spája hlásenia, varovania a správy z viacerých slovenských zdrojov. Overte lokalitu, dátum a pôvod informácie."
     />
     <!-- SEO_HEAD -->
 
@@ -72,14 +72,14 @@
       />
     </noscript>
 
-    <link rel="stylesheet" href="/styles.css?v=20260713-mobile-lists1" />
+    <link rel="stylesheet" href="/styles.css?v=20260713-seo1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="" aria-hidden="true" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
         </span>
         <span class="brand-name">Kde je Medve&#271;</span>
       </a>
@@ -91,7 +91,7 @@
       </nav>
 
       <div class="header-actions">
-        <span class="updated" id="updated"></span>
+        <span class="updated" id="updated"><!-- SSR_UPDATED --></span>
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
           <i class="ph ph-moon" aria-hidden="true"></i>
         </button>
@@ -101,10 +101,11 @@
     <main>
       <section class="masthead mascot-masthead">
         <div class="masthead-copy">
-          <h1>Aktuálna mapa výskytu medveďov na Slovensku</h1>
+          <h1>Kde je medveď? Aktuálna mapa medveďov na Slovensku</h1>
           <p class="lede">
-            Pozrite si, kde a kedy ľudia naposledy hlásili medveďa. Spájame moderované
-            hlásenia, verejné varovania a aktuálne slovenské správy do jednej prehľadnej mapy.
+            Centralizujeme moderované hlásenia, verejné mapy a varovania, upozornenia ŠOP SR
+            a aktuálne slovenské správy. Na jednom mieste si overíte, kde a kedy bol medveď
+            hlásený a z akého zdroja informácia pochádza.
           </p>
 
           <div class="home-insights" id="stats" aria-label="Aktuálny štatistický prehľad">
@@ -143,7 +144,7 @@
             />
             <img
               src="/assets/mascot/bear-map-mascot-transparent.png"
-              alt=""
+              alt="Medveď pri interaktívnej mape výskytu medveďov na Slovensku"
               width="700"
               height="700"
               fetchpriority="high"
@@ -155,7 +156,7 @@
 
       <section class="map-section" aria-labelledby="mapHeading">
         <div class="section-head">
-          <h2 id="mapHeading"><i class="ph ph-map-pin" aria-hidden="true"></i> Mapa výskytu medveďov</h2>
+          <h2 id="mapHeading"><i class="ph ph-map-pin" aria-hidden="true"></i> Aktuálna mapa hláseného výskytu medveďov</h2>
           <span class="muted" id="mapMeta"></span>
         </div>
         <p class="map-context" id="mapExplanation">
@@ -226,8 +227,8 @@
       <div class="columns">
         <section class="panel" aria-labelledby="sightingsHead">
           <div class="section-head">
-            <h2 id="sightingsHead">Medvedie varovania</h2>
-            <span class="src">moderované hlásenia</span>
+            <h2 id="sightingsHead">Aktuálne hlásenia a medvedie varovania</h2>
+            <span class="src">viac verejných zdrojov</span>
           </div>
 
           <div id="sightingsList" class="list" aria-live="polite">
@@ -237,8 +238,8 @@
 
         <section class="panel" aria-labelledby="newsHead">
           <div class="section-head">
-            <h2 id="newsHead">Správy o medveďoch</h2>
-            <span class="src">Google News</span>
+            <h2 id="newsHead">Aktuálne správy o medveďoch</h2>
+            <span class="src">slovenské médiá a ŠOP SR</span>
           </div>
           <div id="newsList" class="list" aria-live="polite">
             <!-- SSR_NEWS -->
@@ -270,8 +271,9 @@
             <i class="ph ph-stack" aria-hidden="true"></i>
             <h3>Viac zdrojov na jednom mieste</h3>
             <p>
-              Rozlišujeme hlásenia používateľov, prevzaté verejné hlásenia a varovania
-              zo slovenských správ. Pri položke uvádzame zdroj aj čas.
+              Spájame vlastné hlásenia s verejnými záznamami z TuMedved.sk,
+              MapaMedvedov.sk a SprejNaMedveda.sk, upozorneniami ŠOP SR z PozorMedved.sk
+              a relevantnými slovenskými správami. Pri položke uvádzame zdroj aj čas.
             </p>
           </article>
           <article>
@@ -329,11 +331,47 @@
           </aside>
         </div>
 
+        <div class="location-directory" id="lokality">
+          <p class="section-kicker">Lokalitné prehľady</p>
+          <h2>Výskyt medveďa podľa lokality</h2>
+          <p>
+            Otvorte súhrn hlásení, varovaní a správ pre najčastejšie spomínané lokality
+            v aktuálnych dátach. Prehľady sa priebežne menia spolu so zdrojovými záznamami.
+          </p>
+          <div class="api-links location-links">
+            <!-- SSR_TOP_LOCATIONS -->
+          </div>
+        </div>
+
         <div class="faq" id="caste-otazky">
           <p class="section-kicker">Rýchle odpovede</p>
           <h2>Často kladené otázky o mape medveďov</h2>
           <div class="faq-list">
             <details open>
+              <summary>Kde je medveď na Slovensku?</summary>
+              <p>
+                Najnovšie hlásené pozorovania a verejné varovania nájdete na aktuálnej mape
+                Kde je Medveď. Každý bod uvádza lokalitu, čas a dostupný pôvod informácie;
+                nejde však o živé GPS sledovanie zvieraťa.
+              </p>
+            </details>
+            <details>
+              <summary>Čo je Kde je Medveď?</summary>
+              <p>
+                Kde je Medveď je nezávislý slovenský agregátor. Na jednom mieste spája
+                moderované hlásenia, verejné mapy a varovania, relevantné správy, štatistiky
+                a bezpečnostné odporúčania.
+              </p>
+            </details>
+            <details>
+              <summary>Z akých zdrojov pochádzajú informácie o medveďoch?</summary>
+              <p>
+                Prehľad spája používateľské hlásenia, verejne dostupné záznamy zo slovenských
+                máp výskytu, upozornenia ŠOP SR a relevantné slovenské správy. Pri každej
+                položke zachováva názov a odkaz na pôvodný zdroj.
+              </p>
+            </details>
+            <details>
               <summary>Je mapa výskytu medveďov aktuálna?</summary>
               <p>
                 Dáta sa automaticky kontrolujú. Na mape sa zobrazia až položky, ktoré prešli
@@ -402,8 +440,7 @@
             <img
               class="mascot-cta-image"
               src="/assets/mascot/bear-helper.png"
-              alt=""
-              aria-hidden="true"
+              alt="Medveď s ďalekohľadom"
               width="460"
               height="460"
               loading="lazy"
