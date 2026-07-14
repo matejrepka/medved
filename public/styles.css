@@ -1876,15 +1876,10 @@ main {
 .footer-brand-mark {
   display: grid;
   place-items: center;
-  flex: 0 0 58px;
-  width: 58px;
-  height: 58px;
-  padding: 6px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  box-shadow: var(--shadow-sm);
+  flex: 0 0 76px;
+  width: 76px;
+  height: 76px;
+  padding: 0;
 }
 
 .footer-brand-mark img {
@@ -2054,9 +2049,9 @@ main {
   }
 
   .footer-brand-mark {
-    flex-basis: 52px;
-    width: 52px;
-    height: 52px;
+    flex-basis: 66px;
+    width: 66px;
+    height: 66px;
   }
 
   .footer-nav {
