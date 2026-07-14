@@ -345,6 +345,7 @@ main {
   margin: 0 auto;
   padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) 24px;
   background: var(--bg);
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 
 .masthead {
@@ -938,10 +939,10 @@ main {
 /* Legenda mapy */
 .map-legend {
   display: flex;
-  gap: 18px;
+  gap: 20px;
   flex-wrap: wrap;
   margin-top: 12px;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: var(--ink-3);
 }
 .map-legend .lg {
@@ -950,8 +951,8 @@ main {
   gap: 7px;
 }
 .map-legend .lg-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--surface);
@@ -1971,18 +1972,16 @@ main {
   border-radius: var(--radius-pill);
   color: var(--accent-ink);
   background: var(--accent);
-  box-shadow: 0 7px 18px color-mix(in srgb, var(--accent) 18%, transparent);
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
-  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease, background-color 0.18s ease;
 }
 
 .footer-report-link:hover {
   color: var(--accent-ink);
   background: var(--accent-hover);
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 24%, transparent);
   text-decoration: none;
   transform: translateY(-2px);
 }
