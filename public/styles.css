@@ -41,8 +41,8 @@
   --maxw: 1180px;
 
   --topographic-bg: url("/assets/topographic-bg.png");
-  --topographic-opacity: 0.3;
-  --topographic-filter: brightness(1.02) contrast(1.06);
+  --topographic-opacity: 0.14;
+  --topographic-filter: brightness(0.86) contrast(1.04);
 }
 
 [data-theme="dark"] {
@@ -71,8 +71,8 @@
   --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.55);
 
-  --topographic-opacity: 0.45;
-  --topographic-filter: brightness(0.82) contrast(1.12);
+  --topographic-opacity: 0.2;
+  --topographic-filter: brightness(0.56) contrast(1.08);
 }
 
 * {
@@ -155,8 +155,7 @@ h3 {
   gap: 16px;
   height: 68px;
   padding: 0 clamp(16px, 4vw, 36px);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(12px);
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 
@@ -345,6 +344,7 @@ main {
   max-width: var(--maxw);
   margin: 0 auto;
   padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) 24px;
+  background: var(--bg);
 }
 
 .masthead {
@@ -360,8 +360,7 @@ main {
   align-items: center;
   gap: clamp(24px, 5vw, 64px);
   padding: clamp(22px, 4vw, 48px) clamp(20px, 4vw, 52px);
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
-  backdrop-filter: blur(6px);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
@@ -470,7 +469,7 @@ main {
   align-items: center;
   gap: 8px;
   color: var(--ink);
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  background: var(--surface-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   font-size: 0.9rem;
@@ -870,7 +869,7 @@ main {
   max-width: min(280px, calc(100vw - 110px));
   padding: 8px 10px;
   color: var(--ink);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
@@ -1345,7 +1344,7 @@ main {
 .source-grid article,
 .scenario-grid article {
   padding: clamp(20px, 3vw, 26px);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
@@ -1415,7 +1414,7 @@ main {
 .emergency-box,
 .limitations {
   padding: clamp(24px, 4vw, 34px);
-  background: linear-gradient(135deg, var(--accent-soft), var(--bark-soft));
+  background: linear-gradient(135deg, var(--accent-soft), var(--bark-soft)), var(--surface);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
   border-radius: var(--radius);
 }
@@ -1866,7 +1865,7 @@ main {
   background-image: var(--topographic-bg);
   background-position: center 42%;
   background-size: max(1320px, 100vw) auto;
-  opacity: 0.13;
+  opacity: 0.07;
   filter: var(--topographic-filter);
 }
 
@@ -2122,7 +2121,7 @@ main {
   padding-right: clamp(170px, 19vw, 240px);
   min-height: clamp(168px, 18vw, 210px);
   position: relative;
-  background: linear-gradient(135deg, var(--accent-soft), var(--bark-soft));
+  background: linear-gradient(135deg, var(--accent-soft), var(--bark-soft)), var(--surface);
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
   border-radius: var(--radius);
   overflow: hidden;
@@ -2866,9 +2865,8 @@ main {
   padding: 18px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   box-shadow: 0 18px 55px rgb(15 23 18 / 20%);
-  backdrop-filter: blur(16px);
 }
 
 .privacy-banner__copy {
@@ -3158,8 +3156,7 @@ canvas,
     width: 100%;
     gap: 0;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    backdrop-filter: saturate(180%) blur(12px);
+    background: var(--surface);
     border-top: 1px solid var(--line);
     box-shadow: 0 -2px 12px rgba(26, 26, 23, 0.06);
   }
