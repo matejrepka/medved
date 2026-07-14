@@ -4,7 +4,8 @@
 //
 // Spustenie:  npm run build:images
 //
-// Pre každý maskot vytvorí zmenšenú PNG (fallback) + WebP (moderné prehliadače).
+// Pre každý maskot vytvorí zmenšenú PNG (fallback) + WebP. Veľký hero navyše
+// dostane AVIF a responzívny 640 px variant, aby sa neposielali zbytočné dáta.
 
 import sharp from "sharp";
 import path from "node:path";
@@ -17,10 +18,17 @@ const SRC = path.join(ROOT, "assets-src");
 const OUT_MASCOT = path.join(ROOT, "public", "assets", "mascot");
 
 // Cieľové šírky vychádzajú zo skutočnej zobrazovanej veľkosti × ~2 (retina).
-//   brand-mark sa zobrazuje 42px, hero max 340px, cta max-height 150px.
+//   brand-mark sa zobrazuje 42px, hero max 640px, cta max-height 150px.
 const MASCOTS = [
   { name: "bear-head-mark", size: 128, webp: false },               // logo v hlavičke
   { name: "bear-map-mascot-transparent", size: 700, webp: true },   // hero (above-the-fold)
+  {
+    name: "bear-hero-roaring",
+    size: 1200,
+    webp: true,
+    avif: true,
+    responsiveWidths: [640],
+  },                                                                // hero detail, cropped bottom-right
   { name: "bear-helper", size: 460, webp: true },                   // CTA "Videli ste medveda?"
 ];
 
@@ -35,7 +43,7 @@ async function fileSize(p) {
 async function buildMascots() {
   await mkdir(OUT_MASCOT, { recursive: true });
 
-  for (const { name, size, webp } of MASCOTS) {
+  for (const { name, size, webp, avif = false, responsiveWidths = [] } of MASCOTS) {
     const src = path.join(SRC, "mascot", `${name}.png`);
     const pngOut = path.join(OUT_MASCOT, `${name}.png`);
 
@@ -52,6 +60,44 @@ async function buildMascots() {
         .webp({ quality: 82, effort: 6 })
         .toFile(webpOut);
       console.log(`  ${name}.webp -> ${await fileSize(webpOut)}`);
+    }
+
+    if (avif) {
+      const avifOut = path.join(OUT_MASCOT, `${name}.avif`);
+      await sharp(src)
+        .resize(size, size, { fit: "inside", withoutEnlargement: true })
+        .avif({ quality: 58, effort: 6 })
+        .toFile(avifOut);
+      console.log(`  ${name}.avif -> ${await fileSize(avifOut)}`);
+    }
+
+    for (const width of responsiveWidths) {
+      const variantName = `${name}-${width}`;
+      const variantPngOut = path.join(OUT_MASCOT, `${variantName}.png`);
+
+      await sharp(src)
+        .resize({ width, withoutEnlargement: true })
+        .png({ compressionLevel: 9, palette: true, quality: 90, effort: 10 })
+        .toFile(variantPngOut);
+      console.log(`  ${variantName}.png -> ${await fileSize(variantPngOut)}`);
+
+      if (webp) {
+        const variantWebpOut = path.join(OUT_MASCOT, `${variantName}.webp`);
+        await sharp(src)
+          .resize({ width, withoutEnlargement: true })
+          .webp({ quality: 82, effort: 6 })
+          .toFile(variantWebpOut);
+        console.log(`  ${variantName}.webp -> ${await fileSize(variantWebpOut)}`);
+      }
+
+      if (avif) {
+        const variantAvifOut = path.join(OUT_MASCOT, `${variantName}.avif`);
+        await sharp(src)
+          .resize({ width, withoutEnlargement: true })
+          .avif({ quality: 58, effort: 6 })
+          .toFile(variantAvifOut);
+        console.log(`  ${variantName}.avif -> ${await fileSize(variantAvifOut)}`);
+      }
     }
   }
 }

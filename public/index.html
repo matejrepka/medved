@@ -36,8 +36,11 @@
     <link
       rel="preload"
       as="image"
-      href="/assets/mascot/bear-map-mascot-transparent.webp"
-      type="image/webp"
+      href="/assets/mascot/bear-hero-roaring.avif"
+      type="image/avif"
+      imagesrcset="/assets/mascot/bear-hero-roaring-640.avif 640w, /assets/mascot/bear-hero-roaring.avif 960w"
+      imagesizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
+      media="(min-width: 721px)"
       fetchpriority="high"
     />
 
@@ -72,7 +75,7 @@
       />
     </noscript>
 
-    <link rel="stylesheet" href="/styles.css?v=20260714-footer2" />
+    <link rel="stylesheet" href="/styles.css?v=20260714-hero-roar2" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
@@ -136,17 +139,25 @@
             </a>
           </div>
         </div>
-        <div class="mascot-hero mascot-hero-cutout" aria-hidden="true">
+        <div class="mascot-hero mascot-hero-cutout mascot-hero-roaring" aria-hidden="true">
           <picture>
             <source
-              srcset="/assets/mascot/bear-map-mascot-transparent.webp"
+              srcset="/assets/mascot/bear-hero-roaring-640.avif 640w, /assets/mascot/bear-hero-roaring.avif 960w"
+              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
+              type="image/avif"
+            />
+            <source
+              srcset="/assets/mascot/bear-hero-roaring-640.webp 640w, /assets/mascot/bear-hero-roaring.webp 960w"
+              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
               type="image/webp"
             />
             <img
-              src="/assets/mascot/bear-map-mascot-transparent.png"
-              alt="Medveď pri interaktívnej mape výskytu medveďov na Slovensku"
-              width="700"
-              height="700"
+              src="/assets/mascot/bear-hero-roaring.png"
+              srcset="/assets/mascot/bear-hero-roaring-640.png 640w, /assets/mascot/bear-hero-roaring.png 960w"
+              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
+              alt="Ilustrovaná hlava revúceho medveďa hnedého"
+              width="960"
+              height="1200"
               fetchpriority="high"
               decoding="async"
             />

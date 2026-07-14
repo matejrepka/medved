@@ -354,6 +354,7 @@ main {
 
 .mascot-masthead {
   max-width: none;
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 760px) minmax(210px, 340px);
   align-items: center;
@@ -364,10 +365,13 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .masthead-copy {
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .mascot-hero {
@@ -395,6 +399,42 @@ main {
 
 [data-theme="dark"] .mascot-hero-cutout img {
   filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.5));
+}
+
+.mascot-hero-roaring {
+  position: relative;
+  align-self: stretch;
+  justify-self: stretch;
+  width: 100%;
+  min-height: 440px;
+  pointer-events: none;
+}
+
+.mascot-hero-roaring picture {
+  position: absolute;
+  inset: 0;
+}
+
+.mascot-hero-roaring img {
+  position: absolute;
+  right: -235px;
+  bottom: -205px;
+  width: clamp(560px, 48vw, 640px);
+  max-width: none;
+  height: auto;
+  filter: drop-shadow(-18px 18px 30px rgba(26, 26, 23, 0.18));
+}
+
+[data-theme="dark"] .mascot-hero-roaring img {
+  filter: drop-shadow(-18px 18px 34px rgba(0, 0, 0, 0.55));
+}
+
+@media (min-width: 721px) and (max-width: 940px) {
+  .mascot-hero-roaring img {
+    right: -210px;
+    bottom: -155px;
+    width: 510px;
+  }
 }
 
 .masthead h1 {
