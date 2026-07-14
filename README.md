@@ -27,8 +27,11 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
   sa zobrazí ako značka na mape. Funguje offline cez lokálny gazetteer (`src/geo/sk-places.json`)
   s toleranciou na slovenské skloňovanie (napr. „v Ružomberku" → Ružomberok).
 - **AI predvyplnenie moderácie** – iba nové správy po stiahnutí spracuje cez OpenRouter model
-  `google/gemma-4-31b-it:free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
+  `openrouter/free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
   a pri varovaní doplní najpresnejšiu lokalitu; admin výsledok pred schválením skontroluje.
+- **Automatická spam kontrola hlásení** – používateľské hlásenie s vysoko spoľahlivým výsledkom
+  „legitímne“ sa hneď schváli; spam, neistý výsledok alebo nedostupná AI idú do moderácie.
+  Záznamy z tumedved.sk, mapamedvedov.sk a sprejnamedveda.sk sa schvaľujú automaticky.
 - **Mapa** – Leaflet + prepínateľné vrstvy: štandardná, turistická (OpenTopoMap) a satelitná
   (Esri). Kliknutie na hlásenie/správu v zozname vycentruje mapu na dané miesto. Dva druhy
   značiek: **hlásenia** z verejných máp a **správy** geokódované z textu článku.
@@ -69,6 +72,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
 # voliteľné, toto je predvolená hodnota:
 OPENROUTER_MODEL=openrouter/free
+# voliteľný samostatný model iba pre spam kontrolu hlásení:
+REPORT_SPAM_MODEL=openrouter/free
 WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
 CRON_REFRESH_SECRET=replace-with-a-long-random-string
 # voliteľné; predvolený kľúč je už publikovaný v /public:
@@ -79,8 +84,9 @@ INDEXNOW_KEY=03a59456ce8341fba7b18cf916aa32e8
 Server ho používa pre kanonické URL, Open Graph, JSON-LD, sitemapu, RSS a `llms.txt`.
 Ak nie je nastavený, lokálny vývoj použije origin aktuálnej požiadavky.
 
-OpenRouter dostáva iba titulok, zdroj, krátky popis a extrahovaný text nového článku. Ak
-`OPENROUTER_API_KEY` chýba alebo model zlyhá, scraping pokračuje bez AI predvyplnenia.
+Pri správach dostáva OpenRouter iba titulok, zdroj, krátky popis a extrahovaný text článku.
+Pri používateľskom hlásení dostáva iba lokalitu a popis, nikdy meno ani email. Ak kľúč chýba
+alebo spam kontrola zlyhá, hlásenie bezpečne ostane v moderácii.
 
 Ak appku hostuješ na Verceli a chceš pravidelný refresh cez cron-job.org, nastav v cron-job.org
 volanie na:
@@ -180,7 +186,8 @@ medved/
 ├── src/
 │   ├── scheduled-store.js # serverový refresh + pamäťová kópia dát
 │   ├── ai/
-│   │   └── news-classifier.js # OpenRouter klasifikácia nových správ + lokalita
+│   │   ├── news-classifier.js       # OpenRouter klasifikácia nových správ + lokalita
+│   │   └── report-spam-classifier.js # spam kontrola používateľských hlásení
 │   ├── db/
 │   │   ├── supabase.js    # Supabase klient zo serverového .env
 │   │   └── repository.js  # ukladanie/čítanie hlásení, správ a webových logov

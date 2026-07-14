@@ -17,6 +17,10 @@ import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { sightingSourceLinks } from "./src/sightings-dedupe.js";
 import { mergeWarnings } from "./src/warnings.js";
 import { classifyFreshNews } from "./src/ai/news-classifier.js";
+import {
+  classifyReportSpam,
+  shouldAutoApproveReport,
+} from "./src/ai/report-spam-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
@@ -31,7 +35,6 @@ import {
   loadEmailSubscriptions,
   loadNewsLogs,
   loadPendingNews,
-  loadPendingSightings,
   loadTumedvedLogs,
   recordScrapeRun,
   saveBearReport,
@@ -971,7 +974,7 @@ app.post("/api/reports", async (req, res) => {
   }
 
   try {
-    const result = await saveBearReport({
+    const report = {
       location: location.trim(),
       description: description?.trim() || null,
       reporterName: reporterName?.trim() || null,
@@ -979,9 +982,19 @@ app.post("/api/reports", async (req, res) => {
       lat: Number(lat) || null,
       lng: Number(lng) || null,
       reportedDate: reportedDate || new Date().toISOString(),
+    };
+    const spamCheck = await classifyReportSpam(report);
+    const published = shouldAutoApproveReport(spamCheck);
+    const result = await saveBearReport({
+      ...report,
+      status: published ? "approved" : "pending",
     });
 
-    res.json({ ok: true, id: result?.id });
+    console.log(
+      `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=${published ? "approved" : "pending"}`
+    );
+
+    res.json({ ok: true, id: result?.id, published });
   } catch (err) {
     console.error("[reports] save failed:", err.message);
     res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť hlásenie." });
@@ -1278,12 +1291,11 @@ app.get("/admin", (_req, res) => {
 
 app.get("/api/admin/pending", adminAuth, async (_req, res) => {
   try {
-    const [reports, sightings, news] = await Promise.all([
+    const [reports, news] = await Promise.all([
       loadBearReports("pending"),
-      loadPendingSightings(),
       loadPendingNews(),
     ]);
-    res.json({ ok: true, reports, sightings, news });
+    res.json({ ok: true, reports, news });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

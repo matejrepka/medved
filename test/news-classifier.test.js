@@ -5,6 +5,7 @@ import {
   classifyFreshNews,
   parseClassificationResponse,
 } from "../src/ai/news-classifier.js";
+import { geocodeNews } from "../src/geo/geocode.js";
 
 test("parseClassificationResponse validates and normalizes model JSON", () => {
   const results = parseClassificationResponse(
@@ -88,4 +89,41 @@ test("classifyFreshNews leaves items unchanged when API key is missing", async (
   await classifyFreshNews(items, { apiKey: "" });
   assert.equal(items[0].place, "Brezno");
   assert.equal(items[0].category, undefined);
+});
+
+test("classifyFreshNews keeps an explicit municipal bear warning out of articles", async () => {
+  const items = await geocodeNews([
+    {
+      title: "Útek pred mega medveďom na východe Slovenska",
+      snippet:
+        "V okolí obcí Hozelec a Gánovce upozorňujú na výskyt medveďa.",
+    },
+  ]);
+  const geocodedLat = items[0].lat;
+
+  const fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              results: [
+                { index: 0, category: "article", place: null, confidence: 0.9 },
+              ],
+            }),
+          },
+        },
+      ],
+    }),
+  });
+
+  await classifyFreshNews(items, { apiKey: "test-key", fetchImpl });
+
+  assert.equal(items[0].category, "warning");
+  assert.equal(items[0].place, "Hozelec");
+  assert.equal(items[0].lat, geocodedLat);
+  assert.equal(items[0].hasCoords, true);
+  assert.equal(items[0].aiClassification.rule, "explicit-local-warning");
 });

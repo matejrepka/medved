@@ -6,7 +6,7 @@
     <title>Nahlásiť výskyt medveďa na Slovensku | Kde je Medveď</title>
     <meta
       name="description"
-      content="Nahláste pozorovanie medveďa na Slovensku, označte miesto na mape a doplňte čas a okolnosti. Hlásenie pred zverejnením skontrolujeme."
+      content="Nahláste pozorovanie medveďa na Slovensku, označte miesto na mape a doplňte čas a okolnosti. Hlásenie automaticky skontrolujeme proti spamu."
     />
     <!-- SEO_HEAD -->
 
@@ -77,7 +77,8 @@
           <h1>Nahlásiť výskyt medveda</h1>
           <p class="lede">
             Videli ste medveda? Vyplňte formulár a pomôžte nám mapovať ich výskyt na Slovensku.
-            Vaše hlásenie bude po kontrole administrátorom zobrazené na mape.
+            Hlásenie automaticky skontrolujeme proti spamu; legitímne hlásenia sa zobrazia
+            na mape bez čakania na administrátora.
           </p>
 
           <form id="reportForm" class="report-form" novalidate>
@@ -176,8 +177,8 @@
     <footer class="site-footer">
       <div class="footer-inner">
         <p>
-          Hlásenie pred zverejnením moderujeme. Zverejnenie neznamená terénne potvrdenie
-          aktuálnej polohy zvieraťa; v tiesni použite linku 112.
+          Hlásenia automaticky kontrolujeme iba z hľadiska spamu. Zverejnenie neznamená
+          terénne potvrdenie aktuálnej polohy zvieraťa; v tiesni použite linku 112.
         </p>
         <nav class="footer-links" aria-label="Dôležité odkazy">
           <a href="/bezpecnost">Bezpečnosť</a>
@@ -437,8 +438,9 @@
           const data = await res.json();
 
           if (res.ok && data.ok) {
-            formMessage.textContent =
-              'Hlásenie bolo úspešne odoslané. Po kontrole administrátorom sa zobrazí na mape.';
+            formMessage.textContent = data.published
+              ? 'Hlásenie bolo úspešne odoslané a zverejnené na mape.'
+              : 'Hlásenie bolo úspešne odoslané a čaká na kontrolu.';
             formMessage.className = 'form-message success';
             form.reset();
             latEl.value = '';

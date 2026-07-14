@@ -29,8 +29,8 @@ alter table public.tumedved_logs
 create index if not exists tumedved_logs_manually_edited_idx
   on public.tumedved_logs (manually_edited);
 
--- Moderácia hlásení: nové scrapované hlásenia čakajú na schválenie ('pending'),
--- existujúce riadky sú 'approved' (default), aby z mapy nič nezmizlo.
+-- Integrované verejné mapy sa schvaľujú automaticky. Status ostáva kvôli
+-- ručnému zamietnutiu a prípadným budúcim neznámym zdrojom.
 alter table public.tumedved_logs
   add column if not exists status text not null default 'approved'
   check (status in ('pending', 'approved', 'rejected'));
@@ -113,7 +113,8 @@ alter table public.news_logs
 create index if not exists news_logs_category_idx
   on public.news_logs (category);
 
--- User-submitted bear sighting reports (require admin approval).
+-- User-submitted bear sightings. Legitímne hlásenia schváli AI spam filter;
+-- spam, neistý výsledok alebo nedostupná AI ostávajú pending pre administrátora.
 create table if not exists public.bear_reports (
   id bigserial primary key,
   reporter_name text,

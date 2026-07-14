@@ -8,6 +8,14 @@ const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
 const NEWS_LIMIT = 200;
 const NEWS_MAP_LIMIT = 500;
+const TRUSTED_SIGHTING_SOURCES = new Set([
+  "tumedved",
+  "mapamedvedov",
+  "sprejnamedveda",
+  "tumedved.sk",
+  "mapamedvedov.sk",
+  "sprejnamedveda.sk",
+]);
 
 function toIso(value) {
   if (!value) return null;
@@ -51,6 +59,35 @@ function sourceLinkIdentity(link) {
   return link.sourceId
     ? `${link.key}|id:${link.sourceId}`
     : `${link.key}|url:${link.url}`;
+}
+
+function normalizedSource(value) {
+  return String(value || "").trim().toLowerCase().replace(/^www\./, "");
+}
+
+export function isTrustedSighting(item) {
+  const candidates = [item?.sourceKey, item?.source];
+  for (const link of sightingSourceLinks(item || {})) {
+    candidates.push(link?.key, link?.label);
+    try {
+      candidates.push(new URL(link?.url).hostname);
+    } catch {
+      // Neplatná URL sama osebe nikdy nevytvorí dôveryhodný zdroj.
+    }
+  }
+  try {
+    candidates.push(new URL(item?.url).hostname);
+  } catch {
+    // Zdrojové kľúče scraperov sú dostatočné aj bez URL.
+  }
+  return candidates.some((value) => TRUSTED_SIGHTING_SOURCES.has(normalizedSource(value)));
+}
+
+export function sightingStatus(item, existingStatus) {
+  // Ručné zamietnutie adminom má prednosť aj pri ďalšom scrapingu.
+  if (existingStatus === "rejected") return "rejected";
+  if (isTrustedSighting(item)) return "approved";
+  return existingStatus || "pending";
 }
 
 async function loadSightingsForMerge() {
@@ -184,9 +221,10 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
   const editedIds = await loadManuallyEditedSightingIds(deduped.map((item) => item.id));
   const candidates = deduped.filter((item) => !editedIds.has(item.id));
 
-  // Nové hlásenia čakajú na schválenie ('pending'), existujúce si zachovajú svoj
-  // status (nechceme prepisovať už schválené/zamietnuté späť na pending). Ak
-  // migrácia 004 ešte nebežala, statuses je null → ukladáme bez stĺpca status.
+  // Záznamy z troch priamo integrovaných verejných máp schválime automaticky.
+  // Ručne zamietnuté záznamy ostávajú zamietnuté a prípadný budúci neznámy
+  // zdroj ostane pending. Ak migrácia 004 ešte nebežala, statuses je null →
+  // ukladáme bez stĺpca status.
   const statuses = await loadSightingStatuses(candidates.map((item) => item.id));
 
   const rows = candidates.map((item) => {
@@ -204,7 +242,7 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
       scraped_at: scrapedAt,
       updated_at: scrapedAt,
     };
-    if (statuses) row.status = statuses.get(item.id) || "pending";
+    if (statuses) row.status = sightingStatus(item, statuses.get(item.id));
     return row;
   });
 
@@ -411,7 +449,7 @@ export async function recordScrapeRun(run) {
   if (error) throw error;
 }
 
-// --- Bear reports (user-submitted, pending moderation) ---
+// --- Bear reports (user-submitted, AI spam check before moderation) ---
 
 export async function saveBearReport(report) {
   const supabase = getSupabase();
@@ -556,34 +594,6 @@ export async function updateBearReportStatus(id, status) {
     .eq("id", id);
 
   if (error) throw error;
-}
-
-// --- Moderácia externých hlásení (tabuľka má historický názov tumedved_logs) ---
-
-// Scrapované hlásenia čakajúce na schválenie (rovnaká sekcia ako hlásenia od
-// používateľov). Ak stĺpec status ešte neexistuje (migrácia 004), vráti [].
-export async function loadPendingSightings() {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase
-    .from("tumedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,payload")
-    .eq("status", "pending")
-    .order("reported_at", { ascending: false, nullsFirst: false })
-    .limit(200);
-
-  if (error) {
-    if (isMissingColumn(error)) return [];
-    throw error;
-  }
-  return (data || []).map((row) => {
-    const { payload: _payload, ...publicRow } = row;
-    return {
-      ...publicRow,
-      source_links: sightingSourceLinks(rowToSighting(row)),
-    };
-  });
 }
 
 export async function updateSightingStatus(id, status) {

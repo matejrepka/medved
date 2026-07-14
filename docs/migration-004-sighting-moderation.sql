@@ -1,9 +1,8 @@
--- Migration 004 — moderácia hlásení z tumedved.sk.
+-- Migration 004 — stav hlásení z verejných máp.
 --
 -- Doteraz sa scrapované hlásenia (tumedved_logs) zobrazovali na mape hneď.
--- Odteraz nové hlásenia čakajú na schválenie adminom (rovnako ako správy a
--- hlásenia od používateľov). Existujúce riadky nastavíme na 'approved', aby
--- z mapy nič nezmizlo — moderácia sa týka len nových hlásení.
+-- Stĺpec umožňuje adminovi záznam zamietnuť. Priamo integrované zdroje
+-- tumedved.sk, mapamedvedov.sk a sprejnamedveda.sk sa automaticky schvaľujú.
 --
 -- Spusti raz v Supabase SQL editore.
 

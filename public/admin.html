@@ -1204,14 +1204,14 @@
           <div class="tab-panel" id="panel-reports">
             <div class="section-header">
               <div class="section-header-left">
-                <h2>Hlásenia na schválenie</h2>
+                <h2>Hlásenia na kontrolu</h2>
                 <span class="section-count" id="pendingReportsCount">0</span>
               </div>
               <button class="btn-approve-all" id="approveAllReports" style="display:none">
                 <i class="ph ph-checks"></i> Schváliť všetky
               </button>
             </div>
-            <p class="section-lede">Hlásenia z verejných máp a od používateľov čakajúce na schválenie pred zobrazením na mape.</p>
+            <p class="section-lede">Používateľské hlásenia, ktoré AI označila ako spam alebo ich nedokázala spoľahlivo vyhodnotiť. Správy sa moderujú samostatne.</p>
             <div id="pendingReportsList"></div>
           </div>
 
@@ -1657,67 +1657,6 @@
         toggleApproveAllButtons();
       }
 
-      function sightingSourceLabels(item) {
-        const labels = (Array.isArray(item.source_links) ? item.source_links : [])
-          .map(link => String(link?.label || '').trim())
-          .filter(Boolean);
-        if (labels.length) return [...new Set(labels)];
-
-        try {
-          const host = new URL(item.url).hostname.replace(/^www\./, '');
-          if (host) return [host];
-        } catch {}
-
-        return [String(item.source || 'Verejná mapa')];
-      }
-
-      // Karta scrapovaného hlásenia z verejných máp v tej istej sekcii ako
-      // hlásenia od používateľov. kind='sightings' → /api/admin/sightings.
-      function renderSightingCard(item) {
-        const card = document.createElement('div');
-        card.className = 'review-card';
-        card.dataset.itemId = item.id;
-        card.dataset.kind = 'sightings';
-
-        const lat = Number(item.lat);
-        const lng = Number(item.lng);
-        const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
-        const sourceBadges = sightingSourceLabels(item)
-          .map(label => '<span class="sub-type-badge area">' + esc(label) + '</span>')
-          .join(' ');
-        const coordsHtml = hasCoords
-          ? '<p class="review-card-meta review-coords">' +
-              '<i class="ph ph-map-pin"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5) +
-              ' · <a href="https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=14/' + lat + '/' + lng + '" target="_blank" rel="noopener">OpenStreetMap</a>' +
-            '</p>' +
-            '<div class="review-map" data-lat="' + lat + '" data-lng="' + lng + '"></div>'
-          : '<p class="review-card-meta review-coords no-coords"><i class="ph ph-warning"></i> Hlásenie bez súradníc.</p>';
-
-        card.innerHTML =
-          '<div class="review-card-head">' +
-            '<div>' +
-              '<p class="review-card-title">' + esc(item.location || 'Bez lokality') + '</p>' +
-              '<p class="review-card-meta">' +
-                sourceBadges + ' · ' +
-                formatDateTime(item.reported_at) +
-              '</p>' +
-            '</div>' +
-            '<div class="review-actions">' +
-              '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
-              '<button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>' +
-            '</div>' +
-          '</div>' +
-          (item.note ? '<p class="review-card-body">' + esc(item.note) + '</p>' : '') +
-          (item.url ? '<p class="review-card-meta"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.url) + '</a></p>' : '') +
-          coordsHtml;
-
-        card.querySelectorAll('.review-btn').forEach(btn => {
-          btn.addEventListener('click', () => updateStatus('sightings', item.id, btn.dataset.action, card));
-        });
-
-        return card;
-      }
-
       function renderReportCard(report) {
         const card = document.createElement('div');
         card.className = 'review-card';
@@ -2058,16 +1997,13 @@
           reportsList.innerHTML = '';
           newsList.innerHTML = '';
 
-          const sightings = data.sightings || [];
           const reports = data.reports || [];
 
-          if (sightings.length || reports.length) {
-            // tumedved.sk hlásenia idú prvé, potom hlásenia od používateľov.
-            sightings.forEach(s => reportsList.appendChild(renderSightingCard(s)));
+          if (reports.length) {
             reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
             scheduleReviewMapsRefresh();
           } else {
-            reportsList.innerHTML = renderEmptyState('check-circle', 'Žiadne hlásenia na schválenie.');
+            reportsList.innerHTML = renderEmptyState('check-circle', 'Žiadne používateľské hlásenia na kontrolu.');
           }
 
           if (data.news && data.news.length) {
@@ -2076,7 +2012,7 @@
             newsList.innerHTML = renderEmptyState('check-circle', 'Žiadne správy na schválenie.');
           }
 
-          const rc = sightings.length + reports.length;
+          const rc = reports.length;
           const nc = (data.news || []).length;
           setText('pendingReportsCount', rc);
           setText('pendingNewsCount', nc);
@@ -2113,8 +2049,8 @@
           cardBtns.forEach(b => b.disabled = true);
 
           try {
-            // Zoznam hlásení mieša tumedved (kind='sightings') aj používateľské
-            // (kind='reports') — každú kartu schválime cez jej vlastný endpoint.
+            // Používateľské hlásenia používajú endpoint reports; správy majú
+            // vlastnú samostatnú moderáciu.
             // Hromadné schválenie správ ich uloží ako bežné články (bez mapy);
             // varovania s lokalitou sa schvaľujú jednotlivo cez kartu.
             const kind = card.dataset.kind || type;
