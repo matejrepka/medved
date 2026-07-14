@@ -57,7 +57,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
-const CONTENT_UPDATED = "2026-07-13T00:00:00+02:00";
+const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
 const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
 const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
@@ -117,9 +117,9 @@ const PUBLIC_PAGES = {
   },
   "/o-mape": {
     file: "o-mape.html",
-    title: "Zdroje a metodika mapy medveďov | Kde je Medveď",
+    title: "O projekte Kde je Medveď | Mapa výskytu medveďov",
     description:
-      "Ako Kde je Medveď spája hlásenia, mapy, verejné varovania a slovenské správy: zdroje údajov, moderovanie, aktualizácia a obmedzenia.",
+      "Prečo vznikol projekt Kde je Medveď, ako pomáha získať prehľad o výskyte medveďov, z akých zdrojov čerpá a ako nás kontaktovať.",
     schemaType: "AboutPage",
     lastmod: CONTENT_UPDATED,
     changefreq: "monthly",
@@ -225,7 +225,7 @@ function latestContentDate() {
     .pop() || null;
 }
 
-function faqEntities() {
+function faqEntities(origin) {
   return [
     {
       question: "Kde je medveď na Slovensku?",
@@ -267,6 +267,12 @@ function faqEntities() {
       question: "Čo robiť, keď stretnem medveďa?",
       answer: "Bezpečnosť – Zásahový tím pre medveďa hnedého ŠOP SR",
       answerUrl: "https://zasahovytim.sopsr.sk/bezpecnost/",
+    },
+    {
+      question: "Ako môžem kontaktovať prevádzkovateľa?",
+      answer:
+        "Otázky, pripomienky a žiadosti o opravu môžete poslať na kontakt@kdejemedved.sk.",
+      answerUrl: absoluteUrl(origin, "/o-mape#kontakt"),
     },
   ];
 }
@@ -410,7 +416,7 @@ function structuredDataForPage(pathname, page, origin) {
       {
         "@type": "FAQPage",
         "@id": `${origin}/#faq`,
-        mainEntity: faqEntities().map(({ question, answer, answerUrl }) => ({
+        mainEntity: faqEntities(origin).map(({ question, answer, answerUrl }) => ({
           "@type": "Question",
           name: question,
           acceptedAnswer: {

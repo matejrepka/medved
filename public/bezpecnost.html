@@ -33,7 +33,7 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260713-mobile-hero1" />
+    <link rel="stylesheet" href="/styles.css?v=20260714-footer1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
@@ -47,7 +47,7 @@
       <nav class="main-nav" aria-label="Hlavné menu">
         <a href="/">Mapa</a>
         <a href="/bezpecnost" class="active">Bezpečnosť</a>
-        <a href="/o-mape">O mape</a>
+        <a href="/o-mape">O projekte</a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
@@ -189,21 +189,58 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <p>
-          Bezpečnostný prehľad spracúva verejné odporúčania ŠOP SR. Pri tiesni sa vždy
-          riaďte pokynmi operátora linky 112 a zasahujúcich zložiek.
-        </p>
-        <nav class="footer-links" aria-label="Dôležité odkazy">
-          <a href="/">Aktuálna mapa</a>
-          <a href="/o-mape">O mape a zdroje</a>
-          <a href="mailto:kontakt@kdejemedved.sk">Kontakt</a>
-          <a href="/privacy">Ochrana súkromia</a>
-          <a href="/terms">Podmienky používania</a>
-        </nav>
+        <div class="footer-main">
+          <div class="footer-brand">
+            <a class="footer-identity" href="/" aria-label="Kde je Medveď, domov">
+              <span class="footer-brand-mark">
+                <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Logo Kde je Medveď" />
+              </span>
+              <span class="footer-brand-copy">
+                <strong>Kde je Medveď</strong>
+                <small>Prehľad, ktorý má stopu.</small>
+              </span>
+            </a>
+            <p class="footer-description">
+              Bezpečnostný prehľad spracúva verejné odporúčania ŠOP SR. Pri tiesni sa vždy
+              riaďte pokynmi operátora linky 112 a zasahujúcich zložiek.
+            </p>
+            <a class="footer-report-link" href="/nahlas">
+              <i class="ph ph-map-pin-plus" aria-hidden="true"></i>
+              Nahlásiť pozorovanie
+              <i class="ph ph-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          <div class="footer-nav">
+            <div class="footer-column">
+              <h2>Preskúmajte</h2>
+              <nav class="footer-links" aria-label="Hlavné odkazy v pätičke">
+                <a href="/">Aktuálna mapa</a>
+                <a href="/stats">Štatistiky</a>
+                <a href="/bezpecnost">Bezpečnosť</a>
+                <a href="/nahlas">Nahlásiť výskyt</a>
+              </nav>
+            </div>
+            <div class="footer-column">
+              <h2>O projekte</h2>
+              <nav class="footer-links footer-legal-links" aria-label="Informácie o projekte">
+                <a href="/o-mape">Ako to funguje</a>
+                <a href="/o-mape#kontakt">Kontakt</a>
+                <a href="/privacy">Ochrana súkromia</a>
+                <a href="/terms">Podmienky používania</a>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© 2026 Kde je Medveď</p>
+          <p>Nezávislý informačný projekt pre Slovensko.</p>
+        </div>
       </div>
     </footer>
 
     <script src="/page.js?v=20260713-1" defer></script>
-    <script src="/consent.js?v=20260713-1" defer></script>
+    <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

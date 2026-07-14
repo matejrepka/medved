@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Zdroje a metodika mapy medveďov | Kde je Medveď</title>
+    <title>O projekte Kde je Medveď | Mapa výskytu medveďov</title>
     <meta
       name="description"
-      content="Ako Kde je Medveď spája hlásenia, mapy, verejné varovania a slovenské správy: zdroje údajov, moderovanie, aktualizácia a obmedzenia."
+      content="Prečo vznikol projekt Kde je Medveď, ako pomáha získať prehľad o výskyte medveďov, z akých zdrojov čerpá a ako nás kontaktovať."
     />
     <!-- SEO_HEAD -->
 
@@ -33,7 +33,7 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260713-mobile-hero1" />
+    <link rel="stylesheet" href="/styles.css?v=20260714-footer1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
@@ -47,7 +47,7 @@
       <nav class="main-nav" aria-label="Hlavné menu">
         <a href="/">Mapa</a>
         <a href="/bezpecnost">Bezpečnosť</a>
-        <a href="/o-mape" class="active">O mape</a>
+        <a href="/o-mape" class="active">O projekte</a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
@@ -58,21 +58,41 @@
 
     <main class="knowledge-page">
       <nav class="breadcrumbs" aria-label="Navigácia v hierarchii">
-        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>O mape</span>
+        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>O projekte</span>
       </nav>
 
       <article class="knowledge-article">
         <header class="knowledge-hero">
-          <p class="section-kicker">Transparentnosť údajov</p>
-          <h1>Zdroje a metodika mapy výskytu medveďov</h1>
+          <p class="section-kicker">O projekte</p>
+          <h1>Kde je Medveď</h1>
           <p class="answer-lead">
-            Kde je Medveď je nezávislý centrálny prehľad informácií o hlásenom výskyte
-            medveďov. Údaje z viacerých verejných zdrojov
+            Kde je Medveď vznikol ako pomôcka pre ľudí, ktorí chcú získať čo najlepší
+            dostupný prehľad o medveďoch a ich hlásenom výskyte na Slovensku. Údaje
+            z viacerých verejných zdrojov
             <strong>automaticky zbierame, zjednocujeme, prepájame a moderujeme</strong>,
             aby sa dali vyhľadávať podľa lokality, dátumu a pôvodu na jednej mape Slovenska.
           </p>
-          <p class="review-note">Metodika naposledy aktualizovaná 13. júla 2026.</p>
+          <p class="review-note">Informácie o projekte naposledy aktualizované 14. júla 2026.</p>
         </header>
+
+        <section aria-labelledby="purposeHeading">
+          <h2 id="purposeHeading">Prečo projekt vznikol</h2>
+          <p>
+            Informácie o výskyte medveďov sú rozdelené medzi používateľské hlásenia,
+            verejné mapy, obecné upozornenia, správy a oficiálne odporúčania. Nájsť ich,
+            porovnať a overiť ich aktuálnosť preto môže byť zdĺhavé.
+          </p>
+          <p>
+            Cieľom projektu je zhromaždiť tieto informácie na jednom mieste a ponúknuť
+            zrozumiteľnú pomôcku pri získavaní čo najlepšieho dostupného prehľadu. Pri každom
+            zázname sa snažíme zachovať lokalitu, čas a pôvodný zdroj, aby si používateľ mohol
+            informáciu ďalej overiť.
+          </p>
+          <p class="notice">
+            Projekt je orientačný informačný nástroj. Nie je živým GPS sledovaním medveďov,
+            oficiálnym varovným systémom ani náhradou za pokyny ŠOP SR, obcí a tiesňových zložiek.
+          </p>
+        </section>
 
         <section aria-labelledby="sourcesHeading">
           <h2 id="sourcesHeading">Aké zdroje mapa používa</h2>
@@ -110,7 +130,7 @@
         </section>
 
         <section aria-labelledby="centralOverviewHeading">
-          <h2 id="centralOverviewHeading">Prečo spájame viac zdrojov na jednom mieste</h2>
+          <h2 id="centralOverviewHeading">Ako vytvárame spoločný prehľad</h2>
           <p>
             Jednotlivé mapy, obecné upozornenia a správy pokrývajú rozdielne udalosti a časové
             obdobia. Kde je Medveď ich nezobrazuje ako jeden nový „oficiálny“ zdroj; vytvára
@@ -200,6 +220,21 @@
           </p>
         </section>
 
+        <section id="kontakt" class="project-contact" aria-labelledby="contactHeading">
+          <p class="section-kicker">Kontakt</p>
+          <h2 id="contactHeading">Máte otázku alebo podnet?</h2>
+          <p>
+            Ak ste našli nepresnosť, chcete navrhnúť nový zdroj informácií, máte otázku
+            k projektu alebo inú pripomienku, napíšte nám. Ozveme sa vám hneď, ako to bude možné.
+          </p>
+          <div class="source-actions">
+            <a class="btn" href="mailto:kontakt@kdejemedved.sk">
+              <i class="ph ph-envelope-simple" aria-hidden="true"></i>
+              kontakt@kdejemedved.sk
+            </a>
+          </div>
+        </section>
+
         <div class="source-actions">
           <a class="btn" href="/">Otvoriť aktuálnu mapu</a>
           <a class="ghost-btn" href="/nahlas">Nahlásiť pozorovanie</a>
@@ -209,22 +244,58 @@
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <p>
-          Transparentne odlišujeme hlásenie, verejný zdroj a odborné bezpečnostné odporúčanie.
-          Mapa slúži ako orientačný informačný nástroj.
-        </p>
-        <nav class="footer-links" aria-label="Dôležité odkazy">
-          <a href="/">Aktuálna mapa</a>
-          <a href="/bezpecnost">Bezpečnosť</a>
-          <a href="/stats">Štatistiky</a>
-          <a href="mailto:kontakt@kdejemedved.sk">Kontakt</a>
-          <a href="/privacy">Ochrana súkromia</a>
-          <a href="/terms">Podmienky používania</a>
-        </nav>
+        <div class="footer-main">
+          <div class="footer-brand">
+            <a class="footer-identity" href="/" aria-label="Kde je Medveď, domov">
+              <span class="footer-brand-mark">
+                <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Logo Kde je Medveď" />
+              </span>
+              <span class="footer-brand-copy">
+                <strong>Kde je Medveď</strong>
+                <small>Prehľad, ktorý má stopu.</small>
+              </span>
+            </a>
+            <p class="footer-description">
+              Transparentne odlišujeme hlásenie, verejný zdroj a odborné bezpečnostné odporúčanie.
+              Mapa slúži ako orientačný informačný nástroj.
+            </p>
+            <a class="footer-report-link" href="/nahlas">
+              <i class="ph ph-map-pin-plus" aria-hidden="true"></i>
+              Nahlásiť pozorovanie
+              <i class="ph ph-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          <div class="footer-nav">
+            <div class="footer-column">
+              <h2>Preskúmajte</h2>
+              <nav class="footer-links" aria-label="Hlavné odkazy v pätičke">
+                <a href="/">Aktuálna mapa</a>
+                <a href="/stats">Štatistiky</a>
+                <a href="/bezpecnost">Bezpečnosť</a>
+                <a href="/nahlas">Nahlásiť výskyt</a>
+              </nav>
+            </div>
+            <div class="footer-column">
+              <h2>O projekte</h2>
+              <nav class="footer-links footer-legal-links" aria-label="Informácie o projekte">
+                <a href="/o-mape">Ako to funguje</a>
+                <a href="/o-mape#kontakt">Kontakt</a>
+                <a href="/privacy">Ochrana súkromia</a>
+                <a href="/terms">Podmienky používania</a>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© 2026 Kde je Medveď</p>
+          <p>Nezávislý informačný projekt pre Slovensko.</p>
+        </div>
       </div>
     </footer>
 
     <script src="/page.js?v=20260713-1" defer></script>
-    <script src="/consent.js?v=20260713-1" defer></script>
+    <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

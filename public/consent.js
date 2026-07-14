@@ -92,7 +92,8 @@
   }
 
   function addSettingsLink() {
-    const footerLinks = document.querySelector(".footer-links");
+    const footerLinks =
+      document.querySelector(".footer-legal-links") || document.querySelector(".footer-links");
     if (!footerLinks || footerLinks.querySelector("[data-open-privacy-settings]")) return;
 
     const button = document.createElement("button");
