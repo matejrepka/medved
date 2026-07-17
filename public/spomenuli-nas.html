@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Výskyt medveďa – {{LOCATION_NAME}} | Aktuálne hlásenia</title>
+    <title>Spomenuli nás | Kde je Medveď v médiách</title>
     <meta
       name="description"
-      content="Aktuálne hlásenia, varovania a správy o výskyte medveďa v lokalite {{LOCATION_NAME}} z viacerých slovenských zdrojov."
+      content="Prečítajte si, kde médiá spomenuli projekt Kde je Medveď a jeho mapu hláseného výskytu medveďov na Slovensku."
     />
     <!-- SEO_HEAD -->
 
@@ -33,7 +33,7 @@
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260715-main-radius1" />
+    <link rel="stylesheet" href="/styles.css?v=20260717-press1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
@@ -46,8 +46,8 @@
       </a>
       <nav class="main-nav" aria-label="Hlavné menu">
         <a href="/">Mapa</a>
-        <a href="/stats">Štatistiky</a>
-        <a href="/o-mape">O projekte</a>
+        <a href="/bezpecnost">Bezpečnosť</a>
+        <a href="/o-mape" class="active">O projekte</a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
@@ -56,72 +56,56 @@
       </div>
     </header>
 
-    <main class="knowledge-page">
+    <main class="knowledge-page press-page">
       <nav class="breadcrumbs" aria-label="Navigácia v hierarchii">
-        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>Výskyt medveďa – <!-- LOCATION_NAME --></span>
+        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>Spomenuli nás</span>
       </nav>
 
       <article class="knowledge-article">
         <header class="knowledge-hero">
-          <p class="section-kicker">Aktuálny lokalitný prehľad</p>
-          <h1>Výskyt medveďa – <!-- LOCATION_NAME --></h1>
+          <p class="section-kicker">V médiách</p>
+          <h1>Spomenuli nás</h1>
           <p class="answer-lead">
-            Kde je Medveď sústreďuje na jednom mieste dostupné hlásenia, verejné varovania
-            a súvisiace slovenské správy pre lokalitu <strong><!-- LOCATION_NAME --></strong>.
-            Pri každom zázname uvádzame dátum a pôvodný zdroj, ak je dostupný.
+            Výber článkov, ktoré predstavili projekt Kde je Medveď a jeho mapu verejnosti.
           </p>
-          <p class="review-note"><!-- LOCATION_COUNTS -->. <!-- LOCATION_UPDATED --></p>
         </header>
 
-        <section aria-labelledby="locationWarningsHeading">
-          <h2 id="locationWarningsHeading">Hlásenia a varovania – <!-- LOCATION_NAME --></h2>
-          <p>
-            Nasledujúce záznamy opisujú hlásený výskyt v konkrétnom čase. Nepotvrdzujú,
-            že sa medveď na uvedenom mieste nachádza aj teraz.
-          </p>
-          <div class="list location-record-list">
-            <!-- LOCATION_WARNINGS -->
-          </div>
+        <section class="press-list" aria-label="Mediálne zmienky">
+          <article class="press-entry">
+            <div class="press-publisher" aria-hidden="true">
+              <i class="ph ph-newspaper-clipping"></i>
+              <strong>AHOJ.TV</strong>
+            </div>
+            <div class="press-entry-content">
+              <div class="press-meta">
+                <span>AHOJ.TV</span>
+                <time datetime="2026-07-17">17. júla 2026</time>
+              </div>
+              <h2>
+                <a
+                  href="https://ahoj.tv/clanky/clanok/15931/vyskyt-medvedov-pribuda.-odbornici-pripominaju-ako-sa-spravne-zachovat/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Výskyt medveďov pribúda. Odborníci pripomínajú, ako sa správne zachovať
+                </a>
+              </h2>
+              <p>
+                Článok radí, ako reagovať pri stretnutí s medveďom, a odporúča pred
+                túrou skontrolovať mapu Kde je Medveď.
+              </p>
+              <a
+                class="press-read-link"
+                href="https://ahoj.tv/clanky/clanok/15931/vyskyt-medvedov-pribuda.-odbornici-pripominaju-ako-sa-spravne-zachovat/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Prečítať článok na AHOJ.TV
+                <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+              </a>
+            </div>
+          </article>
         </section>
-
-        <section aria-labelledby="locationNewsHeading">
-          <h2 id="locationNewsHeading">Súvisiace správy o medveďoch</h2>
-          <p>
-            Relevantné správy pomáhajú doplniť kontext hlásení. Detail a prípadné oficiálne
-            pokyny si vždy overte v pôvodnom článku alebo ozname.
-          </p>
-          <div class="list location-record-list">
-            <!-- LOCATION_NEWS -->
-          </div>
-        </section>
-
-        <section class="limitations" aria-labelledby="locationMeaningHeading">
-          <p class="section-kicker">Ako čítať údaje</p>
-          <h2 id="locationMeaningHeading">Čo znamená výskyt medveďa v tejto lokalite?</h2>
-          <p>
-            Znamená to iba to, že zdroj uviedol pozorovanie, stopu, incident alebo verejné
-            varovanie spojené s lokalitou <!-- LOCATION_NAME -->. Nejde o živú polohu zvieraťa,
-            úplný monitoring populácie ani predpoveď bezpečnosti konkrétnej trasy.
-          </p>
-          <ul>
-            <li>Najprv skontrolujte dátum a čas záznamu.</li>
-            <li>Otvorte pôvodný zdroj a overte presný opis okolností.</li>
-            <li>Sledujte aktuálne oznamy obce, správcu územia a ŠOP SR.</li>
-          </ul>
-        </section>
-
-        <section aria-labelledby="otherLocationsHeading">
-          <h2 id="otherLocationsHeading">Ďalšie lokality s hláseným výskytom</h2>
-          <p>Prehľady vznikajú automaticky z najčastejšie spomínaných lokalít v aktuálnych dátach.</p>
-          <div class="api-links location-links">
-            <!-- LOCATION_RELATED -->
-          </div>
-        </section>
-
-        <div class="source-actions">
-          <a class="btn" href="/#map">Otvoriť aktuálnu mapu</a>
-          <a class="ghost-btn" href="/o-mape">Zdroje a metodika</a>
-        </div>
       </article>
     </main>
 
@@ -139,8 +123,8 @@
               </span>
             </a>
             <p class="footer-description">
-              Kde je Medveď je nezávislý agregátor. Údaje sú orientačné a nenahrádzajú
-              pokyny ŠOP SR, Zásahového tímu ani tiesňových zložiek.
+              Transparentne odlišujeme hlásenie, verejný zdroj a odborné bezpečnostné odporúčanie.
+              Mapa slúži ako orientačný informačný nástroj.
             </p>
             <a class="footer-report-link" href="/nahlas">
               <i class="ph ph-map-pin-plus" aria-hidden="true"></i>
@@ -163,7 +147,7 @@
               <h2>O projekte</h2>
               <nav class="footer-links footer-legal-links" aria-label="Informácie o projekte">
                 <a href="/o-mape">O nás a ako to funguje</a>
-                <a href="/spomenuli-nas">Spomenuli nás</a>
+                <a href="/spomenuli-nas" aria-current="page">Spomenuli nás</a>
                 <a href="/o-mape#kontakt">Kontakt</a>
                 <a href="/privacy">Ochrana súkromia</a>
                 <a href="/terms">Podmienky používania</a>

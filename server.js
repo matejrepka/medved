@@ -125,6 +125,16 @@ const PUBLIC_PAGES = {
     changefreq: "monthly",
     priority: "0.7",
   },
+  "/spomenuli-nas": {
+    file: "spomenuli-nas.html",
+    title: "Spomenuli nás | Kde je Medveď v médiách",
+    description:
+      "Prečítajte si, kde médiá spomenuli projekt Kde je Medveď a jeho mapu hláseného výskytu medveďov na Slovensku.",
+    schemaType: "CollectionPage",
+    lastmod: "2026-07-17T00:00:00+02:00",
+    changefreq: "monthly",
+    priority: "0.5",
+  },
   "/privacy": {
     file: "privacy.html",
     title: "Ochrana súkromia | Kde je Medveď",
@@ -462,6 +472,11 @@ function structuredDataForPage(pathname, page, origin) {
       "https://www.pozormedved.sk/",
       "https://zasahovytim.sopsr.sk/",
     ];
+  }
+
+  if (pathname === "/spomenuli-nas") {
+    const pressPage = graph.find((item) => item["@id"] === `${canonical}#webpage`);
+    pressPage.citation = ["https://www.ahoj.tv/clanky/clanok/15931/"];
   }
 
   if (pathname === "/bezpecnost") {
@@ -1229,6 +1244,7 @@ app.get("/llms.txt", async (req, res) => {
 - [Štatistiky hlásení](${absoluteUrl(origin, "/stats")})
 - [Bezpečnosť pri stretnutí s medveďom](${absoluteUrl(origin, "/bezpecnost")})
 - [Zdroje, metodika a obmedzenia](${absoluteUrl(origin, "/o-mape")})
+- [Spomenuli nás](${absoluteUrl(origin, "/spomenuli-nas")})
 - [Nahlásiť pozorovanie](${absoluteUrl(origin, "/nahlas")})
 ${locationLinks}
 ## Pokryté typy zdrojov

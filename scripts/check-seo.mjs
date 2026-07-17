@@ -9,6 +9,7 @@ const pages = [
   "nahlas.html",
   "bezpecnost.html",
   "o-mape.html",
+  "spomenuli-nas.html",
   "privacy.html",
   "terms.html",
   "location.html",

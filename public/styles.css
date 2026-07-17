@@ -1840,6 +1840,108 @@ main {
   margin-top: 0;
 }
 
+/* ---------- Spomenuli nás ---------- */
+.press-page .knowledge-hero {
+  max-width: 740px;
+}
+
+.press-list {
+  max-width: 900px;
+}
+
+.press-entry {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.72fr) minmax(0, 1.7fr);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.press-publisher {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-height: 280px;
+  padding: 32px;
+  color: var(--accent);
+  background:
+    linear-gradient(145deg, var(--accent-soft), transparent 72%),
+    var(--surface-2);
+  border-right: 1px solid var(--line-strong);
+}
+
+.press-publisher i {
+  font-size: 2.4rem;
+}
+
+.press-publisher strong {
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.press-entry-content {
+  align-self: center;
+  padding: clamp(26px, 5vw, 46px);
+}
+
+.press-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 14px;
+  color: var(--ink-3);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.press-entry h2 {
+  max-width: 21ch;
+  font-size: clamp(1.55rem, 3.5vw, 2.2rem);
+  line-height: 1.12;
+}
+
+.press-entry h2 a {
+  color: var(--ink);
+}
+
+.press-entry h2 a:hover {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.press-entry-content > p {
+  max-width: 58ch;
+  margin: 18px 0 0;
+  color: var(--ink-2);
+  line-height: 1.68;
+}
+
+.press-read-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 4px 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.press-read-link:hover {
+  text-decoration: none;
+  transform: translateX(3px);
+}
+
+.press-read-link:active {
+  transform: translateX(1px);
+}
+
 /* ---------- Footer ---------- */
 .site-footer {
   position: relative;
@@ -3113,6 +3215,16 @@ canvas,
   .source-grid,
   .scenario-grid {
     grid-template-columns: 1fr;
+  }
+
+  .press-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .press-publisher {
+    min-height: 180px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-strong);
   }
 
   .map-reading-grid {
