@@ -39,6 +39,7 @@
   --font-sans: "Hanken Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
   --maxw: 1180px;
+  --mobile-nav-height: 61px;
 
   --topographic-bg: url("/assets/topographic-bg.png");
   --topographic-opacity: 0.14;
@@ -679,11 +680,15 @@ main {
   align-items: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .date-control {
   display: grid;
   gap: 5px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--ink-3);
   font-size: 0.75rem;
   font-weight: 600;
@@ -703,7 +708,10 @@ main {
 }
 
 .date-control input {
+  display: block;
   width: 152px;
+  min-width: 0;
+  max-width: 100%;
   height: 38px;
   padding: 0 10px;
   font: inherit;
@@ -755,6 +763,7 @@ main {
   flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
   padding: 0;
   margin: 0;
   border: 0;
@@ -770,6 +779,7 @@ main {
 
 .layer-picker label {
   min-width: 0;
+  max-width: 100%;
 }
 
 .layer-picker label span {
@@ -2636,6 +2646,9 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0.7rem 0.95rem;
   font-family: inherit;
   font-size: 0.9rem;
@@ -2729,6 +2742,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
   margin-top: 12px;
   padding: 0.7rem 1.4rem;
   font-family: inherit;
@@ -2798,6 +2812,7 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
   margin-top: 0.5rem;
   padding: 0.85rem 2rem;
   font-family: inherit;
@@ -3002,7 +3017,7 @@ main {
 .privacy-choice {
   flex: 1 1 0;
   min-width: 155px;
-  min-height: 42px;
+  min-height: 44px;
   padding: 9px 15px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
@@ -3075,11 +3090,38 @@ main {
   .map-tools {
     padding: 10px;
   }
+
+  .date-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
   .date-control,
   .ghost-btn {
     flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
   }
-  .ghost-btn {
+
+  .date-control input {
+    width: 100%;
+  }
+
+  .layer-picker {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .layer-picker legend {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
+  .layer-picker label,
+  .layer-picker label span {
     width: 100%;
   }
   .masthead h1 {
@@ -3165,8 +3207,8 @@ main {
     display: none;
   }
   .legal-back {
-    flex: 0 0 42px;
-    width: 42px;
+    flex: 0 0 44px;
+    width: 44px;
     padding: 0;
     justify-content: center;
   }
@@ -3250,10 +3292,19 @@ canvas,
   .site-header {
     display: flex;
     justify-content: space-between;
-    height: 60px;
+    height: auto;
+    min-height: calc(60px + env(safe-area-inset-top));
     gap: 10px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: 8px;
+    padding-left: max(16px, env(safe-area-inset-left));
     background: var(--surface);
     backdrop-filter: none;
+  }
+
+  .brand {
+    min-height: 44px;
   }
 
   /* Mobilná spodná navigácia (app-like tab bar) */
@@ -3266,23 +3317,32 @@ canvas,
     justify-self: stretch;
     width: 100%;
     gap: 0;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
     background: var(--surface);
     border-top: 1px solid var(--line);
     box-shadow: 0 -2px 12px rgba(26, 26, 23, 0.06);
   }
 
   .main-nav a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1;
+    min-height: 48px;
     text-align: center;
-    padding: 11px 4px;
+    padding: 8px 4px;
     font-size: 0.82rem;
+    line-height: 1.2;
     border-radius: var(--radius-sm);
   }
 
   /* Obsah nech sa neschová za spodnú lištu */
   body:has(.main-nav) {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+  }
+
+  body:has(.main-nav) .privacy-banner {
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px);
   }
 
   /* iOS pri fokuse na input s fontom <16px stránku zoomne — zabráň tomu */
@@ -3316,8 +3376,8 @@ canvas,
 
   /* Pohodlnejšie tap-targety pre ikonové a bežné tlačidlá */
   .icon-btn {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
 
   /* Dve karty naraz bez vnoreného scrollovania; ďalšie pridá tlačidlo. */
@@ -3387,7 +3447,35 @@ canvas,
   .date-control input,
   .ghost-btn,
   .layer-picker label span {
-    height: 42px;
+    min-height: 44px;
+    height: 44px;
+  }
+
+  .map-location-button,
+  .map-center-button,
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+  }
+
+  .leaflet-control-zoom a {
+    line-height: 44px;
+  }
+
+  .map-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .map-search input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .map-search .btn-locate {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   /* Sekcie nadpisy o niečo menšie */
@@ -3478,8 +3566,22 @@ canvas,
   }
 
   .footer-links {
+    gap: 0;
     justify-content: flex-start;
     white-space: normal;
+  }
+
+  .footer-links a,
+  .footer-links .footer-privacy-button {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  main,
+  .site-footer {
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: max(16px, env(safe-area-inset-left));
   }
 }
 
@@ -3498,7 +3600,8 @@ canvas,
 /* ---------- Veľmi úzky mobil (max 360px) ---------- */
 @media (max-width: 360px) {
   .site-header {
-    padding-inline: 12px;
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
   }
 
   .brand {
@@ -3514,5 +3617,35 @@ canvas,
   .brand-name {
     display: block;
     font-size: 1.05rem;
+  }
+}
+
+/* Mobil na šírku prekročí bežný telefónový breakpoint, ale stále
+   potrebuje dotykové terče. Pointer query zachová kompaktný desktop. */
+@media (hover: none) and (pointer: coarse) {
+  .main-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .icon-btn,
+  .map-location-button,
+  .map-center-button,
+  .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+  }
+
+  .leaflet-control-zoom a {
+    line-height: 44px;
+  }
+
+  .date-control input,
+  .ghost-btn,
+  .layer-picker label span {
+    min-height: 44px;
+    height: 44px;
   }
 }
