@@ -1,8 +1,11 @@
-# 🐻 Medveď Sledovač
+# 🐻 Kde je medveď
 
-Web app, ktorá zbiera **hlásenia o výskyte medveďov** z viacerých verejných máp
-a **slovenské správy o medveďoch**, a zobrazuje ich na jednom mieste — na interaktívnej
-mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
+Web app pre mapový prehľad výskytu medveďov na Slovensku. Spája verejné hlásenia,
+spravodajské články a vlastnú vrstvu moderácie do jednej mape a jedného zoznamu,
+aby bolo vidieť, kde sa udalosti opakujú, kde sú duplicity a kde ide len o textovo
+podobné záznamy.
+
+Live site: kdejemedved.sk
 
 > A web app that aggregates bear-sighting reports from several public maps and Slovak
 > news, then displays deduplicated events on an interactive map of Slovakia.
@@ -43,6 +46,12 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
 - **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org),
   výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
 
+## Prehľad
+
+Projekt je určený pre ľudí, ktorí chcú rýchlo skontrolovať aktuálne hlásenia o výskyte
+medveďov, prečítať súvisiace správy a porovnať viac zdrojov naraz bez ručného preklikávania.
+Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedného zdroja pravdy.
+
 ## Odkiaľ pochádzajú dáta / Data sources
 
 | Zdroj | Ako | Endpoint |
@@ -52,170 +61,23 @@ mape Slovenska a v prehľadných zoznamoch bez duplicitných udalostí.
 | **sprejnamedveda.sk** | strojovo čitateľné dáta mapy; články sa interne párujú na kontrolu obsahu, verejný zdrojový odkaz vedie iba na Aktuality | `https://www.sprejnamedveda.sk/aktuality/` |
 | **Slovenské správy** | Google News RSS pre viaceré dopyty, slovenská edícia (`hl=sk&gl=SK&ceid=SK:sk`) | `https://news.google.com/rss/search?q=…` |
 
-## Spustenie / Run
+## Ako funguje
 
-Potrebuješ **Node.js 20+**.
+- Dáta sa zbierajú z viacerých verejných zdrojov a ukladajú sa do vlastnej databázovej vrstvy.
+- Podobné mapové hlásenia sa zlučujú, aby sa na mape nezobrazovali duplicity.
+- Správy sa filtrujú podľa relevantnosti, geokódujú z textu a zobrazujú vedľa hlásení.
+- Admin časť podporuje moderáciu nových správ a používateľských hlásení.
+- Frontend je navrhnutý ako mapový prehľad s filtrami, vyhľadávaním a prepínaním vrstiev.
 
-```bash
-npm install
-npm start
-```
+## Verejné zverejnenie
 
-Potom otvor **http://localhost:3000**.
+Tento repozitár môže byť verejný, ak v ňom nie sú uložené skutočné tajné údaje a ak sú
+produkčné hodnoty mimo repozitára. Bezpečné je zverejniť zdrojový kód, dokumentáciu,
+SQL schémy a verejné assety. Verejné nie je zverejňovať `.env`, service role kľúče,
+API tokeny, admin heslá ani iné produkčné tajomstvá.
 
-Pred produkčným spustením vyplň `.env`:
-
-```bash
-SITE_URL=https://tvoja-domena.sk
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key
-# voliteľné, toto je predvolená hodnota:
-OPENROUTER_MODEL=openrouter/free
-# voliteľný samostatný model iba pre spam kontrolu hlásení:
-REPORT_SPAM_MODEL=openrouter/free
-WEBSITE_LOG_IP_SALT=replace-with-a-long-random-string
-CRON_REFRESH_SECRET=replace-with-a-long-random-string
-# voliteľné; predvolený kľúč je už publikovaný v /public:
-INDEXNOW_KEY=03a59456ce8341fba7b18cf916aa32e8
-```
-
-`SITE_URL` musí byť presný verejný HTTPS origin bez cesty a bez lomky na konci.
-Server ho používa pre kanonické URL, Open Graph, JSON-LD, sitemapu, RSS a `llms.txt`.
-Ak nie je nastavený, lokálny vývoj použije origin aktuálnej požiadavky.
-
-Pri správach dostáva OpenRouter iba titulok, zdroj, krátky popis a extrahovaný text článku.
-Pri používateľskom hlásení dostáva iba lokalitu a popis, nikdy meno ani email. Ak kľúč chýba
-alebo spam kontrola zlyhá, hlásenie bezpečne ostane v moderácii.
-
-Ak appku hostuješ na Verceli a chceš pravidelný refresh cez cron-job.org, nastav v cron-job.org
-volanie na:
-
-```text
-https://tvoja-domena.sk/api/cron/refresh?secret=CRON_REFRESH_SECRET
-```
-
-Táto URL spustí fresh scraping tumedved.sk a správ, uloží výsledky do Supabase a vráti JSON
-odpoveď. Secret musí sedieť s hodnotou v `.env`. Po úspešnej obnove server odošle zmenené
-hlavné a lokalitné URL do IndexNow, aby ich Bing a ďalšie zapojené vyhľadávače objavili rýchlejšie.
-
-Databázové tabuľky vytvoríš jednorazovo SQL skriptom
-[`docs/supabase-schema.sql`](docs/supabase-schema.sql) v Supabase SQL editore.
-
-Vývojový režim s automatickým reštartom:
-
-```bash
-npm run dev
-```
-
-Iný port:
-
-```bash
-PORT=8080 npm start          # macOS/Linux
-$env:PORT=8080; npm start    # PowerShell (Windows)
-```
-
-## API
-
-Server poskytuje aj vlastné čisté JSON API:
-
-| Endpoint | Metóda | Popis |
-|----------|--------|-------|
-| `/api/sightings` | GET | hlásenia o výskyte medveďov |
-| `/api/news` | GET | slovenské správy o medveďoch |
-| `/api/status` | GET | stav serverového obnovovania dát |
-| `/api/cron/refresh?secret=...` | ALL | chránený endpoint pre cron-job.org, spustí fresh scraping |
-
-## SEO / GEO / AEO po nasadení
-
-Server poskytuje crawl-ready HTML, absolútne canonical odkazy, Open Graph/Twitter metadata,
-schema.org (`WebSite`, `WebApplication`, `Dataset`, `FAQPage`, `Article`, breadcrumbs),
-`/sitemap.xml`, `/robots.txt`, `/feed.xml` a `/llms.txt`. Domovská stránka vykresľuje
-najnovšie hlásenia aj na serveri, takže hlavný obsah nie je závislý od vykonania JavaScriptu.
-Pre lokality s aspoň dvomi relevantnými záznamami vytvára server unikátne prehľady pod
-`/vyskyt-medveda/:lokalita`; sú zahrnuté v sitemape a aktualizujú sa spolu so zdrojovými dátami.
-
-Po nasadení treba jednorazovo dokončiť kroky, ktoré sa nedajú urobiť v repozitári:
-
-1. Nastaviť `SITE_URL` a presmerovať všetky HTTP/www varianty na jeden HTTPS hostname.
-2. Overiť doménu v Google Search Console a Bing Webmaster Tools.
-3. Odoslať `https://tvoja-domena.sk/sitemap.xml` a skontrolovať URL Inspection pre `/`,
-   `/bezpecnost`, `/o-mape` a `/stats`.
-4. Doplniť skutočné identifikačné a kontaktné údaje prevádzkovateľa v dokumente o súkromí.
-5. Budovať legitímne odkazy a citácie: obce, turistické organizácie, správy národných parkov,
-   regionálne médiá a dátové katalógy. Nekupovať odkazy ani nevytvárať doorway stránky.
-6. Priebežne publikovať vlastné, metodicky vysvetlené analýzy dát a opravovať nepresné záznamy.
-
-Lokálna kontrola technických SEO podmienok:
-
-```bash
-npm run check
-```
-
-Príklad odpovede `/api/sightings`:
-
-```json
-{
-  "updatedAt": "2026-06-25T20:06:35.401Z",
-  "count": 116,
-  "items": [
-    {
-      "id": "tm-948",
-      "source": "tumedved.sk",
-      "location": "Šútovo",
-      "note": "Videný malý medveď, asi 3-ročný",
-      "lat": 49.15737,
-      "lng": 19.0766,
-      "hasCoords": true,
-      "reportedAt": "2026-06-25T18:00:00.000Z",
-      "url": "https://tumedved.sk/vyskyt-medveda/sutovo-25-06-2026/",
-      "sourceLinks": [
-        { "label": "tumedved.sk", "url": "https://tumedved.sk/vyskyt-medveda/sutovo-25-06-2026/" },
-        { "label": "sprejnamedveda.sk", "url": "https://www.sprejnamedveda.sk/medvede-na-mape/" }
-      ]
-    }
-  ]
-}
-```
-
-## Štruktúra / Project structure
-
-```
-medved/
-├── server.js              # Express server + API + servírovanie frontendu
-├── src/
-│   ├── scheduled-store.js # serverový refresh + pamäťová kópia dát
-│   ├── ai/
-│   │   ├── news-classifier.js       # OpenRouter klasifikácia nových správ + lokalita
-│   │   └── report-spam-classifier.js # spam kontrola používateľských hlásení
-│   ├── db/
-│   │   ├── supabase.js    # Supabase klient zo serverového .env
-│   │   └── repository.js  # ukladanie/čítanie hlásení, správ a webových logov
-│   ├── geo/
-│   │   ├── geocode.js          # rozpozná obec v texte správy (offline, tolerantné na skloňovanie)
-│   │   ├── sk-places.json      # gazetteer: slovenské obce/mestá/regióny + súradnice
-│   │   └── build-gazetteer.mjs # jednorazový build gazetteera cez Nominatim
-│   └── scrapers/
-│       ├── sightings.js       # nezávislé načítanie a zlúčenie mapových zdrojov
-│       ├── tumedved.js        # hlásenia z tumedved.sk (WP REST API)
-│       ├── mapamedvedov.js    # používateľské hlásenia z mapamedvedov.sk
-│       ├── sprejnamedveda.js  # aktuálna mapa sprejnamedveda.sk
-│       └── news.js            # slovenské správy (Google News RSS) + geokódovanie
-└── public/
-    ├── index.html         # frontend
-    ├── styles.css
-    └── app.js             # mapa (Leaflet) + zoznamy + vyhľadávanie
-```
-
-## Ako často sa dáta obnovujú / Refresh interval
-
-- Scraping spúšťa **externý cron job** (cron-job.org) cez `/api/cron/refresh`.
-- Server pri štarte načíta existujúce dáta zo Supabase a spustí počiatočnú obnovu.
-- Zlúčené hlásenia sa ukladajú do historicky pomenovanej tabuľky `tumedved_logs`, správy do `news_logs`, behy scraperov do
-  `scrape_runs` a návštevy/API requesty používateľov do `website_logs`.
-- Frontend si dáta automaticky načíta každých 15 minút z API.
-
-Supabase je povinný — bez neho server nemá odkiaľ čítať dáta.
+Pred publikovaním treba skontrolovať, že `.env` je ignorovaný, v git histórii nie sú
+citlivé hodnoty a všetky použité kľúče sú prípadne zrotované.
 
 ## Poznámka / Disclaimer
 
