@@ -477,9 +477,7 @@
           const data = await res.json();
 
           if (res.ok && data.ok) {
-            formMessage.textContent = data.published
-              ? 'Hlásenie bolo úspešne odoslané a zverejnené na mape.'
-              : 'Hlásenie bolo úspešne odoslané a čaká na kontrolu.';
+            formMessage.textContent = 'Hlásenie bolo úspešne odoslané a čaká na kontrolu.';
             formMessage.className = 'form-message success';
             form.reset();
             latEl.value = '';

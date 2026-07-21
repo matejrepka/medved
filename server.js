@@ -19,7 +19,6 @@ import { mergeWarnings } from "./src/warnings.js";
 import { classifyFreshNews } from "./src/ai/news-classifier.js";
 import {
   classifyReportSpam,
-  shouldAutoApproveReport,
 } from "./src/ai/report-spam-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
@@ -1005,17 +1004,16 @@ app.post("/api/reports", async (req, res) => {
       reportedDate: reportedDate || new Date().toISOString(),
     };
     const spamCheck = await classifyReportSpam(report);
-    const published = shouldAutoApproveReport(spamCheck);
     const result = await saveBearReport({
       ...report,
-      status: published ? "approved" : "pending",
+      status: "pending",
     });
 
     console.log(
-      `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=${published ? "approved" : "pending"}`
+      `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=pending`
     );
 
-    res.json({ ok: true, id: result?.id, published });
+    res.json({ ok: true, id: result?.id, published: false, moderationStatus: "pending" });
   } catch (err) {
     console.error("[reports] save failed:", err.message);
     res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť hlásenie." });
