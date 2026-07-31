@@ -787,6 +787,41 @@ export async function loadBearReports(status) {
   return data || [];
 }
 
+// Používateľské hlásenia majú inú databázovú tabuľku než importované
+// hlásenia. Pre admin tabuľku ich zjednotíme do rovnakého tvaru a prefixom ID
+// zachováme informáciu o tom, kam sa má editácia zapísať.
+export function bearReportToAdminSighting(row) {
+  return {
+    id: `report-${row.id}`,
+    entity_type: "bear_report",
+    source: "Hlásenie používateľa",
+    location: row.location,
+    note: row.description || "",
+    lat: asNullableNumber(row.lat),
+    lng: asNullableNumber(row.lng),
+    has_coords: hasCoordinates(row.lat, row.lng),
+    reported_at: row.reported_date || row.created_at,
+    url: null,
+    status: row.status,
+    scraped_at: row.created_at,
+    updated_at: row.reviewed_at || row.created_at,
+  };
+}
+
+export async function loadAllBearReports({ limit = 2000 } = {}) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("bear_reports")
+    .select("id,location,description,lat,lng,has_coords,reported_date,status,created_at,reviewed_at")
+    .order("reported_date", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data || []).map(bearReportToAdminSighting);
+}
+
 export async function updateBearReportStatus(id, status) {
   const supabase = getSupabase();
   if (!supabase) return;
@@ -796,6 +831,27 @@ export async function updateBearReportStatus(id, status) {
     .update({ status, reviewed_at: new Date().toISOString() })
     .eq("id", id);
 
+  if (error) throw error;
+}
+
+export async function updateBearReportFields(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const update = { reviewed_at: new Date().toISOString() };
+  if (typeof fields.location === "string") update.location = fields.location.trim() || null;
+  if (typeof fields.note === "string") update.description = fields.note.trim() || null;
+  if ("reportedAt" in fields) update.reported_date = toIso(fields.reportedAt);
+  if ("lat" in fields) update.lat = asNullableNumber(fields.lat);
+  if ("lng" in fields) update.lng = asNullableNumber(fields.lng);
+  if (["pending", "approved", "rejected"].includes(fields.status)) {
+    update.status = fields.status;
+  }
+  if ("lat" in update && "lng" in update) {
+    update.has_coords = hasCoordinates(update.lat, update.lng);
+  }
+
+  const { error } = await supabase.from("bear_reports").update(update).eq("id", id);
   if (error) throw error;
 }
 

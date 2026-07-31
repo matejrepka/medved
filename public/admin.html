@@ -149,7 +149,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        max-width: 960px;
+        max-width: 1240px;
         margin: 0 auto;
         padding: 1.25rem clamp(16px, 4vw, 36px) 0;
       }
@@ -200,7 +200,7 @@
       .admin-tabs {
         display: flex;
         gap: 2px;
-        max-width: 960px;
+        max-width: 1240px;
         margin: 1.25rem auto 0;
         padding: 0 clamp(16px, 4vw, 36px);
         border-bottom: 1px solid var(--line);
@@ -256,7 +256,7 @@
 
       /* ---- Tab panels ---- */
       .admin-body {
-        max-width: 960px;
+        max-width: 1240px;
         margin: 0 auto;
         padding: 1.5rem clamp(16px, 4vw, 36px) 3rem;
       }
@@ -271,20 +271,47 @@
       }
 
       /* ---- Overview panel ---- */
+      .overview-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 1.25rem;
+      }
+      .overview-heading h2 {
+        margin: 0 0 4px;
+        font-family: var(--font-serif);
+        font-size: clamp(1.45rem, 2vw, 1.8rem);
+        font-weight: 600;
+      }
+      .overview-heading p { margin: 0; color: var(--ink-3); font-size: 0.88rem; }
+      .overview-updated {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink-3);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1px;
+        overflow: hidden;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
         margin-bottom: 1.5rem;
       }
       .stat-card {
-        padding: 1.1rem 1.2rem;
+        min-width: 0;
+        padding: 1rem 1.1rem;
         background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        transition: border-color 0.15s;
+        border: 0;
+        border-radius: 0;
+        transition: background 0.15s;
       }
-      .stat-card:hover { border-color: var(--line-strong); }
+      .stat-card:hover { background: var(--surface-hover); }
       .stat-icon {
         display: inline-flex;
         align-items: center;
@@ -295,12 +322,13 @@
         background: var(--accent-soft);
         color: var(--accent);
         font-size: 16px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
       }
       .stat-value {
         display: block;
         font-family: var(--font-serif);
-        font-size: 1.6rem;
+        font-variant-numeric: tabular-nums;
+        font-size: 1.75rem;
         font-weight: 600;
         line-height: 1.1;
         color: var(--ink);
@@ -317,6 +345,116 @@
         color: var(--ink-3);
         margin-bottom: 1.5rem;
       }
+
+      .overview-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .overview-stack { display: grid; gap: 16px; }
+      .overview-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .overview-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        scrollbar-width: none;
+      }
+      .admin-tabs::-webkit-scrollbar { display: none; }
+      .overview-panel-head h3 { margin: 0; font-size: 0.94rem; font-weight: 700; }
+      .overview-panel-head span { color: var(--ink-3); font-size: 0.76rem; }
+      .queue-list, .health-list, .recent-list { display: grid; }
+      .queue-row, .health-row, .recent-row {
+        display: grid;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .queue-row:last-child, .health-row:last-child, .recent-row:last-child { border-bottom: 0; }
+      .queue-row { grid-template-columns: 36px minmax(0, 1fr) auto; }
+      .queue-icon, .recent-icon {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 1rem;
+      }
+      .queue-copy strong, .recent-copy strong { display: block; color: var(--ink); font-size: 0.86rem; }
+      .queue-copy span { display: block; margin-top: 2px; color: var(--ink-3); font-size: 0.76rem; }
+      .recent-copy small { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--ink-3); font-size: 0.76rem; }
+      .recent-copy .status-badge { display: inline-flex; padding: 1px 6px; }
+      .queue-action, .quick-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 7px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        color: var(--ink-2);
+        font: 600 0.78rem var(--font-sans);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        white-space: nowrap;
+      }
+      .queue-action:hover, .quick-action:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+      .queue-action:active, .quick-action:active, .btn-primary:active, .row-edit-btn:active { transform: translateY(1px); }
+      .recent-row {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        width: 100%;
+        text-align: left;
+        color: inherit;
+        background: transparent;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        cursor: pointer;
+        font-family: var(--font-sans);
+      }
+      .recent-row:hover { background: var(--surface-hover); }
+      .recent-row time { color: var(--ink-3); font-size: 0.74rem; white-space: nowrap; }
+      .health-row { grid-template-columns: minmax(0, 1fr) auto; }
+      .health-copy strong { display: block; font-size: 0.84rem; color: var(--ink); }
+      .health-copy span { display: block; margin-top: 2px; color: var(--ink-3); font-size: 0.74rem; line-height: 1.4; }
+      .health-state { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 700; }
+      .health-state i { font-size: 0.72rem; }
+      .health-state.ok { color: #15803d; }
+      .health-state.warn { color: #b45309; }
+      .health-state.error { color: #b91c1c; }
+      [data-theme="dark"] .health-state.ok { color: #4ade80; }
+      [data-theme="dark"] .health-state.warn { color: #fbbf24; }
+      [data-theme="dark"] .health-state.error { color: #f87171; }
+      .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+      .quick-action { justify-content: flex-start; min-height: 44px; background: var(--surface); }
+      .overview-refresh { margin: 12px; }
+      .overview-empty { padding: 24px 16px; color: var(--ink-3); font-size: 0.84rem; text-align: center; }
+      .overview-loading { display: grid; gap: 10px; padding: 14px 16px; }
+      .skeleton-block { display: block; width: 100%; height: 42px; border-radius: 8px; background: var(--line); }
+      .skeleton-line {
+        display: inline-block;
+        width: 48px;
+        height: 1em;
+        border-radius: 4px;
+        background: var(--line-strong);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .skeleton-line, .skeleton-block { animation: adminPulse 1.4s ease-in-out infinite; }
+      }
+      @keyframes adminPulse { 50% { opacity: 0.45; } }
 
       .action-bar {
         display: flex;
@@ -894,6 +1032,79 @@
         flex-wrap: wrap;
         margin-bottom: 1rem;
       }
+      .content-toolbar-main { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: wrap; }
+      .content-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+      .tool-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 40px;
+        padding: 7px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-2);
+        font: 600 0.8rem var(--font-sans);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tool-btn:hover { color: var(--accent); border-color: var(--accent); }
+      .content-settings {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .content-settings > summary {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 42px;
+        padding: 8px 12px;
+        color: var(--ink-2);
+        font-size: 0.82rem;
+        font-weight: 650;
+        cursor: pointer;
+        list-style: none;
+      }
+      .content-settings > summary::-webkit-details-marker { display: none; }
+      .content-settings > summary .ph-caret-down { margin-left: auto; transition: transform 0.2s; }
+      .content-settings[open] > summary .ph-caret-down { transform: rotate(180deg); }
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+        gap: 12px;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .setting-field { display: grid; gap: 5px; min-width: 0; }
+      .setting-field[hidden] { display: none; }
+      .setting-field > label, .setting-label { color: var(--ink-3); font-size: 0.72rem; font-weight: 700; }
+      .setting-field select { width: 100%; min-height: 40px; }
+      .column-settings { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .column-option { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 9px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-2); font-size: 0.76rem; cursor: pointer; }
+      .column-option input { accent-color: var(--accent); }
+      .content-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        color: var(--ink-3);
+        font-size: 0.78rem;
+      }
+      .active-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .filter-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); font-size: 0.72rem; font-weight: 650; }
+      .table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+      .table-range { color: var(--ink-3); font-size: 0.78rem; }
+      .pagination { display: flex; align-items: center; gap: 6px; }
+      .page-btn { display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg); color: var(--ink-2); font: 600 0.78rem var(--font-sans); cursor: pointer; }
+      .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .page-current { min-width: 62px; text-align: center; color: var(--ink-3); font-size: 0.76rem; }
+      #contentTableWrap.compact .data-table td { padding-top: 6px; padding-bottom: 6px; }
+      #contentTableWrap.compact .data-table th { padding-top: 8px; padding-bottom: 8px; }
       .seg-toggle {
         display: inline-flex;
         padding: 3px;
@@ -991,6 +1202,7 @@
         min-width: 720px;
         border-collapse: collapse;
         font-size: 0.86rem;
+        font-variant-numeric: tabular-nums;
       }
       .data-table th {
         text-align: left;
@@ -1007,8 +1219,9 @@
         top: 0;
         z-index: 1;
       }
-      .data-table th.sortable { cursor: pointer; user-select: none; }
-      .data-table th.sortable:hover { color: var(--ink); }
+      .sort-button { display: inline-flex; align-items: center; gap: 3px; margin: -8px -10px; padding: 8px 10px; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+      .sort-button:hover { color: var(--ink); }
+      .sort-button:focus-visible { border-radius: 5px; outline: 2px solid var(--accent); outline-offset: -2px; }
       .data-table th .sort-arrow { margin-left: 4px; opacity: 0.9; }
       .data-table th.actions-col { text-align: right; }
       .data-table td {
@@ -1165,6 +1378,11 @@
         .admin-body { padding: 1.25rem clamp(12px, 4vw, 36px) 2rem; }
         .review-loc-input,
         .edit-warning-location-grid input { font-size: 16px; }
+        .overview-heading { flex-direction: column; }
+        .overview-grid { grid-template-columns: 1fr; }
+        .settings-grid { grid-template-columns: 1fr 1fr; }
+        .content-tools { margin-left: 0; width: 100%; }
+        .content-tools .tool-btn { flex: 1; }
       }
       @media (max-width: 560px) {
         .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -1172,16 +1390,31 @@
         .review-actions { width: 100%; }
         .review-btn { flex: 1; justify-content: center; padding: 10px 14px; }
         .edit-grid { grid-template-columns: 1fr; }
-        .content-search { order: 3; width: 100%; flex-basis: 100%; }
+        .content-toolbar-main > .seg-toggle { order: 0; }
+        .content-search { order: 1; width: 100%; flex-basis: 100%; }
+        #contentStatusFilter { order: 2; }
+        .content-tools { order: 3; }
         .edit-warning-location-grid { grid-template-columns: 1fr 1fr; }
         .edit-warning-location-grid label:first-child { grid-column: 1 / -1; }
+        .queue-row { grid-template-columns: 36px minmax(0, 1fr); }
+        .queue-action { grid-column: 1 / -1; }
+        .recent-row { grid-template-columns: 32px minmax(0, 1fr); }
+        .recent-row time { grid-column: 2; }
+        .settings-grid { grid-template-columns: 1fr; }
+        .content-summary, .table-footer { align-items: flex-start; flex-direction: column; }
       }
       @media (max-width: 400px) {
-        .stats-grid { grid-template-columns: 1fr; }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .stat-card { padding: 0.9rem; }
+        .stat-value { font-size: 1.5rem; }
+        .toolbar-badge { display: none; }
+        .admin-toolbar { gap: 8px; }
+        .logout-btn { padding-inline: 10px; }
       }
     </style>
   </head>
   <body>
+    <a class="skip-link" href="#adminMain">Preskočiť na obsah</a>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
@@ -1191,7 +1424,7 @@
       </a>
     </header>
 
-    <main>
+    <main id="adminMain">
       <!-- Login -->
       <div class="login-wrapper" id="loginScreen">
         <div class="login-card">
@@ -1256,39 +1489,78 @@
 
           <!-- Overview -->
           <div class="tab-panel active" id="panel-overview">
+            <div class="overview-heading">
+              <div>
+                <h2>Dnes v administrácii</h2>
+                <p>Moderovanie, kvalita dát a stav služieb na jednom mieste.</p>
+              </div>
+              <span class="overview-updated" id="overviewUpdatedAt"><i class="ph ph-clock"></i> Načítavam dáta</span>
+            </div>
             <div class="stats-grid" id="adminStats">
               <div class="stat-card">
-                <div class="stat-icon"><i class="ph ph-paw-print"></i></div>
-                <span class="stat-value" id="adminSightingsCount">&mdash;</span>
-                <span class="stat-label">Hlásení (tumedved)</span>
+                <div class="stat-icon"><i class="ph ph-hourglass-medium"></i></div>
+                <span class="stat-value" id="overviewPendingTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Čaká na kontrolu</span>
               </div>
               <div class="stat-card">
-                <div class="stat-icon"><i class="ph ph-newspaper"></i></div>
-                <span class="stat-value" id="adminNewsCount">&mdash;</span>
-                <span class="stat-label">Uložených správ</span>
+                <div class="stat-icon"><i class="ph ph-check-circle"></i></div>
+                <span class="stat-value" id="overviewPublishedTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Schválených záznamov</span>
               </div>
               <div class="stat-card">
-                <div class="stat-icon"><i class="ph ph-arrows-clockwise"></i></div>
-                <span class="stat-value" id="adminRefreshState">&mdash;</span>
-                <span class="stat-label">Stav obnovovania</span>
+                <div class="stat-icon"><i class="ph ph-calendar-check"></i></div>
+                <span class="stat-value" id="overviewRecentTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Nových za 7 dní</span>
               </div>
               <div class="stat-card">
-                <div class="stat-icon"><i class="ph ph-database"></i></div>
-                <span class="stat-value" id="adminSupabaseState">&mdash;</span>
-                <span class="stat-label">Supabase</span>
+                <div class="stat-icon"><i class="ph ph-map-pin-line"></i></div>
+                <span class="stat-value" id="overviewMissingCoords"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Chýbajúce súradnice</span>
               </div>
             </div>
 
-            <p class="overview-meta" id="adminStatsMeta"></p>
-
-            <div class="action-bar">
-              <form id="adminForm" style="display:contents">
-                <button type="submit" class="btn-primary" id="runBtn">
-                  <i class="ph ph-arrows-clockwise"></i>
-                  <span>Spustiť sťahovanie</span>
-                </button>
-              </form>
-              <div id="statusMessage" class="status-msg"></div>
+            <div class="overview-grid">
+              <div class="overview-stack">
+                <section class="overview-panel" aria-labelledby="queueTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="queueTitle">Vyžaduje pozornosť</h3>
+                    <span id="overviewQueueLabel">Načítavam</span>
+                  </div>
+                  <div class="queue-list" id="overviewQueue"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                </section>
+                <section class="overview-panel" aria-labelledby="recentTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="recentTitle">Najnovšie záznamy</h3>
+                    <span>Správy a hlásenia</span>
+                  </div>
+                  <div class="recent-list" id="overviewRecent"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                </section>
+              </div>
+              <aside class="overview-stack">
+                <section class="overview-panel" aria-labelledby="healthTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="healthTitle">Stav systému</h3>
+                    <span id="overviewHealthLabel">Kontrola</span>
+                  </div>
+                  <div class="health-list" id="overviewHealth"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                  <form id="adminForm" class="overview-refresh">
+                    <button type="submit" class="btn-primary" id="runBtn">
+                      <i class="ph ph-arrows-clockwise"></i>
+                      <span>Spustiť sťahovanie</span>
+                    </button>
+                  </form>
+                  <div id="statusMessage" class="status-msg overview-refresh"></div>
+                </section>
+                <section class="overview-panel" aria-labelledby="quickTitle">
+                  <div class="overview-panel-head"><h3 id="quickTitle">Rýchle akcie</h3></div>
+                  <div class="quick-actions">
+                    <button class="quick-action" type="button" data-go-tab="reports"><i class="ph ph-paw-print"></i> Hlásenia</button>
+                    <button class="quick-action" type="button" data-go-tab="news"><i class="ph ph-newspaper"></i> Správy</button>
+                    <button class="quick-action" type="button" data-go-tab="add"><i class="ph ph-plus-circle"></i> Pridať</button>
+                    <button class="quick-action" type="button" data-go-tab="content"><i class="ph ph-database"></i> Databáza</button>
+                  </div>
+                </section>
+              </aside>
             </div>
           </div>
 
@@ -1425,24 +1697,95 @@
             <p class="section-lede">Všetky uložené správy a hlásenia môžeš vyhľadávať, zoraďovať a upravovať. Kliknutím na hlavičku stĺpca obsah zoradíš, tlačidlom upravíš ktorýkoľvek záznam.</p>
 
             <div class="content-toolbar">
-              <div class="seg-toggle" id="contentTypeToggle">
-                <button class="seg-btn active" type="button" data-type="news">
-                  <i class="ph ph-newspaper"></i> Správy <span class="seg-count" id="segNewsCount">0</span>
-                </button>
-                <button class="seg-btn" type="button" data-type="sightings">
-                  <i class="ph ph-paw-print"></i> Hlásenia <span class="seg-count" id="segSightingsCount">0</span>
-                </button>
+              <div class="content-toolbar-main">
+                <div class="seg-toggle" id="contentTypeToggle" aria-label="Typ záznamov">
+                  <button class="seg-btn active" type="button" data-type="news">
+                    <i class="ph ph-newspaper"></i> Správy <span class="seg-count" id="segNewsCount">0</span>
+                  </button>
+                  <button class="seg-btn" type="button" data-type="sightings">
+                    <i class="ph ph-paw-print"></i> Hlásenia <span class="seg-count" id="segSightingsCount">0</span>
+                  </button>
+                </div>
+                <div class="content-search">
+                  <i class="ph ph-magnifying-glass"></i>
+                  <input type="search" id="contentSearch" aria-label="Hľadať v databáze" placeholder="Hľadať v texte, lokalite, zdroji..." autocomplete="off" />
+                </div>
+                <select class="content-filter" id="contentStatusFilter" aria-label="Filtrovať podľa stavu">
+                  <option value="">Všetky stavy</option>
+                  <option value="pending">Čakajúce</option>
+                  <option value="approved">Schválené</option>
+                  <option value="rejected">Zamietnuté</option>
+                </select>
+                <div class="content-tools">
+                  <button class="tool-btn" id="contentExport" type="button"><i class="ph ph-download-simple"></i> CSV</button>
+                  <button class="tool-btn" id="contentReset" type="button"><i class="ph ph-funnel-x"></i> Zrušiť filtre</button>
+                </div>
               </div>
-              <div class="content-search">
-                <i class="ph ph-magnifying-glass"></i>
-                <input type="search" id="contentSearch" placeholder="Hľadať v texte, lokalite, zdroji…" autocomplete="off" />
+
+              <details class="content-settings" id="contentSettings">
+                <summary><i class="ph ph-sliders-horizontal"></i> Filtre a zobrazenie <i class="ph ph-caret-down"></i></summary>
+                <div class="settings-grid">
+                  <div class="setting-field">
+                    <label for="contentSourceFilter">Zdroj</label>
+                    <select class="content-filter" id="contentSourceFilter"><option value="">Všetky zdroje</option></select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentDateFilter">Obdobie</label>
+                    <select class="content-filter" id="contentDateFilter">
+                      <option value="">Celé obdobie</option>
+                      <option value="1">Dnes</option>
+                      <option value="7">Posledných 7 dní</option>
+                      <option value="30">Posledných 30 dní</option>
+                      <option value="90">Posledných 90 dní</option>
+                    </select>
+                  </div>
+                  <div class="setting-field" id="categorySetting">
+                    <label for="contentCategoryFilter">Kategória</label>
+                    <select class="content-filter" id="contentCategoryFilter">
+                      <option value="">Všetky kategórie</option>
+                      <option value="article">Články</option>
+                      <option value="warning">Varovania</option>
+                    </select>
+                  </div>
+                  <div class="setting-field" id="originSetting" hidden>
+                    <label for="contentOriginFilter">Pôvod hlásenia</label>
+                    <select class="content-filter" id="contentOriginFilter">
+                      <option value="">Všetky pôvody</option>
+                      <option value="community">Komunitné hlásenia</option>
+                      <option value="imported">Importované zdroje</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentCoordsFilter">Súradnice</label>
+                    <select class="content-filter" id="contentCoordsFilter">
+                      <option value="">Bez filtra</option>
+                      <option value="yes">So súradnicami</option>
+                      <option value="no">Bez súradníc</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentPageSize">Riadkov na stránku</label>
+                    <select class="content-filter" id="contentPageSize">
+                      <option value="10">10</option>
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentDensity">Hustota tabuľky</label>
+                    <select class="content-filter" id="contentDensity">
+                      <option value="comfortable">Pohodlná</option>
+                      <option value="compact">Kompaktná</option>
+                    </select>
+                  </div>
+                  <div class="column-settings" id="contentColumnSettings" aria-label="Viditeľné stĺpce"></div>
+                </div>
+              </details>
+              <div class="content-summary">
+                <div class="active-filters" id="activeFilters"><span>Bez aktívnych filtrov</span></div>
+                <span id="contentResultSummary">0 záznamov</span>
               </div>
-              <select class="content-filter" id="contentStatusFilter">
-                <option value="">Všetky stavy</option>
-                <option value="pending">Čakajúce</option>
-                <option value="approved">Schválené</option>
-                <option value="rejected">Zamietnuté</option>
-              </select>
             </div>
 
             <div id="contentTableWrap"></div>
@@ -1475,12 +1818,24 @@
       function switchTab(tabName) {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
         panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
-        if (tabName === 'content' && !contentState.loaded) loadContent();
+        const activeTab = document.querySelector('.admin-tab[data-tab="' + tabName + '"]');
+        if (activeTab && window.matchMedia('(max-width: 640px)').matches) {
+          activeTab.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'nearest',
+            inline: 'center',
+          });
+        }
+        if (tabName === 'content' && !contentState.loaded && !contentState.loading) loadContent();
         if (tabName === 'reports') scheduleReviewMapsRefresh();
       }
 
       tabs.forEach(tab => {
         tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-go-tab]');
+        if (trigger) switchTab(trigger.dataset.goTab);
       });
 
       // --- Auth ---
@@ -1503,6 +1858,7 @@
         loadStats();
         loadPending();
         loadSubscriptions();
+        loadContent();
       }
 
       function showLogin(msg) {
@@ -1561,7 +1917,6 @@
       })();
 
       // --- Helpers ---
-      const statsMeta = document.getElementById('adminStatsMeta');
       const form = document.getElementById('adminForm');
       const runBtn = document.getElementById('runBtn');
       const statusMsg = document.getElementById('statusMessage');
@@ -1582,6 +1937,118 @@
         const el = document.getElementById(id);
         if (el) el.textContent = value;
       };
+
+      const overviewState = {
+        status: null,
+        pending: null,
+        subscriptions: null,
+      };
+
+      function recordHasCoordinates(record) {
+        const lat = Number(record?.lat);
+        const lng = Number(record?.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+      }
+
+      function recordDate(type, record) {
+        return type === 'news' ? record.published_at : record.reported_at;
+      }
+
+      function renderOverview() {
+        const contentReady = contentState?.loaded;
+        const pendingReports = overviewState.pending?.reports || [];
+        const pendingNews = overviewState.pending?.news || [];
+        const pendingTotal = pendingReports.length + pendingNews.length;
+        const allNews = contentReady ? contentState.news : [];
+        const allSightings = contentReady ? contentState.sightings : [];
+        const allRecords = [
+          ...allNews.map(record => ({ type: 'news', record })),
+          ...allSightings.map(record => ({ type: 'sightings', record })),
+        ];
+        const approvedTotal = allRecords.filter(({ record }) => (record.status || 'approved') === 'approved').length;
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const recentTotal = allRecords.filter(({ type, record }) => {
+          const time = new Date(recordDate(type, record) || 0).getTime();
+          return Number.isFinite(time) && time >= sevenDaysAgo;
+        }).length;
+        const missingCoords = [
+          ...allSightings,
+          ...allNews.filter(record => record.category === 'warning'),
+        ].filter(record => (record.status || 'approved') !== 'rejected' && !recordHasCoordinates(record)).length;
+
+        if (overviewState.pending) setText('overviewPendingTotal', formatCount(pendingTotal));
+        if (contentReady) {
+          setText('overviewPublishedTotal', formatCount(approvedTotal));
+          setText('overviewRecentTotal', formatCount(recentTotal));
+          setText('overviewMissingCoords', formatCount(missingCoords));
+        }
+
+        const queue = document.getElementById('overviewQueue');
+        if (overviewState.pending && queue) {
+          setText('overviewQueueLabel', pendingTotal ? pendingTotal + ' položiek' : 'Všetko vybavené');
+          queue.innerHTML =
+            '<div class="queue-row">' +
+              '<div class="queue-icon"><i class="ph ph-paw-print"></i></div>' +
+              '<div class="queue-copy"><strong>Používateľské hlásenia</strong><span>' + pendingReports.length + ' čaká na rozhodnutie</span></div>' +
+              '<button class="queue-action" type="button" data-go-tab="reports">Skontrolovať</button>' +
+            '</div>' +
+            '<div class="queue-row">' +
+              '<div class="queue-icon"><i class="ph ph-newspaper"></i></div>' +
+              '<div class="queue-copy"><strong>Importované správy</strong><span>' + pendingNews.length + ' čaká na kategorizáciu</span></div>' +
+              '<button class="queue-action" type="button" data-go-tab="news">Skontrolovať</button>' +
+            '</div>';
+        }
+
+        const recent = document.getElementById('overviewRecent');
+        if (contentReady && recent) {
+          const rows = allRecords
+            .sort((a, b) => new Date(recordDate(b.type, b.record) || 0) - new Date(recordDate(a.type, a.record) || 0))
+            .slice(0, 6);
+          recent.innerHTML = rows.length ? rows.map(({ type, record }) => {
+            const isNews = type === 'news';
+            const title = isNews ? (record.title || 'Správa bez titulku') : (record.location || 'Hlásenie bez lokality');
+            const meta = isNews ? (record.source || 'Neznámy zdroj') : (record.source || 'Hlásenie');
+            return '<button class="recent-row" type="button" data-open-type="' + type + '" data-open-id="' + esc(String(record.id)) + '">' +
+              '<span class="recent-icon"><i class="ph ph-' + (isNews ? 'newspaper' : 'paw-print') + '"></i></span>' +
+              '<span class="recent-copy"><strong>' + esc(title) + '</strong><small>' + esc(meta) + ' · ' + statusBadge(record.status || 'approved') + '</small></span>' +
+              '<time>' + formatDateTime(recordDate(type, record)) + '</time>' +
+            '</button>';
+          }).join('') : '<div class="overview-empty">Databáza zatiaľ neobsahuje záznamy.</div>';
+        }
+
+        const status = overviewState.status;
+        const health = document.getElementById('overviewHealth');
+        if (status && health) {
+          const sightings = status.sightings || {};
+          const news = status.news || {};
+          const sightingOk = !sightings.error && !sightings.refreshing;
+          const newsOk = !news.error && !news.refreshing;
+          const activeSubs = (overviewState.subscriptions || []).filter(sub => sub.active && sub.confirmed_at).length;
+          const healthItems = [
+            ['Databáza', status.supabaseConfigured ? 'Pripojená' : 'Nepripojená', status.supabaseConfigured ? 'ok' : 'error', status.supabaseConfigured ? 'Supabase je dostupný' : 'Chýba konfigurácia databázy'],
+            ['Hlásenia', sightings.refreshing ? 'Obnovuje sa' : sightingOk ? 'V poriadku' : 'Chyba', sightings.refreshing ? 'warn' : sightingOk ? 'ok' : 'error', 'Posledné dáta: ' + formatDateTime(sightings.fetchedAt)],
+            ['Správy', news.refreshing ? 'Obnovuje sa' : newsOk ? 'V poriadku' : 'Chyba', news.refreshing ? 'warn' : newsOk ? 'ok' : 'error', 'Posledné dáta: ' + formatDateTime(news.fetchedAt)],
+            ['Emailové upozornenia', status.emailNotificationsEnabled ? 'Aktívne' : 'Vypnuté', status.emailNotificationsEnabled ? 'ok' : 'warn', activeSubs + ' aktívnych odberov'],
+          ];
+          const problemCount = healthItems.filter(item => item[2] === 'error').length;
+          setText('overviewHealthLabel', problemCount ? problemCount + ' problémov' : 'Bez kritických chýb');
+          health.innerHTML = healthItems.map(item =>
+            '<div class="health-row"><div class="health-copy"><strong>' + esc(item[0]) + '</strong><span>' + esc(item[3]) + '</span></div>' +
+            '<span class="health-state ' + item[2] + '"><i class="ph ph-circle"></i>' + esc(item[1]) + '</span></div>'
+          ).join('');
+        }
+
+        const latest = status
+          ? [status.sightings?.fetchedAt, status.news?.fetchedAt].filter(Boolean).sort().pop()
+          : null;
+        setText('overviewUpdatedAt', latest ? 'Dáta aktualizované ' + formatDateTime(latest) : 'Čakám na stav zdrojov');
+      }
+
+      document.getElementById('overviewRecent').addEventListener('click', (event) => {
+        const row = event.target.closest('[data-open-id]');
+        if (!row) return;
+        openContentRecord(row.dataset.openType, row.dataset.openId);
+      });
 
       const esc = (str) => {
         if (!str) return '';
@@ -1607,41 +2074,6 @@
         el.classList.toggle('has-items', count > 0);
       }
 
-      const refreshStageLabels = {
-        fetch: 'sťahovanie',
-        save: 'ukladanie',
-        reload: 'načítanie uložených dát',
-        record: 'zápis záznamu o obnove',
-      };
-
-      function describeSourceRun(label, meta) {
-        const run = meta?.lastRun;
-        if (!run) {
-          if (!meta?.error) return null;
-          const stage = refreshStageLabels[meta.errorStage];
-          return `${label}: chyba${stage ? ` pri ${stage}` : ''} – ${meta.error}`;
-        }
-        if (run.status === 'success') {
-          const count = Number.isInteger(run.itemCount) ? ` (${run.itemCount})` : '';
-          return `${label}: načítané${count}`;
-        }
-        const stage = refreshStageLabels[run.stage || meta.errorStage] || 'obnova';
-        return `${label}: zlyhalo pri ${stage} – ${run.error || meta.error || 'Neznáma chyba'}`;
-      }
-
-      function describeSourceRuns(label, meta) {
-        const children = meta?.lastRun?.sourceOutcomes;
-        if (!children) return [describeSourceRun(label, meta)].filter(Boolean);
-        return Object.values(children).map((source) => {
-          if (source.ok) {
-            const count = Number.isInteger(source.itemCount) ? ` (${source.itemCount})` : '';
-            return `${source.label}: načítané${count}`;
-          }
-          const stage = refreshStageLabels[source.stage] || 'sťahovanie';
-          return `${source.label}: zlyhalo pri ${stage} – ${source.error || 'Neznáma chyba'}`;
-        });
-      }
-
       function refreshSourceFailed(source) {
         if (!source?.ok) return true;
         return source.children
@@ -1651,30 +2083,8 @@
 
       // --- Stats ---
       const renderStats = (status) => {
-        const sightings = status?.sightings || {};
-        const news = status?.news || {};
-        const refreshState = [sightings.refreshing ? 'hlásenia' : null, news.refreshing ? 'správy' : null]
-          .filter(Boolean).join(' + ') || 'idle';
-        const latestUpdateCandidates = [sightings.fetchedAt, news.fetchedAt].filter(Boolean).sort();
-        const latestUpdate = latestUpdateCandidates[latestUpdateCandidates.length - 1] || null;
-
-        setText('adminSightingsCount', formatCount(sightings.count));
-        setText('adminNewsCount', formatCount(news.count));
-        setText('adminRefreshState', refreshState);
-        setText('adminSupabaseState', status?.supabaseConfigured ? 'pripojené' : 'nepripojené');
-
-        const details = [];
-        details.push('Posledná aktualizácia: ' + formatDateTime(latestUpdate));
-        const sourceRuns = [
-          ...describeSourceRuns('Hlásenia', sightings),
-          ...describeSourceRuns('Správy', news),
-        ];
-        if (sourceRuns.length) {
-          details.push(...sourceRuns);
-        } else {
-          details.push('Režim: ' + (status?.refreshMode || 'neuvedený'));
-        }
-        if (statsMeta) statsMeta.textContent = details.join('  ·  ');
+        overviewState.status = status;
+        renderOverview();
       };
 
       const loadStats = async () => {
@@ -1683,7 +2093,7 @@
           if (!res.ok) throw new Error('HTTP ' + res.status);
           renderStats(await res.json());
         } catch (err) {
-          if (statsMeta) statsMeta.textContent = 'Statistiky sa nepodarilo načítať: ' + err.message;
+          setText('overviewUpdatedAt', 'Stav zdrojov sa nepodarilo načítať');
         }
       };
 
@@ -1760,6 +2170,13 @@
         setText('pendingNewsCount', nc);
         updateTabCount('tabReportsCount', rc);
         updateTabCount('tabNewsCount', nc);
+        if (overviewState.pending) {
+          const reportIds = new Set(Array.from(document.querySelectorAll('#pendingReportsList .review-card')).map(card => String(card.dataset.itemId)));
+          const newsIds = new Set(Array.from(document.querySelectorAll('#pendingNewsList .review-card')).map(card => String(card.dataset.itemId)));
+          overviewState.pending.reports = overviewState.pending.reports.filter(item => reportIds.has(String(item.id)));
+          overviewState.pending.news = overviewState.pending.news.filter(item => newsIds.has(String(item.id)));
+          renderOverview();
+        }
         toggleApproveAllButtons();
       }
 
@@ -2171,6 +2588,10 @@
           const res = await authFetch('/api/admin/pending');
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
+          overviewState.pending = {
+            reports: data.reports || [],
+            news: data.news || [],
+          };
 
           const reportsList = document.getElementById('pendingReportsList');
           const newsList = document.getElementById('pendingNewsList');
@@ -2199,8 +2620,13 @@
           updateTabCount('tabReportsCount', rc);
           updateTabCount('tabNewsCount', nc);
           toggleApproveAllButtons();
+          renderOverview();
         } catch (err) {
           console.error('Failed to load pending items:', err);
+          setText('overviewPendingTotal', 'N/A');
+          setText('overviewQueueLabel', 'Nedostupné');
+          document.getElementById('overviewQueue').innerHTML =
+            '<div class="overview-empty">Front moderácie sa nepodarilo načítať. Skúste stránku obnoviť.</div>';
         }
       }
 
@@ -2471,6 +2897,8 @@
             const count = rows.length;
             setText('subscriptionsCount', count);
             updateTabCount('tabSubsCount', count);
+            overviewState.subscriptions = (overviewState.subscriptions || []).filter(sub => String(sub.id) !== String(id));
+            renderOverview();
             if (!count) loadSubscriptions();
           } else {
             alert('Chyba: ' + (data.error || 'Neznáma chyba'));
@@ -2487,9 +2915,11 @@
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
           const subs = data.subscriptions || [];
+          overviewState.subscriptions = subs;
 
           setText('subscriptionsCount', subs.length);
           updateTabCount('tabSubsCount', subs.length);
+          renderOverview();
 
           if (!subs.length) {
             container.innerHTML = renderEmptyState('bell-slash', 'Žiadne registrované odbery.');
@@ -2533,19 +2963,43 @@
       }
 
       // --- Content management (všetky správy + hlásenia: hľadanie, zoradenie, editácia) ---
+      const savedContentPreferences = (() => {
+        try { return JSON.parse(localStorage.getItem('adminContentPreferences') || '{}'); }
+        catch (_) { return {}; }
+      })();
       const contentState = {
         type: 'news',
         news: [],
         sightings: [],
         search: '',
         status: '',
+        source: '',
+        dateRange: '',
+        category: '',
+        origin: '',
+        coords: '',
+        page: 1,
+        perPage: Number(savedContentPreferences.perPage) || 25,
+        density: savedContentPreferences.density === 'compact' ? 'compact' : 'comfortable',
+        columns: savedContentPreferences.columns || { news: {}, sightings: {} },
         sort: {
           news: { key: 'published_at', dir: 'desc' },
           sightings: { key: 'reported_at', dir: 'desc' },
         },
         loaded: false,
+        loading: false,
         openId: null,
       };
+
+      function saveContentPreferences() {
+        try {
+          localStorage.setItem('adminContentPreferences', JSON.stringify({
+            perPage: contentState.perPage,
+            density: contentState.density,
+            columns: contentState.columns,
+          }));
+        } catch (_) {}
+      }
 
       function contentNewsLocations(record) {
         if (Array.isArray(record.locations) && record.locations.length) return record.locations;
@@ -2596,6 +3050,57 @@
           : '<span class="coord-no">bez súradníc</span>';
       }
 
+      function visibleColumns(type = contentState.type) {
+        const hidden = contentState.columns[type] || {};
+        return COLUMNS[type].filter(column => hidden[column.key] !== false);
+      }
+
+      function updateContentSettings() {
+        const type = contentState.type;
+        const records = type === 'news' ? contentState.news : contentState.sightings;
+        const sourceSelect = document.getElementById('contentSourceFilter');
+        const sourceMap = new Map();
+        records.map(record => record.source).filter(Boolean).forEach(source => {
+          const key = source.toLocaleLowerCase('sk');
+          if (!sourceMap.has(key)) sourceMap.set(key, source);
+        });
+        const sources = [...sourceMap.values()].sort((a, b) => a.localeCompare(b, 'sk'));
+        sourceSelect.innerHTML = '<option value="">Všetky zdroje</option>' + sources.map(source =>
+          '<option value="' + esc(source) + '">' + esc(source) + '</option>'
+        ).join('');
+        sourceSelect.value = sources.includes(contentState.source) ? contentState.source : '';
+        if (contentState.source && !sourceSelect.value) contentState.source = '';
+
+        document.getElementById('categorySetting').hidden = type !== 'news';
+        document.getElementById('originSetting').hidden = type !== 'sightings';
+        document.getElementById('contentCategoryFilter').value = contentState.category;
+        document.getElementById('contentOriginFilter').value = contentState.origin;
+        document.getElementById('contentDateFilter').value = contentState.dateRange;
+        document.getElementById('contentCoordsFilter').value = contentState.coords;
+        document.getElementById('contentPageSize').value = String(contentState.perPage);
+        document.getElementById('contentDensity').value = contentState.density;
+
+        const columnWrap = document.getElementById('contentColumnSettings');
+        columnWrap.innerHTML = '<span class="setting-label">Viditeľné stĺpce</span>' + COLUMNS[type].map(column => {
+          const checked = (contentState.columns[type] || {})[column.key] !== false;
+          return '<label class="column-option"><input type="checkbox" data-column-key="' + column.key + '"' + (checked ? ' checked' : '') + '> ' + esc(column.label) + '</label>';
+        }).join('');
+      }
+
+      function contentFilterLabels() {
+        const statusLabels = { pending: 'Čakajúce', approved: 'Schválené', rejected: 'Zamietnuté' };
+        const dateLabels = { '1': 'Dnes', '7': '7 dní', '30': '30 dní', '90': '90 dní' };
+        const chips = [];
+        if (contentState.search) chips.push('Hľadanie: ' + contentState.search);
+        if (contentState.status) chips.push(statusLabels[contentState.status]);
+        if (contentState.source) chips.push('Zdroj: ' + contentState.source);
+        if (contentState.dateRange) chips.push(dateLabels[contentState.dateRange]);
+        if (contentState.type === 'news' && contentState.category) chips.push(contentState.category === 'warning' ? 'Varovania' : 'Články');
+        if (contentState.type === 'sightings' && contentState.origin) chips.push(contentState.origin === 'community' ? 'Komunitné' : 'Importované');
+        if (contentState.coords) chips.push(contentState.coords === 'yes' ? 'So súradnicami' : 'Bez súradníc');
+        return chips;
+      }
+
       function toLocalInputValue(iso) {
         if (!iso) return '';
         const d = new Date(iso);
@@ -2634,6 +3139,29 @@
         if (contentState.status) {
           list = list.filter((r) => (r.status || 'approved') === contentState.status);
         }
+        if (contentState.source) {
+          const selectedSource = contentState.source.toLocaleLowerCase('sk');
+          list = list.filter(record => String(record.source || '').toLocaleLowerCase('sk') === selectedSource);
+        }
+        if (contentState.category && type === 'news') list = list.filter(record => (record.category || 'article') === contentState.category);
+        if (contentState.origin && type === 'sightings') {
+          list = list.filter(record => contentState.origin === 'community'
+            ? record.entity_type === 'bear_report'
+            : record.entity_type !== 'bear_report');
+        }
+        if (contentState.coords) {
+          list = list.filter(record => recordHasCoordinates(record) === (contentState.coords === 'yes'));
+        }
+        if (contentState.dateRange) {
+          const cutoffDate = new Date();
+          if (contentState.dateRange === '1') cutoffDate.setHours(0, 0, 0, 0);
+          else cutoffDate.setTime(Date.now() - (Number(contentState.dateRange) * 24 * 60 * 60 * 1000));
+          const cutoff = cutoffDate.getTime();
+          list = list.filter(record => {
+            const time = new Date(recordDate(type, record) || 0).getTime();
+            return Number.isFinite(time) && time >= cutoff;
+          });
+        }
         const sort = contentState.sort[type];
         const dir = sort.dir === 'asc' ? 1 : -1;
         list.sort((a, b) => {
@@ -2648,11 +3176,21 @@
       function renderContentTable() {
         const wrap = document.getElementById('contentTableWrap');
         const type = contentState.type;
-        const cols = COLUMNS[type];
+        const cols = visibleColumns(type);
         const list = filteredSortedList();
         const total = (type === 'news' ? contentState.news : contentState.sightings).length;
+        const pageCount = Math.max(1, Math.ceil(list.length / contentState.perPage));
+        contentState.page = Math.min(Math.max(1, contentState.page), pageCount);
+        const pageStart = (contentState.page - 1) * contentState.perPage;
+        const pageItems = list.slice(pageStart, pageStart + contentState.perPage);
 
         setText('contentCount', list.length + (list.length !== total ? ' / ' + total : ''));
+        setText('contentResultSummary', list.length + ' z ' + total + ' záznamov');
+        const chips = contentFilterLabels();
+        document.getElementById('activeFilters').innerHTML = chips.length
+          ? chips.map(label => '<span class="filter-chip">' + esc(label) + '</span>').join('')
+          : '<span>Bez aktívnych filtrov</span>';
+        wrap.classList.toggle('compact', contentState.density === 'compact');
 
         if (!list.length) {
           wrap.innerHTML = '<div class="content-empty">' +
@@ -2664,10 +3202,11 @@
         const headCells = cols.map((c) => {
           const active = sort.key === c.key;
           const arrow = active ? '<i class="ph ph-caret-' + (sort.dir === 'asc' ? 'up' : 'down') + ' sort-arrow"></i>' : '';
-          return '<th class="sortable" data-key="' + c.key + '">' + c.label + arrow + '</th>';
+          const ariaSort = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+          return '<th aria-sort="' + ariaSort + '"><button class="sort-button" type="button" data-key="' + c.key + '">' + c.label + arrow + '</button></th>';
         }).join('');
 
-        const bodyRows = list.map((r) => {
+        const bodyRows = pageItems.map((r) => {
           const cells = cols.map((c) => '<td>' + c.render(r) + '</td>').join('');
           return '<tr class="data-row" data-id="' + esc(String(r.id)) + '">' + cells +
             '<td class="actions-cell"><button class="row-edit-btn" type="button"><i class="ph ph-pencil-simple"></i> Upraviť</button></td></tr>';
@@ -2680,12 +3219,13 @@
           '<tbody>' + bodyRows + '</tbody>';
 
         // Zoradenie kliknutím na hlavičku.
-        table.querySelectorAll('th.sortable').forEach((th) => {
-          th.addEventListener('click', () => {
-            const key = th.dataset.key;
+        table.querySelectorAll('.sort-button').forEach((button) => {
+          button.addEventListener('click', () => {
+            const key = button.dataset.key;
             const s = contentState.sort[type];
             if (s.key === key) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
             else { s.key = key; s.dir = 'desc'; }
+            contentState.page = 1;
             contentState.openId = null;
             renderContentTable();
           });
@@ -2699,6 +3239,24 @@
 
         wrap.innerHTML = '';
         wrap.appendChild(table);
+
+        const footer = document.createElement('div');
+        footer.className = 'table-footer';
+        const rangeStart = list.length ? pageStart + 1 : 0;
+        const rangeEnd = Math.min(pageStart + contentState.perPage, list.length);
+        footer.innerHTML =
+          '<span class="table-range">Zobrazené ' + rangeStart + '-' + rangeEnd + ' z ' + list.length + '</span>' +
+          '<div class="pagination">' +
+            '<button class="page-btn" type="button" data-page="prev" aria-label="Predchádzajúca stránka"' + (contentState.page <= 1 ? ' disabled' : '') + '><i class="ph ph-caret-left"></i></button>' +
+            '<span class="page-current">' + contentState.page + ' / ' + pageCount + '</span>' +
+            '<button class="page-btn" type="button" data-page="next" aria-label="Nasledujúca stránka"' + (contentState.page >= pageCount ? ' disabled' : '') + '><i class="ph ph-caret-right"></i></button>' +
+          '</div>';
+        footer.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => {
+          contentState.page += button.dataset.page === 'next' ? 1 : -1;
+          contentState.openId = null;
+          renderContentTable();
+        }));
+        wrap.appendChild(footer);
       }
 
       function findRecord(type, id) {
@@ -2718,7 +3276,7 @@
         if (!rec) return;
         contentState.openId = id;
 
-        const colCount = COLUMNS[type].length + 1;
+        const colCount = visibleColumns(type).length + 1;
         const editTr = document.createElement('tr');
         editTr.className = 'edit-row';
         const td = document.createElement('td');
@@ -2766,15 +3324,16 @@
       function sightingEditForm(r) {
         const sel = (v, opts) => opts.map((o) =>
           '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+        const isUserReport = r.entity_type === 'bear_report';
         return '<div class="edit-form">' +
           '<div class="edit-grid">' +
             field('Lokalita', '<input data-f="location" type="text" value="' + esc(r.location || '') + '">', true) +
             field('Dátum nahlásenia', '<input data-f="reportedAt" type="datetime-local" value="' + toLocalInputValue(r.reported_at) + '">') +
             field('Stav', '<select data-f="status">' + sel(r.status || 'approved', [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
-            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '">') +
+            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '"' + (isUserReport ? ' disabled' : '') + '>') +
             field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
             field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
-            field('URL', '<input data-f="url" type="url" value="' + esc(r.url || '') + '">', true) +
+            field('URL', '<input data-f="url" type="url" value="' + esc(r.url || '') + '"' + (isUserReport ? ' disabled' : '') + '>', true) +
             field('Poznámka', '<textarea data-f="note">' + esc(r.note || '') + '</textarea>', true) +
           '</div>' +
           '<div class="edit-actions">' +
@@ -2935,6 +3494,8 @@
       }
 
       async function loadContent() {
+        if (contentState.loading) return;
+        contentState.loading = true;
         const wrap = document.getElementById('contentTableWrap');
         wrap.innerHTML = '<div class="content-empty">Načítavam…</div>';
         try {
@@ -2947,32 +3508,133 @@
           contentState.openId = null;
           setText('segNewsCount', contentState.news.length);
           setText('segSightingsCount', contentState.sightings.length);
+          updateContentSettings();
           renderContentTable();
+          renderOverview();
         } catch (err) {
           wrap.innerHTML = '<div class="content-empty">Nepodarilo sa načítať obsah: ' + esc(err.message) + '</div>';
+          setText('overviewPublishedTotal', 'N/A');
+          setText('overviewRecentTotal', 'N/A');
+          setText('overviewMissingCoords', 'N/A');
+          document.getElementById('overviewRecent').innerHTML =
+            '<div class="overview-empty">Záznamy sa nepodarilo načítať. Skúste databázu obnoviť.</div>';
+        } finally {
+          contentState.loading = false;
         }
+      }
+
+      function setContentType(type) {
+        contentState.type = type;
+        contentState.page = 1;
+        contentState.openId = null;
+        document.querySelectorAll('#contentTypeToggle .seg-btn')
+          .forEach(button => button.classList.toggle('active', button.dataset.type === type));
+        updateContentSettings();
+        renderContentTable();
+      }
+
+      function openContentRecord(type, id) {
+        setContentType(type);
+        contentState.search = String(id);
+        document.getElementById('contentSearch').value = contentState.search;
+        switchTab('content');
+        renderContentTable();
+      }
+
+      function resetContentFilters() {
+        Object.assign(contentState, {
+          search: '', status: '', source: '', dateRange: '', category: '', origin: '', coords: '', page: 1,
+        });
+        document.getElementById('contentSearch').value = '';
+        document.getElementById('contentStatusFilter').value = '';
+        updateContentSettings();
+        renderContentTable();
+      }
+
+      function csvCell(value) {
+        const text = String(value == null ? '' : value);
+        return '"' + text.replaceAll('"', '""') + '"';
+      }
+
+      function exportContentCsv() {
+        const type = contentState.type;
+        const rows = filteredSortedList();
+        const columns = visibleColumns(type);
+        const lines = [columns.map(column => csvCell(column.label)).join(',')];
+        rows.forEach(record => {
+          lines.push(columns.map(column => {
+            if (column.key === 'place') return csvCell(contentNewsLocations(record).map(location => location.place).filter(Boolean).join('; '));
+            if (column.key === 'has_coords') return csvCell(recordHasCoordinates(record) ? 'áno' : 'nie');
+            return csvCell(record[column.key]);
+          }).join(','));
+        });
+        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'kde-je-medved-' + (type === 'news' ? 'spravy' : 'hlasenia') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 0);
       }
 
       // Toolbar wiring
       document.getElementById('contentTypeToggle').addEventListener('click', (e) => {
         const btn = e.target.closest('.seg-btn');
         if (!btn) return;
-        contentState.type = btn.dataset.type;
-        contentState.openId = null;
-        document.querySelectorAll('#contentTypeToggle .seg-btn')
-          .forEach((b) => b.classList.toggle('active', b === btn));
-        renderContentTable();
+        setContentType(btn.dataset.type);
       });
       document.getElementById('contentSearch').addEventListener('input', (e) => {
         contentState.search = e.target.value;
+        contentState.page = 1;
         contentState.openId = null;
         renderContentTable();
       });
       document.getElementById('contentStatusFilter').addEventListener('change', (e) => {
         contentState.status = e.target.value;
+        contentState.page = 1;
         contentState.openId = null;
         renderContentTable();
       });
+      const filterBindings = [
+        ['contentSourceFilter', 'source'],
+        ['contentDateFilter', 'dateRange'],
+        ['contentCategoryFilter', 'category'],
+        ['contentOriginFilter', 'origin'],
+        ['contentCoordsFilter', 'coords'],
+      ];
+      filterBindings.forEach(([id, key]) => document.getElementById(id).addEventListener('change', event => {
+        contentState[key] = event.target.value;
+        contentState.page = 1;
+        contentState.openId = null;
+        renderContentTable();
+      }));
+      document.getElementById('contentPageSize').addEventListener('change', event => {
+        contentState.perPage = Number(event.target.value) || 25;
+        contentState.page = 1;
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentDensity').addEventListener('change', event => {
+        contentState.density = event.target.value === 'compact' ? 'compact' : 'comfortable';
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentColumnSettings').addEventListener('change', event => {
+        const checkbox = event.target.closest('[data-column-key]');
+        if (!checkbox) return;
+        const type = contentState.type;
+        const currentlyVisible = visibleColumns(type).length;
+        if (!checkbox.checked && currentlyVisible <= 1) {
+          checkbox.checked = true;
+          return;
+        }
+        contentState.columns[type] = contentState.columns[type] || {};
+        contentState.columns[type][checkbox.dataset.columnKey] = checkbox.checked;
+        contentState.openId = null;
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentReset').addEventListener('click', resetContentFilters);
+      document.getElementById('contentExport').addEventListener('click', exportContentCsv);
       document.getElementById('contentReload').addEventListener('click', loadContent);
     </script>
   </body>

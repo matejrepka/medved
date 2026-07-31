@@ -41,6 +41,7 @@ import {
   confirmEmailSubscription,
   deleteEmailSubscription,
   hashIp,
+  loadAllBearReports,
   loadAllNews,
   loadAllSightings,
   loadApprovedBearReports,
@@ -60,6 +61,7 @@ import {
   saveTumedvedLogs,
   saveWebsiteLog,
   updateBearReportStatus,
+  updateBearReportFields,
   updateNewsFields,
   updateSightingFields,
   updateSightingStatus,
@@ -1196,18 +1198,25 @@ app.post("/api/reports", async (req, res) => {
       lng: Number(lng) || null,
       reportedDate: reportedDate || new Date().toISOString(),
     };
-    const spamCheck = await classifyReportSpam(report);
     const result = await saveBearReport({
       ...report,
       status: "pending",
     });
-    await flushTelegramNotifications("public report");
-
-    console.log(
-      `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=pending`
-    );
-
     res.json({ ok: true, id: result?.id, published: false, moderationStatus: "pending" });
+
+    // Uloženie je jediná práca, ktorú musí formulár dokončiť pred
+    // odpoveďou. AI kontrola nemení stav (hlásenie vždy čaká na
+    // moderovanie) a Telegram má trvácny outbox, preto ich spustíme na pozadí.
+    telegramService.kick();
+    classifyReportSpam(report)
+      .then((spamCheck) => {
+        console.log(
+          `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=pending`
+        );
+      })
+      .catch((error) => {
+        console.warn(`[report spam ai] background classification failed: ${error.message}`);
+      });
   } catch (err) {
     console.error("[reports] save failed:", err.message);
     res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť hlásenie." });
@@ -1897,7 +1906,14 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
 
 app.get("/api/admin/content", adminAuth, async (_req, res) => {
   try {
-    const [news, sightings] = await Promise.all([loadAllNews(), loadAllSightings()]);
+    const [news, scrapedSightings, bearReports] = await Promise.all([
+      loadAllNews(),
+      loadAllSightings(),
+      loadAllBearReports(),
+    ]);
+    const sightings = [...scrapedSightings, ...bearReports].sort(
+      (a, b) => new Date(b.reported_at || 0).getTime() - new Date(a.reported_at || 0).getTime()
+    );
     res.json({ ok: true, news, sightings });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -1929,10 +1945,15 @@ app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
 
 app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
   try {
-    await updateSightingFields(req.params.id, req.body || {});
-    await sightingsStore.loadFromDatabase().catch((err) => {
-      console.error("[sighting edit] reload failed:", err.message);
-    });
+    const reportMatch = /^report-(\d+)$/.exec(req.params.id);
+    if (reportMatch) {
+      await updateBearReportFields(Number(reportMatch[1]), req.body || {});
+    } else {
+      await updateSightingFields(req.params.id, req.body || {});
+      await sightingsStore.loadFromDatabase().catch((err) => {
+        console.error("[sighting edit] reload failed:", err.message);
+      });
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error("[sighting edit] failed:", err.message);
@@ -2029,10 +2050,12 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       }
     }
 
-    await flushTelegramNotifications("admin warning");
-    await flushEmailNotifications("admin warning");
-
     res.json({ ok: true });
+
+    // DB triggre už vytvorili trvácne outbox položky. Workerov zobudíme
+    // bez blokovania odpovede formulára; retry a interval ostávajú nezmenené.
+    telegramService.kick();
+    emailService.kick();
   } catch (err) {
     console.error("[manual warning] save failed:", err.message);
     res.status(err.statusCode || 500).json({ ok: false, error: err.message });
