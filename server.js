@@ -601,9 +601,9 @@ function renderSsrNewsLocations(item) {
   if (!locations.length || (item.category !== "warning" && !item.isIncident)) return "";
 
   return `<div class="news-location-links" aria-label="Lokality varovania">
-    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Lokality</span>
+    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Zobraziť na mape</span>
     ${locations.map((location, index) => location.hasCoords
-      ? `<a href="#mapViewport" data-news-marker="${escapeHtml(`${item.id}:location:${index}`)}" data-lat="${escapeHtml(location.lat)}" data-lng="${escapeHtml(location.lng)}">${escapeHtml(location.place)}</a>`
+      ? `<a href="#mapViewport" data-news-marker="${escapeHtml(`${item.id}:location:${index}`)}" data-lat="${escapeHtml(location.lat)}" data-lng="${escapeHtml(location.lng)}" aria-label="Zobraziť lokalitu ${escapeHtml(location.place)} na mape">${escapeHtml(location.place)}</a>`
       : `<span class="news-location-name">${escapeHtml(location.place)}</span>`
     ).join("")}
   </div>`;
@@ -639,7 +639,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h4>
       <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}${item.place ? `<span class="meta-place">${escapeHtml(item.place)}</span>` : ""}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
       ${locations}<div class="card-actions"><div class="card-main-actions">${link}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
     </article>`;

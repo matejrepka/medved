@@ -1326,11 +1326,10 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.news-location-label,
 .news-location-name,
 .news-location-links a {
   display: inline-flex;
@@ -1343,9 +1342,13 @@ main {
 }
 
 .news-location-label {
+  display: inline-flex;
+  flex: 0 0 100%;
+  align-items: center;
   gap: 5px;
-  padding-left: 0;
   color: var(--ink-3);
+  font-size: 0.76rem;
+  font-weight: 650;
 }
 
 .news-location-name {
@@ -4636,28 +4639,41 @@ html.dialog-open body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px 16px;
-  margin-top: 12px;
+  justify-content: flex-start;
+  gap: 8px 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .card-main-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: 8px;
   min-width: 0;
 }
 
 .card-main-actions .source-links {
-  gap: 4px 8px;
+  gap: 8px;
 }
 
 .card-actions .card-link,
 .card-actions .source-links .card-link {
   min-height: 44px;
   margin-top: 0;
-  padding: 7px 4px;
+  padding: 7px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.card-actions .card-link:hover,
+.card-actions .card-link:focus-visible {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  outline: none;
 }
 
 .card-map-action {
@@ -4686,6 +4702,10 @@ html.dialog-open body {
 .card-actions .card-link:active,
 .card-correction:active {
   transform: translateY(1px);
+}
+
+.card-correction {
+  margin-left: auto;
 }
 
 .meta-coverage,
@@ -5515,8 +5535,8 @@ html.dialog-open body {
   }
 
   .card-actions {
-    align-items: center;
-    gap: 2px 12px;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .card-main-actions {
@@ -5525,6 +5545,7 @@ html.dialog-open body {
 
   .card-correction {
     min-height: 44px;
+    margin-left: 0;
   }
 
   .card-map-action {

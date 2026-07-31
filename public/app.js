@@ -1231,9 +1231,9 @@ function newsLocationLinksHtml(n) {
   const locations = newsLocations(n);
   if (!locations.length) return "";
   return `<div class="news-location-links" aria-label="Lokality varovania">
-    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Lokality</span>
+    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Zobraziť na mape</span>
     ${locations.map((location, index) => location.hasCoords
-      ? `<a href="#mapViewport" data-news-marker="${esc(newsMarkerId(n.id, index))}" data-lat="${location.lat}" data-lng="${location.lng}">${esc(location.place)}</a>`
+      ? `<a href="#mapViewport" data-news-marker="${esc(newsMarkerId(n.id, index))}" data-lat="${location.lat}" data-lng="${location.lng}" aria-label="Zobraziť lokalitu ${esc(location.place)} na mape">${esc(location.place)}</a>`
       : `<span class="news-location-name">${esc(location.place)}</span>`
     ).join("")}
   </div>`;
@@ -1256,7 +1256,6 @@ function renderNews() {
       (n, i) => {
         const point = newsMapPoint(n);
         const isWarning = n.category === "warning";
-        const place = n.isIncident || isWarning ? newsPlaceLabel(n) : "";
         const locationLinks = n.isIncident || isWarning ? newsLocationLinksHtml(n) : "";
         const href = newsUrl(n);
         const kind = newsRecordKind(n);
@@ -1292,11 +1291,6 @@ function renderNews() {
           ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj:</span>${esc(n.source)}</span>` : ""}
           ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
           ${n.verificationStatus === "official_notice" ? '<span class="meta-official">Obsahuje úradné oznámenie</span>' : ""}
-          ${
-            place
-              ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i>${esc(place)}</span>`
-              : ""
-          }
           <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované:</span>${esc(fmtDate(n.date))}</time>
         </div>
         ${
@@ -1308,7 +1302,7 @@ function renderNews() {
         }
         ${locationLinks}
         <div class="card-actions">
-          <div class="card-main-actions">${articleLink}${mapAction}</div>
+          <div class="card-main-actions">${articleLink}</div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
         </div>
         ${coverage}
