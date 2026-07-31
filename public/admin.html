@@ -668,6 +668,118 @@
       .review-msg:empty { display: none; }
       [data-theme="dark"] .review-msg { color: #f87171; }
 
+      .incident-review {
+        margin: 14px 0 0;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+      .incident-review legend {
+        padding: 0 6px;
+        color: var(--ink);
+        font-size: 0.84rem;
+        font-weight: 700;
+      }
+      .incident-review-intro {
+        margin: 0 0 10px;
+        color: var(--ink-3);
+        font-size: 0.76rem;
+        line-height: 1.45;
+      }
+      .incident-fields {
+        display: grid;
+        gap: 10px;
+      }
+      .incident-field label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--ink-2);
+        font-size: 0.78rem;
+        font-weight: 650;
+      }
+      .incident-field input,
+      .incident-field select,
+      .incident-field textarea {
+        width: 100%;
+        min-height: 44px;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font: 1rem/1.35 var(--font-sans);
+      }
+      .incident-field textarea { min-height: 72px; resize: vertical; }
+      .incident-field input:focus,
+      .incident-field select:focus,
+      .incident-field textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+        outline: none;
+      }
+      .incident-search-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 10px;
+      }
+      .incident-search-row input {
+        flex: 1 1 220px;
+        min-width: 0;
+        min-height: 44px;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font: 1rem/1.35 var(--font-sans);
+      }
+      .incident-search-row .review-btn { min-height: 44px; }
+      .incident-search-label,
+      .incident-source-field { margin-top: 10px; }
+      .incident-match-results {
+        display: grid;
+        gap: 7px;
+        margin-top: 10px;
+      }
+      .incident-option {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 3px 9px;
+        min-height: 44px;
+        padding: 9px 10px;
+        color: var(--ink-2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .incident-option:has(input:checked) {
+        color: var(--ink);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .incident-option input { grid-row: 1 / span 2; margin-top: 3px; accent-color: var(--accent); }
+      .incident-option strong { font-size: 0.88rem; }
+      .incident-option small { color: var(--ink-3); font-size: 0.78rem; line-height: 1.4; }
+      .incident-match-status {
+        margin: 0;
+        color: var(--ink-3);
+        font-size: 0.76rem;
+      }
+      .incident-create-fields { margin-top: 10px; }
+      .incident-create-fields[hidden] { display: none; }
+
+      @media (min-width: 720px) {
+        .incident-fields { grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.3fr); }
+        .incident-field.full { grid-column: 1 / -1; }
+        .incident-field input,
+        .incident-field select,
+        .incident-field textarea,
+        .incident-search-row input { font-size: 0.84rem; }
+      }
+
       /* ---- Manual add form ---- */
       .add-form {
         max-width: 560px;
@@ -1223,7 +1335,7 @@
                 <span class="section-count" id="pendingNewsCount">0</span>
               </div>
               <button class="btn-approve-all" id="approveAllNews" style="display:none">
-                <i class="ph ph-checks"></i> Schváliť všetky
+                <i class="ph ph-checks"></i> Schváliť bez spojenia
               </button>
             </div>
             <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
@@ -1492,6 +1604,16 @@
         const d = document.createElement('div');
         d.textContent = str;
         return d.innerHTML;
+      };
+
+      const safeHttpHref = (value) => {
+        if (!value) return '';
+        try {
+          const url = new URL(value, window.location.origin);
+          return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+        } catch (_) {
+          return '';
+        }
       };
 
       function updateTabCount(id, count) {
@@ -1887,21 +2009,35 @@
 
       let newsCardSeq = 0;
 
+      function suggestedSourceType(item) {
+        const text = [item.source, item.article_url, item.google_news_url, item.link]
+          .filter(Boolean).join(' ').toLocaleLowerCase('sk')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (/sop sr|statna ochrana prirody|zasahovy tim|policia|policajny zbor|mestska policia|\bobec\b|\bmesto\b|sopsr\.sk|minv\.sk/.test(text)) return 'official_notice';
+        if (/tasr|sita|teraz\.sk|webnoviny/.test(text)) return 'syndication';
+        if (/markiza|joj|rtvs|stvr|sme|pravda|aktuality|dennik n|hnonline|topky/.test(text)) return 'national';
+        return 'local_original';
+      }
+
       function renderNewsCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
         card.dataset.itemId = item.id;
 
         const groupName = 'cat-' + (++newsCardSeq);
+        const incidentGroupName = 'incident-' + newsCardSeq;
         const isWarning = item.category === 'warning';
+        const sourceType = suggestedSourceType(item);
+        const articleHref = safeHttpHref(item.article_url || item.google_news_url || item.link);
 
         card.innerHTML =
           '<div class="review-card-head">' +
             '<div>' +
               '<p class="review-card-title">' + esc(item.title) + '</p>' +
               '<p class="review-card-meta">' +
-                esc(item.source || '') + ' · ' + formatDateTime(item.published_at) +
+                esc(item.source || 'Zdroj neuvedený') + ', publikované ' + formatDateTime(item.published_at) +
               '</p>' +
+              '<p class="review-card-meta">Importované ' + formatDateTime(item.scraped_at) + '</p>' +
             '</div>' +
             '<div class="review-actions">' +
               '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
@@ -1909,7 +2045,7 @@
             '</div>' +
           '</div>' +
           (item.snippet ? '<p class="review-card-body">' + esc(item.snippet) + '</p>' : '') +
-          (item.link ? '<p class="review-card-meta"><a href="' + esc(item.link) + '" target="_blank" rel="noopener">' + esc(item.link) + '</a></p>' : '') +
+          (articleHref ? '<p class="review-card-meta"><a href="' + esc(articleHref) + '" target="_blank" rel="noopener">' + esc(articleHref) + '</a></p>' : '') +
           '<div class="review-cat">' +
             '<label class="review-cat-opt">' +
               '<input type="radio" name="' + groupName + '" value="article"' + (isWarning ? '' : ' checked') + '>' +
@@ -1929,6 +2065,61 @@
             '<div class="place-search-results" hidden></div>' +
             '<p class="review-loc-hint">Vyhľadajte a vyberte obec, dolinu, jazero alebo inú lokalitu. Zobrazí sa na verejnej mape hranatou značkou.</p>' +
           '</div>' +
+          '<fieldset class="incident-review">' +
+            '<legend>Priradenie k reálnej udalosti</legend>' +
+            '<p class="incident-review-intro">Dátum udalosti a lokalita sú oddelené od publikovania článku. Ak ich nemožno spoľahlivo určiť, ponechajte správu bez spojenia.</p>' +
+            '<div class="incident-fields">' +
+              '<div class="incident-field">' +
+                '<label for="event-date-' + groupName + '">Dátum udalosti</label>' +
+                '<input id="event-date-' + groupName + '" class="incident-event-date" type="date">' +
+              '</div>' +
+              '<div class="incident-field">' +
+                '<label for="incident-loc-' + groupName + '">Lokalita udalosti</label>' +
+                '<div class="place-search-row">' +
+                  '<input id="incident-loc-' + groupName + '" class="review-loc-input incident-locality" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off">' +
+                  '<button class="place-search-btn incident-loc-search" type="button"><i class="ph ph-magnifying-glass"></i> Lokalita</button>' +
+                '</div>' +
+                '<div class="place-search-results incident-loc-results" hidden></div>' +
+                '<p class="review-loc-hint incident-loc-hint">Vyhľadajte a vyberte presnú lokalitu udalosti.</p>' +
+              '</div>' +
+            '</div>' +
+            '<label class="review-loc-label incident-search-label" for="incident-query-' + groupName + '"><i class="ph ph-magnifying-glass"></i> Iná existujúca udalosť (voliteľné)</label>' +
+            '<div class="incident-search-row">' +
+              '<input id="incident-query-' + groupName + '" class="incident-query" type="search" placeholder="Názov alebo lokalita">' +
+              '<button class="review-btn incident-match-search" type="button"><i class="ph ph-git-merge"></i> Nájsť udalosť</button>' +
+            '</div>' +
+            '<div class="incident-match-results">' +
+              '<label class="incident-option">' +
+                '<input type="radio" name="' + incidentGroupName + '" value="ungrouped" checked>' +
+                '<strong>Schváliť bez spojenia</strong>' +
+                '<small>Bezpečná voľba, keď dátum alebo miesto nie sú isté.</small>' +
+              '</label>' +
+              '<label class="incident-option">' +
+                '<input type="radio" name="' + incidentGroupName + '" value="create">' +
+                '<strong>Vytvoriť novú udalosť</strong>' +
+                '<small>Použite, keď ide o samostatnú udalosť a údaje sú spoľahlivé.</small>' +
+              '</label>' +
+              '<p class="incident-match-status" aria-live="polite">Zatiaľ bez vyhľadania historických udalostí.</p>' +
+            '</div>' +
+            '<div class="incident-create-fields" hidden>' +
+              '<div class="incident-fields">' +
+                '<div class="incident-field full"><label>Názov udalosti</label><input class="incident-title" type="text" maxlength="300" value="' + esc(item.title || '') + '"></div>' +
+                '<div class="incident-field"><label>Presnosť dátumu</label><select class="incident-date-precision"><option value="day">Presný deň</option><option value="approximate">Približný deň</option></select></div>' +
+                '<div class="incident-field"><label>Stav udalosti</label><select class="incident-status"><option value="active">Aktívna</option><option value="resolved">Ukončená</option></select></div>' +
+                '<div class="incident-field full"><label>Krátke zhrnutie</label><textarea class="incident-summary" maxlength="1500">' + esc(item.snippet || '') + '</textarea></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="incident-field incident-source-field">' +
+              '<label>Typ tohto zdroja</label>' +
+              '<select class="incident-source-type">' +
+                '<option value="official_notice"' + (sourceType === 'official_notice' ? ' selected' : '') + '>Úradné oznámenie (ŠOP, obec, polícia)</option>' +
+                '<option value="local_original"' + (sourceType === 'local_original' ? ' selected' : '') + '>Miestny alebo priamy zdroj</option>' +
+                '<option value="national"' + (sourceType === 'national' ? ' selected' : '') + '>Celoštátne médium</option>' +
+                '<option value="syndication"' + (sourceType === 'syndication' ? ' selected' : '') + '>Prevzatá správa alebo agentúra</option>' +
+                '<option value="other"' + (sourceType === 'other' ? ' selected' : '') + '>Iný zdroj</option>' +
+              '</select>' +
+            '</div>' +
+          '</fieldset>' +
           '<p class="review-msg" role="alert"></p>';
 
         const locWrap = card.querySelector('.review-loc');
@@ -1949,7 +2140,120 @@
             : null
         );
 
-        card.querySelectorAll('input[type="radio"]').forEach(r => {
+        const incidentDateInput = card.querySelector('.incident-event-date');
+        const incidentLocalityInput = card.querySelector('.incident-locality');
+        const incidentQueryInput = card.querySelector('.incident-query');
+        const incidentMatchResults = card.querySelector('.incident-match-results');
+        const incidentMatchStatus = card.querySelector('.incident-match-status');
+        const incidentCreateFields = card.querySelector('.incident-create-fields');
+        const incidentPicker = wireLocationSearch(
+          incidentLocalityInput,
+          card.querySelector('.incident-loc-search'),
+          card.querySelector('.incident-loc-results'),
+          card.querySelector('.incident-loc-hint'),
+          item.place && Number.isFinite(initialLat) && Number.isFinite(initialLng)
+            ? { name: item.place, label: item.place, lat: initialLat, lng: initialLng }
+            : null
+        );
+
+        function incidentChoice() {
+          return card.querySelector('input[name="' + incidentGroupName + '"]:checked');
+        }
+
+        function syncIncidentChoice() {
+          incidentCreateFields.hidden = incidentChoice()?.value !== 'create';
+        }
+
+        incidentMatchResults.addEventListener('change', syncIncidentChoice);
+        syncIncidentChoice();
+
+        function invalidateIncidentMatches() {
+          const existing = incidentMatchResults.querySelectorAll('.incident-option.existing');
+          if (!existing.length) return;
+          existing.forEach((option) => option.remove());
+          if (incidentChoice()?.value === 'attach') {
+            card.querySelector('input[name="' + incidentGroupName + '"][value="ungrouped"]').checked = true;
+            syncIncidentChoice();
+          }
+          incidentMatchStatus.textContent = 'Dátum alebo lokalita sa zmenili. Vyhľadajte zhodu znova.';
+        }
+
+        incidentDateInput.addEventListener('change', invalidateIncidentMatches);
+        incidentLocalityInput.addEventListener('input', invalidateIncidentMatches);
+        incidentQueryInput.addEventListener('input', invalidateIncidentMatches);
+        card.querySelector('.incident-loc-results').addEventListener('click', () => {
+          setTimeout(invalidateIncidentMatches, 0);
+        });
+
+        card.querySelector('.incident-match-search').addEventListener('click', async function() {
+          const eventDate = incidentDateInput.value;
+          const locality = incidentLocalityInput.value.trim();
+          const manualQuery = incidentQueryInput.value.trim();
+          if (!manualQuery && (!eventDate || !locality)) {
+            incidentMatchStatus.textContent = 'Zadajte dátum a lokalitu, alebo názov inej existujúcej udalosti.';
+            (!eventDate ? incidentDateInput : incidentLocalityInput).focus();
+            return;
+          }
+
+          this.disabled = true;
+          this.innerHTML = '<i class="ph ph-spinner spin"></i> Hľadám';
+          incidentMatchStatus.textContent = 'Hľadám možné zhody v histórii.';
+          incidentMatchResults.querySelectorAll('.incident-option.existing').forEach((option) => option.remove());
+          const requestKey = eventDate + '|' + locality + '|' + manualQuery;
+
+          try {
+            const params = manualQuery
+              ? new URLSearchParams({ q: manualQuery })
+              : new URLSearchParams({ eventDate, locality, title: item.title || '' });
+            const selectedIncidentPlace = incidentPicker.getSelected();
+            if (selectedIncidentPlace) {
+              params.set('lat', selectedIncidentPlace.lat);
+              params.set('lng', selectedIncidentPlace.lng);
+            }
+            const res = await authFetch('/api/admin/incidents?' + params.toString());
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'Vyhľadávanie zlyhalo.');
+            if (requestKey !== incidentDateInput.value + '|' + incidentLocalityInput.value.trim() + '|' + incidentQueryInput.value.trim()) {
+              incidentMatchStatus.textContent = 'Dátum alebo lokalita sa zmenili. Vyhľadajte zhodu znova.';
+              return;
+            }
+
+            const matches = data.incidents || [];
+            if (!matches.length) {
+              incidentMatchStatus.textContent = 'Nenašla sa presvedčivá zhoda. Skontrolujte údaje alebo vytvorte novú udalosť.';
+              const create = card.querySelector('input[name="' + incidentGroupName + '"][value="create"]');
+              create.checked = true;
+              syncIncidentChoice();
+              return;
+            }
+
+            matches.forEach((match) => {
+              const label = document.createElement('label');
+              label.className = 'incident-option existing';
+              const radio = document.createElement('input');
+              radio.type = 'radio';
+              radio.name = incidentGroupName;
+              radio.value = 'attach';
+              radio.dataset.incidentId = match.id;
+              const strong = document.createElement('strong');
+              strong.textContent = match.title;
+              const small = document.createElement('small');
+              const reasons = match.match?.reasons?.join(', ') || 'súvisiaci záznam';
+              small.textContent = match.event_date + ', ' + match.locality + ', zdroje: ' +
+                match.source_count + ', ' + reasons;
+              label.append(radio, strong, small);
+              incidentMatchResults.insertBefore(label, incidentMatchStatus);
+            });
+            incidentMatchStatus.textContent = 'Možné zhody sú len návrhy. Pripojenie vyžaduje váš výber.';
+          } catch (err) {
+            incidentMatchStatus.textContent = err.message;
+          } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="ph ph-git-merge"></i> Nájsť udalosť';
+          }
+        });
+
+        card.querySelectorAll('.review-cat input[type="radio"]').forEach(r => {
           r.addEventListener('change', () => {
             const warn = card.querySelector('input[type="radio"]:checked').value === 'warning';
             locWrap.hidden = !warn;
@@ -1962,7 +2266,7 @@
         });
 
         card.querySelector('.review-btn.approve').addEventListener('click', () => {
-          const category = card.querySelector('input[type="radio"]:checked').value;
+          const category = card.querySelector('.review-cat input[type="radio"]:checked').value;
           const place = locInput.value.trim();
           if (category === 'warning' && !place) {
             msg.textContent = 'Zadajte lokalitu pre medvedie varovanie.';
@@ -1970,12 +2274,35 @@
             return;
           }
           const selected = locationPicker.getSelected();
+          const incidentSelected = incidentPicker.getSelected();
+          const choice = incidentChoice();
+          const incidentAction = choice?.value || 'ungrouped';
+          if (incidentAction === 'create' && (!incidentDateInput.value || !incidentLocalityInput.value.trim())) {
+            msg.textContent = 'Nová udalosť potrebuje dátum a spoľahlivú lokalitu.';
+            (!incidentDateInput.value ? incidentDateInput : incidentLocalityInput).focus();
+            return;
+          }
+          if (incidentAction === 'attach' && !choice.dataset.incidentId) {
+            msg.textContent = 'Vyberte existujúcu udalosť.';
+            return;
+          }
           reviewNews(item.id, {
             status: 'approved',
             category,
             place,
             lat: selected ? selected.lat : null,
             lng: selected ? selected.lng : null,
+            incidentAction,
+            incidentId: choice?.dataset.incidentId || null,
+            eventDate: incidentDateInput.value || null,
+            eventDatePrecision: card.querySelector('.incident-date-precision').value,
+            incidentLocality: incidentLocalityInput.value.trim() || null,
+            incidentLat: incidentSelected ? incidentSelected.lat : null,
+            incidentLng: incidentSelected ? incidentSelected.lng : null,
+            incidentTitle: card.querySelector('.incident-title').value.trim(),
+            incidentSummary: card.querySelector('.incident-summary').value.trim(),
+            incidentStatus: card.querySelector('.incident-status').value,
+            sourceType: card.querySelector('.incident-source-type').value,
           }, card);
         });
 
@@ -2035,7 +2362,10 @@
       async function approveAll(type, listId, btn) {
         const cards = Array.from(document.querySelectorAll('#' + listId + ' .review-card'));
         if (!cards.length) return;
-        if (!confirm('Schváliť ' + cards.length + ' položiek?')) return;
+        const confirmation = type === 'news'
+          ? 'Schváliť ' + cards.length + ' správ ako články bez spojenia s udalosťou?'
+          : 'Schváliť ' + cards.length + ' položiek?';
+        if (!confirm(confirmation)) return;
 
         btn.disabled = true;
         const origText = btn.innerHTML;
@@ -2058,7 +2388,7 @@
               ? '/api/admin/news/' + encodeURIComponent(itemId) + '/review'
               : '/api/admin/' + kind + '/' + encodeURIComponent(itemId) + '/status';
             const body = kind === 'news'
-              ? { status: 'approved', category: 'article' }
+              ? { status: 'approved', category: 'article', incidentAction: 'ungrouped' }
               : { status: 'approved' };
             const res = await authFetch(url, {
               method: 'POST',
@@ -2295,10 +2625,14 @@
         news: [
           { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || 'Bez titulku') + '</strong>' },
           { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
-          { key: 'published_at', label: 'Dátum', render: (r) => formatDateTime(r.published_at) },
+          { key: 'published_at', label: 'Publikované', render: (r) => formatDateTime(r.published_at) },
+          { key: 'scraped_at', label: 'Importované', render: (r) => formatDateTime(r.scraped_at) },
           { key: 'place', label: 'Lokalita', render: (r) => esc(r.place || 'Bez lokality') },
           { key: 'category', label: 'Kategória', render: (r) => catBadge(r.category) },
           { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status) },
+          { key: 'incident_id', label: 'Udalosť', render: (r) => r.incident_id
+            ? '<span class="status-badge approved" title="' + esc(r.incident_id) + '">Priradená</span>'
+            : '<span class="coord-no">Bez spojenia</span>' },
         ],
         sightings: [
           { key: 'location', label: 'Lokalita', render: (r) => '<strong>' + esc(r.location || 'Bez lokality') + '</strong>' },
@@ -2350,7 +2684,7 @@
       }
 
       function sortValue(type, key, r) {
-        if (key === 'published_at' || key === 'reported_at') {
+        if (key === 'published_at' || key === 'reported_at' || key === 'scraped_at') {
           const t = new Date(r[key] || 0).getTime();
           return Number.isFinite(t) ? t : 0;
         }
@@ -2474,12 +2808,14 @@
             field('Titulok', '<input data-f="title" type="text" value="' + esc(r.title || '') + '">', true) +
             field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '">') +
             field('Dátum publikovania', '<input data-f="publishedAt" type="datetime-local" value="' + toLocalInputValue(r.published_at) + '">') +
+            field('Importované', '<input type="datetime-local" value="' + toLocalInputValue(r.scraped_at) + '" disabled>') +
             field('Stav', '<select data-f="status">' + sel(r.status, [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
             field('Kategória', '<select data-f="category">' + sel(r.category === 'warning' ? 'warning' : 'article', [['article','Článok'],['warning','Medvedie varovanie']]) + '</select>') +
             field('Lokalita (obec)', '<input data-f="place" type="text" value="' + esc(r.place || '') + '">') +
             field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
             field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
             field('Odkaz', '<input data-f="link" type="url" value="' + esc(r.link || '') + '">', true) +
+            field('Pôvodná adresa článku', '<input type="url" value="' + esc(r.article_url || r.google_news_url || r.link || '') + '" disabled>', true) +
             field('Krátky popis', '<textarea data-f="snippet">' + esc(r.snippet || '') + '</textarea>', true) +
           '</div>' +
           '<div class="edit-actions">' +

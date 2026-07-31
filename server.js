@@ -23,6 +23,7 @@ import {
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
+import { INCIDENT_SOURCE_TYPES } from "./src/incidents.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import {
   deleteEmailSubscription,
@@ -32,6 +33,7 @@ import {
   loadApprovedBearReports,
   loadBearReports,
   loadEmailSubscriptions,
+  loadIncidentSuggestions,
   loadNewsLogs,
   loadPendingNews,
   loadTumedvedLogs,
@@ -45,10 +47,9 @@ import {
   saveWebsiteLog,
   updateBearReportStatus,
   updateNewsFields,
-  updateNewsStatus,
   updateSightingFields,
   updateSightingStatus,
-  reviewNews,
+  reviewNewsWithIncident,
 } from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -586,14 +587,30 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
 function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limit = 12) {
   if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
   return items.slice(0, limit).map((item) => {
-    const href = item.articleUrl || item.link || item.googleNewsUrl || "";
+    const href = safeHttpUrl(item.articleUrl || item.link || item.googleNewsUrl || "");
     const link = href
-      ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať správu <span aria-hidden="true">→</span></a>`
+      ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať zdroj <span aria-hidden="true">→</span></a>`
       : "";
-    return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}">
+    const coverage = item.isIncident && Array.isArray(item.coverage)
+      ? `<details class="coverage-details" id="coverage-${escapeHtml(item.incidentId)}">
+          <summary>Všetky zdroje (${item.coverage.length})</summary>
+          <ul class="coverage-list">${item.coverage.map((article) => {
+            const articleUrl = safeHttpUrl(article.url);
+            return `<li><div><strong>${escapeHtml(article.source || "Verejný zdroj")}</strong><span>${escapeHtml(article.sourceTypeLabel || "Iný zdroj")}${article.publishedAt ? `, ${escapeHtml(formatSlovakDate(article.publishedAt, true))}` : ""}</span></div>${articleUrl ? `<a href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener noreferrer">Otvoriť článok <span aria-hidden="true">→</span></a>` : ""}</li>`;
+          }).join("")}</ul>
+        </details>`
+      : "";
+    const sourceCount = item.sourceCount > 1
+      ? `<span class="meta-coverage">${escapeHtml(slovakCount(item.sourceCount, "zdroj", "zdroje", "zdrojov"))}</span>`
+      : "";
+    const official = item.verificationStatus === "official_notice"
+      ? '<span class="meta-official">Obsahuje úradné oznámenie</span>'
+      : "";
+    return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
       <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
-      <div class="card-meta"><span class="meta-source">${escapeHtml(item.source || "verejný zdroj")}</span><time datetime="${escapeHtml(item.date || "")}">${escapeHtml(formatSlovakDate(item.date))}</time></div>
-      ${link}
+      <div class="card-meta"><span class="meta-source">${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}${item.place ? `<span class="meta-place">${escapeHtml(item.place)}</span>` : ""}<time datetime="${escapeHtml(item.date || "")}">${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
+      ${link ? `<div class="card-actions">${link}</div>` : ""}${coverage}
     </article>`;
   }).join("\n");
 }
@@ -1440,6 +1457,41 @@ app.get("/api/admin/locations", adminAuth, async (req, res) => {
   }
 });
 
+app.get("/api/admin/incidents", adminAuth, async (req, res) => {
+  const locality = typeof req.query.locality === "string" ? req.query.locality.trim() : "";
+  const eventDate = typeof req.query.eventDate === "string" ? req.query.eventDate.trim() : "";
+  const title = typeof req.query.title === "string" ? req.query.title.trim() : "";
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+
+  if (!query && (!locality || !eventDate)) {
+    return res.status(400).json({
+      ok: false,
+      error: "Na návrhy zadajte dátum aj lokalitu, alebo vyhľadávací text.",
+    });
+  }
+  if ([locality, title, query].some((value) => value.length > 240)) {
+    return res.status(400).json({ ok: false, error: "Vyhľadávanie je príliš dlhé." });
+  }
+
+  try {
+    const incidents = await loadIncidentSuggestions({
+      locality,
+      eventDate,
+      title,
+      query,
+      lat: Number.isFinite(lat) ? lat : null,
+      lng: Number.isFinite(lng) ? lng : null,
+    });
+    res.set("Cache-Control", "private, no-store");
+    res.json({ ok: true, incidents });
+  } catch (err) {
+    console.error("[admin incidents] search failed:", err.message);
+    res.status(500).json({ ok: false, error: "Nepodarilo sa vyhľadať existujúce udalosti." });
+  }
+});
+
 app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   const { status } = req.body || {};
   if (!["approved", "rejected"].includes(status)) {
@@ -1477,7 +1529,15 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
   try {
-    await updateNewsStatus(req.params.id, status);
+    await reviewNewsWithIncident(req.params.id, {
+      status,
+      category: "article",
+      incidentAction: "ungrouped",
+      actor: "admin",
+    });
+    await newsStore.loadFromDatabase().catch((err) => {
+      console.error("[news status] reload failed:", err.message);
+    });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -1487,17 +1547,35 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
 // Schválenie správy s kategorizáciou (varovanie/článok) a úpravou lokality.
 // Pri 'warning' prijmeme vybraný bod na mape alebo názov geokódujeme.
 app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
-  const { status, category, place, lat, lng } = req.body || {};
+  const {
+    status,
+    category,
+    place,
+    lat,
+    lng,
+    incidentAction = "ungrouped",
+    incidentId,
+    eventDate,
+    eventDatePrecision,
+    incidentLocality,
+    incidentLat,
+    incidentLng,
+    incidentTitle,
+    incidentSummary,
+    incidentStatus,
+    sourceType,
+  } = req.body || {};
   if (!["approved", "rejected"].includes(status)) {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
 
   try {
-    const fields = { status };
+    const fields = { status, actor: "admin" };
 
     if (status === "approved") {
       const cat = category === "warning" ? "warning" : "article";
       fields.category = cat;
+      let warningLocation = null;
 
       if (cat === "warning") {
         const name = typeof place === "string" ? place.trim() : "";
@@ -1506,20 +1584,68 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
             .status(400)
             .json({ ok: false, error: "Pri medvedom varovaní zadajte lokalitu." });
         }
-        const hit = await resolveAdminLocation(name, lat, lng);
-        if (!hit) {
+        warningLocation = await resolveAdminLocation(name, lat, lng);
+        if (!warningLocation) {
           return res.status(400).json({
             ok: false,
             error: `Lokalita „${name}“ sa na Slovensku nenašla. Skontrolujte názov alebo ju vyhľadajte a vyberte zo zoznamu.`,
           });
         }
-        fields.place = hit.name;
-        fields.lat = hit.lat;
-        fields.lng = hit.lng;
+        fields.place = warningLocation.name;
+        fields.lat = warningLocation.lat;
+        fields.lng = warningLocation.lng;
+      }
+
+      fields.incidentAction = ["create", "attach", "ungrouped"].includes(incidentAction)
+        ? incidentAction
+        : "ungrouped";
+      fields.sourceType = INCIDENT_SOURCE_TYPES.includes(sourceType) ? sourceType : "other";
+
+      if (fields.incidentAction === "attach") {
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(incidentId || ""))) {
+          return res.status(400).json({ ok: false, error: "Vyberte existujúcu udalosť." });
+        }
+        fields.incidentId = incidentId;
+      }
+
+      if (fields.incidentAction === "create") {
+        const dateValue = typeof eventDate === "string" ? eventDate.trim() : "";
+        const locality = typeof incidentLocality === "string" ? incidentLocality.trim() : "";
+        const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
+          ? new Date(`${dateValue}T12:00:00Z`)
+          : null;
+        if (!parsedDate || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== dateValue) {
+          return res.status(400).json({ ok: false, error: "Zadajte platný dátum skutočnej udalosti." });
+        }
+        if (!locality) {
+          return res.status(400).json({ ok: false, error: "Zadajte lokalitu skutočnej udalosti." });
+        }
+
+        const selectedIncidentLocation =
+          warningLocation && locality.toLocaleLowerCase("sk") === warningLocation.name.toLocaleLowerCase("sk")
+            ? warningLocation
+            : await resolveAdminLocation(locality, incidentLat, incidentLng);
+        if (!selectedIncidentLocation) {
+          return res.status(400).json({
+            ok: false,
+            error: `Lokalita udalosti „${locality}“ sa na Slovensku nenašla. Vyhľadajte ju a vyberte zo zoznamu.`,
+          });
+        }
+
+        fields.eventDate = dateValue;
+        fields.eventDatePrecision = eventDatePrecision === "approximate" ? "approximate" : "day";
+        fields.incidentLocality = selectedIncidentLocation.name;
+        fields.incidentLat = selectedIncidentLocation.lat;
+        fields.incidentLng = selectedIncidentLocation.lng;
+        fields.incidentTitle = typeof incidentTitle === "string" ? incidentTitle.trim().slice(0, 300) : "";
+        fields.incidentSummary = typeof incidentSummary === "string" ? incidentSummary.trim().slice(0, 1500) : "";
+        fields.incidentStatus = ["active", "resolved", "archived"].includes(incidentStatus)
+          ? incidentStatus
+          : "active";
       }
     }
 
-    await reviewNews(req.params.id, fields);
+    const incidentResult = await reviewNewsWithIncident(req.params.id, fields);
     // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
@@ -1531,6 +1657,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
       place: fields.place || null,
       lat: fields.lat ?? null,
       lng: fields.lng ?? null,
+      incident: incidentResult || null,
     });
   } catch (err) {
     console.error("[news review] failed:", err.message);
