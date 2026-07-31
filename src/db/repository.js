@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
 import { decodeHtmlEntities } from "../html-text.js";
 import { dedupeSightings, sightingSourceLinks } from "../sightings-dedupe.js";
+import { groupNewsByIncidents, rankIncidentSuggestions } from "../incidents.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
@@ -131,6 +132,27 @@ function looksLikeBearWarning(row, hasCoords) {
 function newsCategory(row, hasCoords) {
   if (row.category === "warning") return "warning";
   return looksLikeBearWarning(row, hasCoords) ? "warning" : "article";
+}
+
+function rowToNews(row) {
+  const lat = asNullableNumber(row.lat);
+  const lng = asNullableNumber(row.lng);
+  return {
+    id: row.id,
+    source: row.source,
+    title: decodeHtmlEntities(row.title),
+    link: row.link,
+    googleNewsUrl: row.google_news_url,
+    articleUrl: row.article_url,
+    snippet: decodeHtmlEntities(row.snippet || ""),
+    date: row.published_at,
+    place: row.place,
+    lat,
+    lng,
+    hasCoords: hasCoordinates(lat, lng),
+    category: newsCategory(row, hasCoordinates(lat, lng)),
+    _scrapedAt: row.scraped_at,
+  };
 }
 
 async function upsertChunks(table, rows, options) {
@@ -331,6 +353,80 @@ function isMissingColumn(error) {
   return error?.code === "42703" || /does not exist/i.test(error?.message || "");
 }
 
+async function loadIncidentLinksForNews(newsIds, columns) {
+  const supabase = getSupabase();
+  const rows = [];
+  const unique = [...new Set(newsIds.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+    const { data, error } = await supabase
+      .from("incident_news_links")
+      .select(columns)
+      .in("news_id", unique.slice(i, i + WRITE_CHUNK_SIZE));
+    if (error) throw error;
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
+async function loadIncidentLinksForIncidents(incidentIds, columns) {
+  const supabase = getSupabase();
+  const rows = [];
+  const unique = [...new Set(incidentIds.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+    const { data, error } = await supabase
+      .from("incident_news_links")
+      .select(columns)
+      .in("incident_id", unique.slice(i, i + WRITE_CHUNK_SIZE));
+    if (error) throw error;
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
+async function loadApprovedNewsRowsByIds(newsIds, columns) {
+  const supabase = getSupabase();
+  const rows = [];
+  const unique = [...new Set(newsIds.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+    const { data, error } = await supabase
+      .from("news_logs")
+      .select(columns)
+      .eq("status", "approved")
+      .in("id", unique.slice(i, i + WRITE_CHUNK_SIZE));
+    if (error) throw error;
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
+function isMissingRelation(error) {
+  return (
+    error?.code === "42P01" ||
+    error?.code === "PGRST205" ||
+    /relation .* does not exist|could not find the table/i.test(error?.message || "")
+  );
+}
+
+async function refreshIncidentPrimaryForNews(newsId) {
+  const supabase = getSupabase();
+  try {
+    const { data: link, error: linkError } = await supabase
+      .from("incident_news_links")
+      .select("incident_id")
+      .eq("news_id", newsId)
+      .maybeSingle();
+    if (linkError) throw linkError;
+    if (link?.incident_id) {
+      const { error: refreshError } = await supabase.rpc("refresh_news_incident_primary", {
+        p_incident_id: link.incident_id,
+      });
+      if (refreshError) throw refreshError;
+    }
+  } catch (incidentError) {
+    if (!isMissingRelation(incidentError) && incidentError.code !== "PGRST202") throw incidentError;
+  }
+}
+
 export async function loadTumedvedLogs() {
   const supabase = getSupabase();
   if (!supabase) return [];
@@ -408,28 +504,49 @@ export async function loadNewsLogs() {
     rowsById.set(row.id, row);
   }
 
-  return [...rowsById.values()]
-    .map((row) => {
-      const lat = asNullableNumber(row.lat);
-      const lng = asNullableNumber(row.lng);
-      return {
-        id: row.id,
-        source: row.source,
-        title: decodeHtmlEntities(row.title),
-        link: row.link,
-        googleNewsUrl: row.google_news_url,
-        articleUrl: row.article_url,
-        snippet: decodeHtmlEntities(row.snippet || ""),
-        date: row.published_at,
-        place: row.place,
-        lat,
-        lng,
-        hasCoords: hasCoordinates(lat, lng),
-        category: newsCategory(row, hasCoordinates(lat, lng)),
-        _scrapedAt: row.scraped_at,
-      };
-    })
-    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  const articles = [...rowsById.values()].map(rowToNews);
+  if (!articles.length) return [];
+
+  // Incident tables are additive. Before migration 006 is deployed, preserve
+  // the original public feed instead of failing the entire news endpoint.
+  let links = [];
+  try {
+    links = await loadIncidentLinksForNews(
+      articles.map((article) => article.id),
+      "incident_id,news_id,source_type,source_priority,attached_at"
+    );
+  } catch (error) {
+    if (!isMissingRelation(error)) throw error;
+    return articles.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  }
+
+  const incidentIds = [...new Set(links.map((link) => link.incident_id).filter(Boolean))];
+  let incidents = [];
+  if (incidentIds.length) {
+    // Once one member of an incident reaches the public window, include every
+    // approved attached article so the source count and coverage list are exact.
+    links = await loadIncidentLinksForIncidents(
+      incidentIds,
+      "incident_id,news_id,source_type,source_priority,attached_at"
+    );
+    const missingNewsIds = links
+      .map((link) => link.news_id)
+      .filter((id) => !rowsById.has(id));
+    if (missingNewsIds.length) {
+      const coverageRows = await loadApprovedNewsRowsByIds(missingNewsIds, columns);
+      for (const row of coverageRows) rowsById.set(row.id, row);
+      articles.splice(0, articles.length, ...[...rowsById.values()].map(rowToNews));
+    }
+
+    const { data, error } = await supabase
+      .from("news_incidents")
+      .select("id,event_date,event_date_precision,locality,lat,lng,title,summary,status,verification_status,primary_news_id,created_at,updated_at")
+      .in("id", incidentIds);
+    if (error) throw error;
+    incidents = data || [];
+  }
+
+  return groupNewsByIncidents({ articles, incidents, links });
 }
 
 export async function recordScrapeRun(run) {
@@ -615,7 +732,7 @@ export async function loadPendingNews() {
 
   const { data, error } = await supabase
     .from("news_logs")
-    .select("id,source,title,link,snippet,published_at,place,lat,lng,has_coords,category,status")
+    .select("id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,scraped_at,updated_at")
     .eq("status", "pending")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(100);
@@ -634,6 +751,7 @@ export async function updateNewsStatus(id, status) {
     .eq("id", id);
 
   if (error) throw error;
+  await refreshIncidentPrimaryForNews(id);
 }
 
 // Schválenie/zamietnutie správy s kategorizáciou. Pri 'warning' uložíme lokalitu
@@ -668,6 +786,94 @@ export async function reviewNews(id, fields) {
 
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
+  await refreshIncidentPrimaryForNews(id);
+}
+
+export async function reviewNewsWithIncident(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const params = {
+    p_news_id: id,
+    p_status: fields.status,
+    p_category: fields.category || "article",
+    p_place: fields.place || null,
+    p_lat: asNullableNumber(fields.lat),
+    p_lng: asNullableNumber(fields.lng),
+    p_incident_action: fields.incidentAction || "ungrouped",
+    p_incident_id: fields.incidentId || null,
+    p_event_date: fields.eventDate || null,
+    p_event_date_precision: fields.eventDatePrecision || "day",
+    p_incident_locality: fields.incidentLocality || null,
+    p_incident_lat: asNullableNumber(fields.incidentLat),
+    p_incident_lng: asNullableNumber(fields.incidentLng),
+    p_incident_title: fields.incidentTitle || null,
+    p_incident_summary: fields.incidentSummary || null,
+    p_incident_status: fields.incidentStatus || "active",
+    p_source_type: fields.sourceType || "other",
+    p_actor: fields.actor || "admin",
+  };
+
+  const { data, error } = await supabase.rpc("moderate_news_with_incident", params);
+  if (!error) return data;
+
+  // Safe rollout path: rejection and explicitly ungrouped approval can retain
+  // the legacy moderation behavior until migration 006 is applied. Any action
+  // that would create an attachment fails loudly instead of fabricating one.
+  const missingRpc =
+    error.code === "PGRST202" ||
+    error.code === "42883" ||
+    /could not find the function/i.test(error.message || "");
+  if (missingRpc && (fields.status === "rejected" || params.p_incident_action === "ungrouped")) {
+    await reviewNews(id, fields);
+    return { status: fields.status, incidentId: null, migrationPending: true };
+  }
+  if (missingRpc) {
+    throw new Error("Zoskupovanie udalostí nie je nasadené. Najprv spustite migráciu 006.");
+  }
+  throw error;
+}
+
+export async function loadIncidentSuggestions(criteria = {}) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("news_incidents")
+    .select("id,event_date,event_date_precision,locality,lat,lng,title,summary,status,verification_status,primary_news_id,updated_at")
+    .neq("status", "archived")
+    .order("event_date", { ascending: false })
+    .limit(200);
+
+  const eventDate = toIso(criteria.eventDate);
+  if (eventDate) {
+    const center = new Date(eventDate);
+    const from = new Date(center.getTime() - 45 * 86400000).toISOString().slice(0, 10);
+    const to = new Date(center.getTime() + 45 * 86400000).toISOString().slice(0, 10);
+    query = query.gte("event_date", from).lte("event_date", to);
+  }
+
+  const { data, error } = await query;
+  if (error && isMissingRelation(error)) return [];
+  if (error) throw error;
+
+  const ranked = rankIncidentSuggestions(data || [], criteria, 8);
+  if (!ranked.length) return [];
+
+  const { data: links, error: linksError } = await supabase
+    .from("incident_news_links")
+    .select("incident_id")
+    .in("incident_id", ranked.map((incident) => incident.id));
+  if (linksError) throw linksError;
+  const counts = new Map();
+  for (const link of links || []) {
+    counts.set(link.incident_id, (counts.get(link.incident_id) || 0) + 1);
+  }
+
+  return ranked.map((incident) => ({
+    ...incident,
+    source_count: counts.get(incident.id) || 0,
+  }));
 }
 
 // --- Admin: správa obsahu (zoznam + editácia všetkých záznamov) ---
@@ -689,7 +895,28 @@ export async function loadAllNews({ limit = ADMIN_NEWS_LIMIT } = {}) {
     .limit(limit);
 
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+  if (!rows.length) return rows;
+
+  let links = [];
+  try {
+    links = await loadIncidentLinksForNews(
+      rows.map((row) => row.id),
+      "incident_id,news_id,source_type"
+    );
+  } catch (error) {
+    if (isMissingRelation(error)) return rows;
+    throw error;
+  }
+  const byNews = new Map(links.map((link) => [link.news_id, link]));
+  return rows.map((row) => {
+    const link = byNews.get(row.id);
+    return {
+      ...row,
+      incident_id: link?.incident_id || null,
+      incident_source_type: link?.source_type || null,
+    };
+  });
 }
 
 // Všetky hlásenia (tumedved) pre admin správu obsahu — najnovšie prvé.
@@ -746,6 +973,7 @@ export async function updateNewsFields(id, fields) {
 
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
+  await refreshIncidentPrimaryForNews(id);
 }
 
 // Editácia hlásenia adminom. Nastaví manually_edited = true, aby ho scraper pri

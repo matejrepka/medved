@@ -1,4 +1,5 @@
--- Run this once in the Supabase SQL editor.
+-- Run this once in the Supabase SQL editor, then run
+-- docs/migration-006-news-incidents.sql for durable news incident grouping.
 -- The app writes with SUPABASE_SERVICE_ROLE_KEY from the Node server only.
 
 create table if not exists public.tumedved_logs (

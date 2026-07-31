@@ -634,8 +634,18 @@ function normalizeNewsLink(url) {
   }
 }
 
+function safeExternalUrl(value) {
+  if (!value) return "#";
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
 function newsUrl(n) {
-  return n.articleUrl || n.googleNewsUrl || normalizeNewsLink(n.link) || "#";
+  return safeExternalUrl(n.articleUrl || n.googleNewsUrl || normalizeNewsLink(n.link));
 }
 
 function newsMapPoint(n) {
@@ -663,6 +673,26 @@ function focusMapMarker(id, lat, lng) {
   else map.flyTo([lat, lng], 12, { duration: 0.45 });
   marker.openPopup();
 }
+
+document.getElementById("map").addEventListener("click", (event) => {
+  const link = event.target.closest("[data-coverage-incident]");
+  if (!link) return;
+  event.preventDefault();
+  const incidentId = link.dataset.coverageIncident;
+  const filtered = filteredNews();
+  const index = filtered.findIndex((item) => String(item.incidentId) === String(incidentId));
+  if (index >= 0 && listVisible.news <= index) {
+    listVisible.news = index + 1;
+    renderNews();
+  }
+  const details = document.getElementById(`coverage-${incidentId}`);
+  if (!details) return;
+  details.open = true;
+  details.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+  });
+});
 
 function readStoredMapLayer() {
   try {
@@ -826,7 +856,15 @@ function filteredNews() {
   return state.news.filter(
     (n) =>
       matchesDateRange(n.date) &&
-      matchesSearchQuery([n.title, n.snippet, n.source, n.place])
+      matchesSearchQuery([
+        n.title,
+        n.snippet,
+        n.source,
+        n.place,
+        ...(Array.isArray(n.coverage)
+          ? n.coverage.flatMap((article) => [article.title, article.source, article.sourceTypeLabel])
+          : []),
+      ])
   );
 }
 
@@ -1121,9 +1159,12 @@ function renderMarkers() {
     marker.bindPopup(`
       ${recordSignalsHtml(kind, n.date)}
       <p class="popup-loc">${esc(newsPlaceLabel(n) || "Varovanie zo správ")}</p>
-      <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
+      <p class="popup-meta">${esc(n.source || "")}${n.source ? ", " : ""}${esc(fmtDate(n.date))}</p>
       <p class="popup-note">${esc(n.title)}</p>
-      <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Link na článok →</a>
+      <a class="popup-link" href="${esc(href)}" target="_blank" rel="noopener">Prečítať zdroj <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+      ${n.isIncident && n.sourceCount > 1
+        ? `<a class="popup-coverage-link" href="#coverage-${esc(n.incidentId)}" data-coverage-incident="${esc(n.incidentId)}">Ďalšie zdroje (${n.sourceCount - 1})</a>`
+        : ""}
     `);
     state.markers.set(n.id, marker);
     bounds.push([point.lat, point.lng]);
@@ -1171,14 +1212,14 @@ function renderNews() {
       (n, i) => {
         const point = newsMapPoint(n);
         const isWarning = n.category === "warning";
-        const place = isWarning ? newsPlaceLabel(n) : "";
+        const place = n.isIncident || isWarning ? newsPlaceLabel(n) : "";
         const href = newsUrl(n);
         const kind = newsRecordKind(n);
         const correction = correctionHref(n, kind.label.toLocaleLowerCase("sk-SK"));
         const articleLink =
           href && href !== "#"
             ? `<a class="card-link" href="${esc(href)}" target="_blank" rel="noopener">
-                Link na článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+                Prečítať zdroj <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
               </a>`
             : "";
         const mapAction = point
@@ -1187,15 +1228,32 @@ function renderNews() {
               Zobraziť na mape
             </button>`
           : "";
+        const coverage = n.isIncident && Array.isArray(n.coverage)
+          ? `<details class="coverage-details" id="coverage-${esc(n.incidentId)}">
+              <summary>Všetky zdroje (${n.coverage.length})</summary>
+              <ul class="coverage-list">
+                ${n.coverage.map((article) => `<li>
+                  <div>
+                    <strong>${esc(article.source)}</strong>
+                    <span>${esc(article.sourceTypeLabel)}${article.publishedAt ? `, ${esc(fmtDate(article.publishedAt, true))}` : ""}</span>
+                  </div>
+                  ${safeExternalUrl(article.url) !== "#" ? `<a href="${esc(safeExternalUrl(article.url))}" target="_blank" rel="noopener">Otvoriť článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>` : ""}
+                </li>`).join("")}
+              </ul>
+            </details>`
+          : "";
         return `
       <article class="card news reveal${point ? " has-place" : ""}${
           isWarning ? " is-warning" : ""
-        }" style="${revealStyle(i)}" data-id="${esc(n.id)}">
+        }" style="${revealStyle(i)}" data-id="${esc(n.id)}"${n.incidentId ? ` id="incident-${esc(n.incidentId)}"` : ""}>
         ${recordSignalsHtml(kind, n.date)}
         <h4 class="card-title">${esc(n.title)}</h4>
         <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj</span>${esc(n.source)}</span>` : ""}
+          ${n.sourceTypeLabel ? `<span>${esc(n.sourceTypeLabel)}</span>` : ""}
+          ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
+          ${n.verificationStatus === "official_notice" ? '<span class="meta-official">Obsahuje úradné oznámenie</span>' : ""}
           ${
             place
               ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i>${esc(place)}</span>`
@@ -1211,6 +1269,7 @@ function renderNews() {
             : ""
         }
         <div class="card-actions">${articleLink}${mapAction}<a class="card-correction" href="${esc(correction)}">Nahlásiť nepresnosť</a></div>
+        ${coverage}
       </article>`
       }
     )
@@ -1221,6 +1280,12 @@ function renderNews() {
       const n = state.news.find((item) => item.id === button.dataset.mapItem);
       const point = newsMapPoint(n);
       if (n && point) focusMapMarker(n.id, point.lat, point.lng);
+    });
+  });
+
+  elNews.querySelectorAll('.coverage-details').forEach((details) => {
+    details.addEventListener('toggle', () => {
+      if (details.open) details.scrollIntoView({ block: 'nearest' });
     });
   });
 

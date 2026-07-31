@@ -32,6 +32,14 @@ Live site: kdejemedved.sk
 - **AI predvyplnenie moderácie** – iba nové správy po stiahnutí spracuje cez OpenRouter model
   `openrouter/free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
   a pri varovaní doplní najpresnejšiu lokalitu; admin výsledok pred schválením skontroluje.
+- **Udalosti a spravodajské pokrytie** – každý článok ostáva samostatným moderovaným
+  záznamom, no admin ho môže pri schválení pripojiť k trvalej udalosti podľa skutočného
+  dátumu a lokality. Verejný zoznam potom ukáže jednu udalosť s počtom zdrojov a rozbaliteľným
+  pokrytím. Neisté zhody sa nikdy nepripájajú automaticky a možno ich schváliť bez spojenia.
+- **Primárny zdroj udalosti** – poradie je založené na type zdroja, nie na všeobecnom
+  hodnotení vydavateľa: úradné oznámenie, miestny alebo priamy zdroj, celoštátne médium,
+  prevzatá správa a iný zdroj. Neskôr pridaný silnejší typ sa môže stať primárnym bez straty
+  ostatných článkov. Viac médií samo osebe nemení udalosť na potvrdenú.
 - **Automatická spam kontrola hlásení** – používateľské hlásenie s vysoko spoľahlivým výsledkom
   „legitímne“ sa hneď schváli; spam, neistý výsledok alebo nedostupná AI idú do moderácie.
   Záznamy z tumedved.sk, mapamedvedov.sk a sprejnamedveda.sk sa schvaľujú automaticky.
@@ -71,6 +79,21 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 - Správy sa filtrujú podľa relevantnosti, geokódujú z textu a zobrazujú vedľa hlásení.
 - Admin časť podporuje moderáciu nových správ a používateľských hlásení.
 - Frontend je navrhnutý ako mapový prehľad s filtrami, vyhľadávaním a prepínaním vrstiev.
+
+## Databázové migrácie
+
+Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom
+`docs/migration-006-news-incidents.sql` v Supabase SQL Editore. Pri existujúcej databáze
+stačí po už nasadených migráciách 001-005 spustiť migráciu 006.
+
+V SQL Editore spustite celý obsah migrácie 006 bez označeného čiastkového výberu.
+Editor pri označenom texte vykoná iba výber; telo PL/pgSQL funkcie by tak mohlo zostať
+bez koncového oddeľovača. Migráciu možno po takomto prerušení bezpečne spustiť znova.
+
+Migrácia 005 zámerne nerobí historický backfill a nevytvára žiadne automatické spojenia.
+Existujúce správy ostanú schválené a nezoskupené. Nové priradenia sa ukladajú transakčne
+cez serverový service-role klient; funkcia RPC nemá oprávnenie pre `anon` ani
+`authenticated` rolu.
 
 ## Verejné zverejnenie
 

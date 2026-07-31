@@ -1015,6 +1015,17 @@ main {
   align-items: center;
   gap: 3px;
 }
+.popup-coverage-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-size: 0.74rem;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* ---------- Columns ---------- */
 .columns {
@@ -4572,6 +4583,79 @@ html.dialog-open body {
 .card-map-action:hover {
   background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+.meta-coverage,
+.meta-official {
+  color: var(--ink-2);
+  font-weight: 650;
+}
+
+.meta-official {
+  color: var(--accent);
+}
+
+.coverage-details {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.coverage-details summary {
+  min-height: 44px;
+  padding: 12px 0 8px;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.coverage-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coverage-list li {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.coverage-list div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coverage-list strong {
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+.coverage-list span {
+  color: var(--ink-3);
+  font-size: 0.74rem;
+}
+
+.coverage-list a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+@media (min-width: 560px) {
+  .coverage-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
 }
 
 /* Editorial home */
