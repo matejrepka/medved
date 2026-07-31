@@ -1153,6 +1153,9 @@ function renderSightings() {
               Zobraziť na mape
             </button>`
           : "";
+        const sourceRow = sourceLinks
+          ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${sourceLinks}</div>`
+          : "";
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         ${recordSignalsHtml(kind, s.reportedAt)}
@@ -1163,9 +1166,12 @@ function renderSightings() {
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
         <div class="card-actions card-actions-sighting">
-          ${mapAction}
-          <div class="card-main-actions"><a class="card-link card-detail-link" href="${esc(detailUrl)}">Zobraziť detail <i class="ph ph-arrow-right" aria-hidden="true"></i></a><div class="mobile-source-duplicate">${sourceLinks}</div></div>
+          <div class="card-primary-actions">
+            ${mapAction}
+            <a class="card-detail-action" href="${esc(detailUrl)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a>
+          </div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
+          ${sourceRow}
         </div>
       </article>`;
       }
@@ -1302,6 +1308,9 @@ function renderNews() {
                 Prečítať zdroj <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
               </a>`
             : "";
+        const sourceRow = articleLink
+          ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Pôvodný článok</span>${articleLink}</div>`
+          : "";
         const coverage = n.isIncident && Array.isArray(n.coverage) && n.coverage.length > 1
           ? `<details class="coverage-details" id="coverage-${esc(n.incidentId)}">
               <summary>Všetky zdroje (${n.coverage.length})</summary>
@@ -1341,8 +1350,9 @@ function renderNews() {
         }
         ${locationLinks}
         <div class="card-actions">
-          <div class="card-main-actions"><a class="card-link card-detail-link" href="${esc(detailUrl)}">Zobraziť súhrn <i class="ph ph-arrow-right" aria-hidden="true"></i></a><div class="mobile-source-duplicate">${articleLink}</div></div>
+          <div class="card-primary-actions"><a class="card-detail-action" href="${esc(detailUrl)}"><i class="ph ph-article" aria-hidden="true"></i>Detail správy</a></div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
+          ${sourceRow}
         </div>
         ${coverage}
       </article>`

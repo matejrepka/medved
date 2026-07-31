@@ -692,7 +692,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}<div class="card-actions"><div class="card-main-actions"><a class="card-link card-detail-link" href="${escapeHtml(detail)}">Zobraziť detail <span aria-hidden="true">→</span></a><div class="mobile-source-duplicate">${links}</div></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
+      ${note}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
     </article>`;
   }).join("\n");
 }
@@ -746,7 +746,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
       <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.title || "Správa o medveďovi")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(item.source || "verejný zdroj", href ? [{ label: item.source || "Zdroj", url: href }] : [])}${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.summary || item.snippet ? `<p class="card-note">${escapeHtml(String(item.summary || item.snippet).slice(0, 320))}</p>` : ""}
-      ${locations}<div class="card-actions"><div class="card-main-actions"><a class="card-link card-detail-link" href="${escapeHtml(detail)}">Zobraziť súhrn <span aria-hidden="true">→</span></a><div class="mobile-source-duplicate">${link}</div></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
+      ${locations}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail správy</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a>${link ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Pôvodný článok</span>${link}</div>` : ""}</div>${coverage}
     </article>`;
   }).join("\n");
 }
@@ -1784,8 +1784,9 @@ async function renderRecordPage(req, res, requestedKind) {
     const isNewsArticle = recordType === "news";
     const isWarningPage = requestedKind === "warning";
     const title = record.title || record.location || "Záznam o výskyte medveďa";
-    const summary = String(record.summary || record.snippet || record.note ||
-      "Záznam obsahuje dostupnú lokalitu, dátum a pôvod informácie.").trim();
+    const summary = String(record.summary || record.snippet || record.note || (isNewsArticle
+      ? `Správa sa venuje téme „${title}“. Podrobnosti sú dostupné v pôvodnom článku.`
+      : "Záznam obsahuje dostupnú lokalitu, dátum a pôvod informácie.")).trim();
     const date = record.date || record.reportedAt || record._scrapedAt || CONTENT_UPDATED;
     const source = detailSource(record, recordType);
     const page = {
@@ -1804,6 +1805,7 @@ async function renderRecordPage(req, res, requestedKind) {
       .replace("<!-- SEO_HEAD -->", buildSeoHead(canonicalPath, page, siteOrigin(req)))
       .replaceAll("{{RECORD_TITLE}}", escapeHtml(title))
       .replaceAll("<!-- RECORD_TYPE -->", isWarningPage ? "Varovanie pred medveďom" : "Správa o medveďoch")
+      .replace("<!-- RECORD_SUMMARY_HEADING -->", isNewsArticle ? "Súhrn článku" : "Súhrn záznamu")
       .replace("<!-- RECORD_SUMMARY -->", escapeHtml(summary))
       .replace("<!-- RECORD_DATE -->", escapeHtml(formatSlovakDate(date, Boolean(record.reportedAt && record.datePrecision !== "date"))))
       .replace("<!-- RECORD_DATE_ISO -->", escapeHtml(date))

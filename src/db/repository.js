@@ -150,6 +150,28 @@ function payloadNewsLocations(row) {
   );
 }
 
+function sourceSummaryForNews(item, maxLength = 520) {
+  const sourceText = decodeHtmlEntities(item?.snippet || item?._analysisBody || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const title = decodeHtmlEntities(item?.title || "").replace(/\s+/g, " ").trim();
+  const fallback = title
+    ? `Správa sa venuje téme „${title}“. Podrobnosti sú dostupné v pôvodnom článku.`
+    : "Podrobnosti k tejto správe sú dostupné v pôvodnom článku.";
+  const text = sourceText || fallback;
+  if (text.length <= maxLength) return text;
+
+  const shortened = text.slice(0, maxLength + 1);
+  const sentenceEnd = Math.max(
+    shortened.lastIndexOf(". "),
+    shortened.lastIndexOf("? "),
+    shortened.lastIndexOf("! ")
+  );
+  if (sentenceEnd >= 160) return shortened.slice(0, sentenceEnd + 1).trim();
+  const wordEnd = shortened.lastIndexOf(" ");
+  return `${shortened.slice(0, wordEnd > 0 ? wordEnd : maxLength).trim()}…`;
+}
+
 function rowToNews(row, storedLocations = []) {
   const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
   const locations = normalizeNewsLocations(
@@ -166,7 +188,7 @@ function rowToNews(row, storedLocations = []) {
     googleNewsUrl: row.google_news_url,
     articleUrl: row.article_url,
     snippet: decodeHtmlEntities(row.snippet || ""),
-    summary: decodeHtmlEntities(payload.aiSummary || row.snippet || ""),
+    summary: decodeHtmlEntities(payload.aiSummary || payload.sourceSummary || row.snippet || ""),
     summaryGeneratedByAi: Boolean(payload.aiSummary && payload.aiClassification?.summaryGenerated),
     date: row.published_at,
     place: primary?.place || row.place,
@@ -409,25 +431,31 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
 
   // Pri existujúcich riadkoch meníme iba súhrn a jeho auditné metadáta.
   // Stav moderácie, kategóriu, lokality ani redakčné zmeny neprepíšeme.
-  for (const item of retryItems.filter((candidate) => candidate.aiSummary)) {
+  for (const item of retryItems) {
     const known = knownRows.get(item.id);
     const payload = known?.payload && typeof known.payload === "object" ? known.payload : {};
     const previousClassification = payload.aiClassification &&
       typeof payload.aiClassification === "object" ? payload.aiClassification : {};
-    const mayPrefillModeration = known.status === "pending" && !previousClassification.classifiedAt;
+    const mayPrefillModeration = Boolean(
+      item.aiSummary && known.status === "pending" && !previousClassification.classifiedAt
+    );
+    const sourceSummary = sourceSummaryForNews(item);
     const updatedPayload = {
       ...payload,
+      sourceSummary,
       ...(mayPrefillModeration ? {
         locations: item.locations,
         aiClassification: item.aiClassification,
       } : {}),
-      aiSummary: item.aiSummary,
-      aiClassification: {
-        ...(mayPrefillModeration ? item.aiClassification : previousClassification),
-        summaryGenerated: Boolean(item.aiClassification?.summaryGenerated),
-        summaryModel: item.aiClassification?.model || null,
-        summarizedAt: item.aiClassification?.classifiedAt || scrapedAt,
-      },
+      ...(item.aiSummary ? {
+        aiSummary: item.aiSummary,
+        aiClassification: {
+          ...(mayPrefillModeration ? item.aiClassification : previousClassification),
+          summaryGenerated: Boolean(item.aiClassification?.summaryGenerated),
+          summaryModel: item.aiClassification?.model || null,
+          summarizedAt: item.aiClassification?.classifiedAt || scrapedAt,
+        },
+      } : {}),
     };
     const update = {
       payload: updatedPayload,
@@ -473,7 +501,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
     has_coords: hasCoordinates(item.lat, item.lng),
     category: item.category === "warning" ? "warning" : "article",
     status: "pending",
-    payload: item,
+    payload: { ...item, sourceSummary: sourceSummaryForNews(item) },
     scraped_at: scrapedAt,
     updated_at: scrapedAt,
   }));

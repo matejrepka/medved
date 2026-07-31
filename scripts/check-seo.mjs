@@ -86,6 +86,9 @@ if (!server.includes('const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk"
 if (!server.includes("mergeLocationPages(locationCandidates)")) {
   errors.push("server.js: lokalitné stránky musia byť deduplikované podľa slugu");
 }
+if (!server.includes('"<!-- RECORD_SUMMARY_HEADING -->"') || !server.includes('"<!-- RECORD_SUMMARY -->"')) {
+  errors.push("server.js: detail článku musí vykresliť nadpis a obsah súhrnu");
+}
 if (!/if \(pathname === "\/domov"\) \{\s*graph\.push\(\{\s*"@type": "FAQPage"/m.test(server)) {
   errors.push("server.js: FAQ schema musí byť naviazaná na viditeľné FAQ na /domov");
 }
@@ -114,6 +117,16 @@ for (const archivePath of ["/spravy", "/varovania"]) {
   if (!pageShell.includes(`href: "${archivePath}"`)) {
     errors.push(`page.js: mobilné menu neodkazuje na ${archivePath}`);
   }
+}
+
+const recordTemplate = await readFile(path.join(root, "public", "zaznam.html"), "utf8");
+if (!recordTemplate.includes("<!-- RECORD_SUMMARY_HEADING -->") || !recordTemplate.includes("<!-- RECORD_SUMMARY -->")) {
+  errors.push("zaznam.html: každý detail musí obsahovať blok súhrnu");
+}
+
+const publicApp = await readFile(path.join(root, "public", "app.js"), "utf8");
+if (!publicApp.includes("card-detail-action") || !publicApp.includes("Detail záznamu")) {
+  errors.push("app.js: karta musí mať jasne zoskupenú akciu detailu");
 }
 
 for (const file of ["spravy.html", "varovania.html", "zaznam.html"]) {
