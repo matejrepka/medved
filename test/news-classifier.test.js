@@ -17,6 +17,7 @@ test("parseClassificationResponse validates and normalizes model JSON", () => {
     category: "warning",
     place: "Morské oko",
     places: ["Morské oko"],
+    summary: "",
     eventDate: null,
     eventDatePrecision: "unknown",
     eventDateConfidence: null,
@@ -26,6 +27,7 @@ test("parseClassificationResponse validates and normalizes model JSON", () => {
     category: "article",
     place: null,
     places: [],
+    summary: "",
     eventDate: null,
     eventDatePrecision: "unknown",
     eventDateConfidence: null,
@@ -63,8 +65,8 @@ test("classifyFreshNews prefills warning location and clears article coordinates
             message: {
               content: JSON.stringify({
                 results: [
-                  { index: 0, category: "warning", place: "Morské oko", confidence: 0.98 },
-                  { index: 1, category: "article", place: null, confidence: 0.91 },
+                  { index: 0, category: "warning", place: "Morské oko", summary: "Pri Morskom oku zaznamenali medveďa.", confidence: 0.98 },
+                  { index: 1, category: "article", place: null, summary: "Článok vysvetľuje zásady bezpečného pohybu v lese.", confidence: 0.91 },
                 ],
               }),
             },
@@ -91,12 +93,15 @@ test("classifyFreshNews prefills warning location and clears article coordinates
   }]);
   assert.equal(items[0].lat, 48.9150886);
   assert.equal(items[0].hasCoords, true);
+  assert.equal(items[0].aiSummary, "Pri Morskom oku zaznamenali medveďa.");
+  assert.equal(items[0].aiClassification.summaryGenerated, true);
   assert.equal(items[1].category, "article");
   assert.equal(items[1].place, null);
   assert.deepEqual(items[1].locations, []);
   assert.equal(items[1].lat, null);
   assert.equal(items[1].lng, null);
   assert.equal(items[1].hasCoords, false);
+  assert.equal(items[1].aiSummary, "Článok vysvetľuje zásady bezpečného pohybu v lese.");
 });
 
 test("classifyFreshNews extracts and geocodes every concrete warning location", async () => {

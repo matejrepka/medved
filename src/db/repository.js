@@ -151,6 +151,7 @@ function payloadNewsLocations(row) {
 }
 
 function rowToNews(row, storedLocations = []) {
+  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
   const locations = normalizeNewsLocations(
     storedLocations.length ? storedLocations : payloadNewsLocations(row)
   );
@@ -165,6 +166,8 @@ function rowToNews(row, storedLocations = []) {
     googleNewsUrl: row.google_news_url,
     articleUrl: row.article_url,
     snippet: decodeHtmlEntities(row.snippet || ""),
+    summary: decodeHtmlEntities(payload.aiSummary || row.snippet || ""),
+    summaryGeneratedByAi: Boolean(payload.aiSummary && payload.aiClassification?.summaryGenerated),
     date: row.published_at,
     place: primary?.place || row.place,
     lat,
@@ -349,19 +352,23 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
   }
 }
 
-// Vráti množinu id správ, ktoré už v news_logs existujú — bez ohľadu na status
-// (pending / approved / rejected). Slúži na overenie, čo už bolo zapísané.
-async function loadKnownNewsIds(ids) {
+// Vráti existujúce správy spolu so stavom AI payloadu. Okrem deduplikácie to
+// umožní po malých dávkach dokončiť súhrny, ktoré sa nezmestili do predošlého
+// cron behu alebo ich provider dočasne odmietol.
+async function loadKnownNewsRows(ids) {
   const supabase = getSupabase();
-  const known = new Set();
+  const known = new Map();
   if (!supabase) return known;
 
   const unique = [...new Set(ids.filter(Boolean))];
   for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
     const chunk = unique.slice(i, i + WRITE_CHUNK_SIZE);
-    const { data, error } = await supabase.from("news_logs").select("id").in("id", chunk);
+    const { data, error } = await supabase
+      .from("news_logs")
+      .select("id,status,payload")
+      .in("id", chunk);
     if (error) throw error;
-    for (const row of data || []) known.add(row.id);
+    for (const row of data || []) known.set(row.id, row);
   }
 
   return known;
@@ -377,22 +384,78 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
   const supabase = getSupabase();
   if (!supabase || !items.length) return;
 
-  const knownIds = await loadKnownNewsIds(items.map((item) => item.id));
-  const freshItems = items.filter((item) => item.id && !knownIds.has(item.id));
+  const knownRows = await loadKnownNewsRows(items.map((item) => item.id));
+  const freshItems = items.filter((item) => item.id && !knownRows.has(item.id));
+  const retryItems = items.filter((item) => {
+    const row = knownRows.get(item.id);
+    const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
+    return row && row.status !== "rejected" && !payload.aiSummary;
+  });
 
-  if (!freshItems.length) {
+  if (!freshItems.length && !retryItems.length) {
     console.log(`[news] no new articles — all ${items.length} already in DB`);
     return;
   }
 
-  // Drahšie/limitované spracovanie (AI) beží až po odfiltrovaní známych ID,
-  // takže sa pri pravidelnom crone neopakuje nad tými istými článkami.
+  // Drahšie/limitované spracovanie (AI) dostane najprv starší nedokončený rad,
+  // aby ho nová špička nevyhladovala. Už hotové a zamietnuté články preskočíme.
   if (typeof options.prepareFresh === "function") {
     try {
-      await options.prepareFresh(freshItems);
+      await options.prepareFresh([...retryItems, ...freshItems]);
     } catch (err) {
       console.warn(`[news] fresh-item preparation failed: ${err.message}`);
     }
+  }
+
+  // Pri existujúcich riadkoch meníme iba súhrn a jeho auditné metadáta.
+  // Stav moderácie, kategóriu, lokality ani redakčné zmeny neprepíšeme.
+  for (const item of retryItems.filter((candidate) => candidate.aiSummary)) {
+    const known = knownRows.get(item.id);
+    const payload = known?.payload && typeof known.payload === "object" ? known.payload : {};
+    const previousClassification = payload.aiClassification &&
+      typeof payload.aiClassification === "object" ? payload.aiClassification : {};
+    const mayPrefillModeration = known.status === "pending" && !previousClassification.classifiedAt;
+    const updatedPayload = {
+      ...payload,
+      ...(mayPrefillModeration ? {
+        locations: item.locations,
+        aiClassification: item.aiClassification,
+      } : {}),
+      aiSummary: item.aiSummary,
+      aiClassification: {
+        ...(mayPrefillModeration ? item.aiClassification : previousClassification),
+        summaryGenerated: Boolean(item.aiClassification?.summaryGenerated),
+        summaryModel: item.aiClassification?.model || null,
+        summarizedAt: item.aiClassification?.classifiedAt || scrapedAt,
+      },
+    };
+    const update = {
+      payload: updatedPayload,
+      updated_at: scrapedAt,
+    };
+    if (mayPrefillModeration) {
+      update.category = item.category === "warning" ? "warning" : "article";
+      update.place = item.place || null;
+      update.lat = asNullableNumber(item.lat);
+      update.lng = asNullableNumber(item.lng);
+      update.has_coords = hasCoordinates(item.lat, item.lng);
+    }
+    const { error } = await supabase
+      .from("news_logs")
+      .update(update)
+      .eq("id", item.id);
+    if (error) throw error;
+    if (mayPrefillModeration) {
+      await replaceNewsWarningLocations(
+        item.id,
+        item.category === "warning" ? newsLocations(item) : []
+      );
+    }
+  }
+
+  if (!freshItems.length) {
+    console.log(`[news] completed ${retryItems.filter((item) => item.aiSummary).length} queued AI summaries`);
+    return;
   }
 
   const rows = freshItems.map((item) => ({
@@ -424,7 +487,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
     if (locations.length) await replaceNewsWarningLocations(item.id, locations);
   }
 
-  console.log(`[news] saved ${freshItems.length} new, ${knownIds.size} already known`);
+  console.log(`[news] saved ${freshItems.length} new, ${knownRows.size} already known`);
 }
 
 // Chyba PostgREST pre neexistujúci stĺpec (napr. status pred migráciou 004).

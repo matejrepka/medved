@@ -4,11 +4,15 @@ import { normalizeLocationName, normalizeNewsLocations } from "../news-locations
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "openrouter/free";
-const BATCH_SIZE = 6;
+const BATCH_SIZE = 4;
 const MAX_BODY_CHARS = 7000;
 const MAX_SNIPPET_CHARS = 1200;
+const MAX_SUMMARY_CHARS = 520;
+const DEFAULT_MAX_ITEMS_PER_RUN = 12;
+const DEFAULT_MIN_INTERVAL_MS = 2500;
 
 let missingKeyWarningShown = false;
+let lastRequestStartedAt = 0;
 
 function cleanText(value, maxLength = 180) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLength);
@@ -121,6 +125,7 @@ export function parseClassificationResponse(content, itemCount) {
       category: row.category,
       place,
       places,
+      summary: cleanText(row.summary, MAX_SUMMARY_CHARS),
       eventDate,
       eventDatePrecision,
       eventDateConfidence,
@@ -147,7 +152,7 @@ function wait(ms) {
 
 const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
-async function classifyBatch(items, { apiKey, model, fetchImpl }) {
+async function classifyBatch(items, { apiKey, model, fetchImpl, minIntervalMs }) {
   const request = {
     method: "POST",
     headers: {
@@ -171,7 +176,8 @@ async function classifyBatch(items, { apiKey, model, fetchImpl }) {
             "Rozhoduj podľa obsahu, nie podľa žánru alebo spravodajského titulku: aj článok v médiu patrí do warning, ak obec, úrad, urbár, polícia alebo obyvatelia upozorňujú na aktuálny výskyt medveďa, opisujú čerstvé pozorovanie alebo vyzývajú ľudí, aby sa konkrétnemu miestu vyhli. Platí to aj vtedy, keď článok zároveň vyvracia nepotvrdený útok; potvrdený miestny výskyt alebo varovanie stále znamená warning. " +
             "Pri warning uveď v places všetky samostatné, konkrétne lokality aktuálnych pozorovaní alebo varovaní presne z článku (obce, doliny, jazerá, vrchy, časti miest alebo iné pomenované body). Ak článok opisuje viac pozorovaní na rôznych miestach, vráť každé miesto samostatne v poradí významu. Nepridávaj regióny spomenuté iba ako kontext a nič si nevymýšľaj. Ak nemožno spoľahlivo určiť ani jedno miesto, places musí byť prázdne pole. Pri article musí byť places prázdne pole. " +
             "Oddelene urč skutočný dátum opisovanej udalosti. eventDate môže byť YYYY-MM-DD iba ak článok uvádza presný deň alebo jednoznačný relatívny deň (napríklad dnes/včera) a publishedAt umožňuje výpočet. eventDatePrecision je day iba pri takto spoľahlivom dni, approximate pri približnom dátume a unknown, ak dátum nemožno spoľahlivo určiť. eventDateConfidence vyjadruje istotu iba v dátume, oddelene od confidence klasifikácie. Nikdy nepouži publishedAt ako náhradu bez dôkazu v texte. " +
-            "Vráť iba platný JSON objekt v tvare {\"results\":[{\"index\":0,\"category\":\"article|warning\",\"places\":[\"názov\"],\"eventDate\":null,\"eventDatePrecision\":\"day|approximate|unknown\",\"eventDateConfidence\":0.0,\"confidence\":0.0}]}. Každý vstupný index musí byť vo výsledku práve raz.",
+            "Pre každý vstup vytvor aj summary v prirodzenej slovenčine. Zhrň iba najdôležitejšie overiteľné fakty z dodaného textu: čo sa stalo, kde a kedy, ak sú údaje známe, a aké konkrétne odporúčanie alebo rozhodnutie zaznelo. Použi najviac dve krátke vety a 420 znakov. Nepridávaj hodnotenie, domnienky, všeobecné bezpečnostné rady ani fakty, ktoré nie sú vo vstupe. " +
+            "Vráť iba platný JSON objekt v tvare {\"results\":[{\"index\":0,\"category\":\"article|warning\",\"places\":[\"názov\"],\"summary\":\"stručný vecný súhrn\",\"eventDate\":null,\"eventDatePrecision\":\"day|approximate|unknown\",\"eventDateConfidence\":0.0,\"confidence\":0.0}]}. Každý vstupný index musí byť vo výsledku práve raz.",
         },
         {
           role: "user",
@@ -184,6 +190,9 @@ async function classifyBatch(items, { apiKey, model, fetchImpl }) {
   let lastError = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
+      const remaining = minIntervalMs - (Date.now() - lastRequestStartedAt);
+      if (remaining > 0) await wait(remaining);
+      lastRequestStartedAt = Date.now();
       const response = await fetchImpl(OPENROUTER_URL, {
         ...request,
         signal: AbortSignal.timeout(45000),
@@ -199,6 +208,10 @@ async function classifyBatch(items, { apiKey, model, fetchImpl }) {
         );
         error.status = response.status;
         error.retryable = RETRYABLE_STATUSES.has(response.status);
+        const retryAfterSeconds = Number(response.headers?.get?.("retry-after"));
+        error.retryAfterMs = Number.isFinite(retryAfterSeconds)
+          ? Math.min(30000, Math.max(1000, retryAfterSeconds * 1000))
+          : null;
         if (!error.retryable || attempt === 2) throw error;
         lastError = error;
       } else {
@@ -211,7 +224,7 @@ async function classifyBatch(items, { apiKey, model, fetchImpl }) {
       if (attempt === 2 || permanentHttpError) throw err;
     }
 
-    await wait(attempt === 0 ? 5000 : 15000);
+    await wait(lastError?.retryAfterMs || (attempt === 0 ? 5000 : 15000));
   }
 
   throw lastError || new Error("OpenRouter klasifikácia zlyhala.");
@@ -227,6 +240,7 @@ async function defaultLocationResolver(name) {
 
 async function applyClassification(item, result, { model, resolveLocation }) {
   item.category = result.category;
+  item.aiSummary = result.summary || cleanText(item.snippet, MAX_SUMMARY_CHARS);
 
   if (result.category === "article") {
     item.locations = [];
@@ -289,6 +303,7 @@ async function applyClassification(item, result, { model, resolveLocation }) {
     eventDatePrecision: result.eventDatePrecision || "unknown",
     eventDateConfidence: result.eventDateConfidence ?? null,
     confidence: result.confidence,
+    summaryGenerated: Boolean(result.summary),
     rule: result.rule || null,
     classifiedAt: new Date().toISOString(),
   };
@@ -313,12 +328,24 @@ export async function classifyFreshNews(items, options = {}) {
   const model = options.model || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
   const fetchImpl = options.fetchImpl || fetch;
   const resolveLocation = options.resolveLocation || defaultLocationResolver;
+  const minIntervalMs = Math.max(
+    0,
+    options.minIntervalMs ?? (options.fetchImpl
+      ? 0
+      : Number(process.env.NEWS_AI_MIN_INTERVAL_MS) || DEFAULT_MIN_INTERVAL_MS)
+  );
+  const configuredLimit = Number(process.env.NEWS_AI_MAX_ITEMS_PER_RUN);
+  const maxItems = Math.max(
+    1,
+    Math.min(40, Number.isFinite(configuredLimit) ? configuredLimit : DEFAULT_MAX_ITEMS_PER_RUN)
+  );
+  const queuedItems = items.slice(0, maxItems);
   let classified = 0;
 
-  for (let start = 0; start < items.length; start += BATCH_SIZE) {
-    const batch = items.slice(start, start + BATCH_SIZE);
+  for (let start = 0; start < queuedItems.length; start += BATCH_SIZE) {
+    const batch = queuedItems.slice(start, start + BATCH_SIZE);
     try {
-      const results = await classifyBatch(batch, { apiKey, model, fetchImpl });
+      const results = await classifyBatch(batch, { apiKey, model, fetchImpl, minIntervalMs });
       for (const [index, result] of results) {
         const guardedResult = enforceExplicitLocalWarning(batch[index], result);
         await applyClassification(batch[index], guardedResult, { model, resolveLocation });
@@ -332,6 +359,9 @@ export async function classifyFreshNews(items, options = {}) {
     }
   }
 
-  console.log(`[news ai] classified ${classified}/${items.length} new articles with ${model}`);
+  console.log(
+    `[news ai] classified and summarized ${classified}/${items.length} new articles with ${model}` +
+    (items.length > queuedItems.length ? `; ${items.length - queuedItems.length} left for manual review` : "")
+  );
   return items;
 }

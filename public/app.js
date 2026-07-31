@@ -822,6 +822,18 @@ function mapCoord(value, axis) {
   return number;
 }
 
+function safeDetailUrl(value, fallback) {
+  try {
+    const url = new URL(value || "", window.location.origin);
+    const validPath = url.pathname.startsWith("/spravy/") || url.pathname.startsWith("/varovania/");
+    return url.origin === window.location.origin && validPath
+      ? `${url.pathname}${url.search}${url.hash}`
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function sightingDedupeKey(s) {
   return [
     normalizeSearchText(s.location).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
@@ -1134,6 +1146,7 @@ function renderSightings() {
         const sourceLinks = warningSourceLinksHtml(s, "card-link");
         const withTime = s.datePrecision !== "date";
         const correction = correctionHref(s, kind.label.toLocaleLowerCase("sk-SK"));
+        const detailUrl = safeDetailUrl(s.detailUrl, "/varovania");
         const mapAction = s.hasCoords
           ? `<button class="card-map-action" type="button" data-map-item="${esc(s.id)}">
               <i class="ph ph-map-pin" aria-hidden="true"></i>
@@ -1143,7 +1156,7 @@ function renderSightings() {
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         ${recordSignalsHtml(kind, s.reportedAt)}
-        <h4 class="card-title">${esc(s.location)}</h4>
+        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}">${esc(s.location)}</a></h4>
         <div class="card-meta">
           ${listingSourceMetaHtml(sourceLabel, sourceEntries)}
           <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
@@ -1151,7 +1164,7 @@ function renderSightings() {
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
         <div class="card-actions card-actions-sighting">
           ${mapAction}
-          <div class="card-main-actions mobile-source-duplicate">${sourceLinks}</div>
+          <div class="card-main-actions"><a class="card-link card-detail-link" href="${esc(detailUrl)}">Zobraziť detail <i class="ph ph-arrow-right" aria-hidden="true"></i></a><div class="mobile-source-duplicate">${sourceLinks}</div></div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
         </div>
       </article>`;
@@ -1281,6 +1294,8 @@ function renderNews() {
         const href = newsUrl(n);
         const kind = newsRecordKind(n);
         const correction = correctionHref(n, kind.label.toLocaleLowerCase("sk-SK"));
+        const detailUrl = safeDetailUrl(n.detailUrl, n.category === "warning" ? "/varovania" : "/spravy");
+        const summary = n.summary || n.snippet || "";
         const articleLink =
           href && href !== "#"
             ? `<a class="card-link" href="${esc(href)}" target="_blank" rel="noopener">
@@ -1310,7 +1325,7 @@ function renderNews() {
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}"${n.incidentId ? ` id="incident-${esc(n.incidentId)}"` : ""}>
         ${recordSignalsHtml(kind, n.date)}
-        <h4 class="card-title">${esc(n.title)}</h4>
+        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}">${esc(n.title)}</a></h4>
         <div class="card-meta">
           ${sourceMeta}
           ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
@@ -1318,15 +1333,15 @@ function renderNews() {
           <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované:</span>${esc(fmtDate(n.date))}</time>
         </div>
         ${
-          n.snippet
-            ? `<p class="card-note">${esc(n.snippet.slice(0, 175))}${
-                n.snippet.length > 175 ? "…" : ""
+          summary
+            ? `<p class="card-note">${esc(summary.slice(0, 240))}${
+                summary.length > 240 ? "…" : ""
               }</p>`
             : ""
         }
         ${locationLinks}
         <div class="card-actions">
-          <div class="card-main-actions mobile-source-duplicate">${articleLink}</div>
+          <div class="card-main-actions"><a class="card-link card-detail-link" href="${esc(detailUrl)}">Zobraziť súhrn <i class="ph ph-arrow-right" aria-hidden="true"></i></a><div class="mobile-source-duplicate">${articleLink}</div></div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
         </div>
         ${coverage}

@@ -8,6 +8,7 @@ import "dotenv/config";
 import express from "express";
 import compression from "compression";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 
@@ -77,6 +78,10 @@ const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32
 const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk";
 const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
 const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
+const NEWS_ROUTE_PREFIX = "/spravy/";
+const WARNING_ROUTE_PREFIX = "/varovania/";
+const ARCHIVE_PAGE_SIZE = 24;
+const ARCHIVE_PAGE_SIZES = new Set([24, 50, 100]);
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
 const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
 const parsedTelegramConfig = readTelegramConfig();
@@ -93,18 +98,18 @@ const emailConfig = {
 const PUBLIC_PAGES = {
   "/": {
     file: "index.html",
-    title: "Kde je Medveď | Aktuálna mapa varovaní na Slovensku",
+    title: "Mapa medveďov na Slovensku | Aktuálne varovania",
     description:
-      "Centralizovaná mapa hláseného výskytu medveďov na Slovensku. Spája hlásenia, verejné varovania a správy s dátumom a pôvodným zdrojom.",
+      "Aktuálna mapa medveďov na Slovensku spája hlásený výskyt, verejné varovania a správy s lokalitou, dátumom a pôvodným zdrojom.",
     schemaType: "CollectionPage",
     dynamicLastmod: true,
     priority: "1.0",
   },
   "/domov": {
     file: "domov.html",
-    title: "Kde je Medveď | Slovenská mapa hlásení a varovaní",
+    title: "Medvede na Slovensku | Mapa hlásení Kde je Medveď",
     description:
-      "Kde je Medveď centralizuje hlásenia, verejné varovania a slovenské správy na jednej priebežne aktualizovanej mape s uvedením zdroja a dátumu.",
+      "Prehľad medveďov na Slovensku: mapa hlásení, verejné varovania, lokality a aktuálne správy s uvedením zdroja a dátumu.",
     schemaType: "WebPage",
     dynamicLastmod: true,
     changefreq: "daily",
@@ -119,6 +124,26 @@ const PUBLIC_PAGES = {
     dynamicLastmod: true,
     changefreq: "daily",
     priority: "0.8",
+  },
+  "/spravy": {
+    file: "spravy.html",
+    title: "Správy o medveďoch na Slovensku | Kde je Medveď",
+    description:
+      "Najnovšie správy o medveďoch na Slovensku s krátkym vecným súhrnom, dátumom a odkazom na pôvodný zdroj.",
+    schemaType: "CollectionPage",
+    dynamicLastmod: true,
+    changefreq: "daily",
+    priority: "0.9",
+  },
+  "/varovania": {
+    file: "varovania.html",
+    title: "Aktuálne varovania pred medveďmi na Slovensku",
+    description:
+      "Prehľad verejných varovaní a hláseného výskytu medveďov na Slovensku podľa lokality, dátumu a pôvodného zdroja.",
+    schemaType: "CollectionPage",
+    dynamicLastmod: true,
+    changefreq: "daily",
+    priority: "0.9",
   },
   "/nahlas": {
     file: "nahlas.html",
@@ -220,6 +245,27 @@ function locationSlug(value) {
 
 function locationPath(value) {
   return `${LOCATION_ROUTE_PREFIX}${encodeURIComponent(locationSlug(value))}`;
+}
+
+function recordToken(id) {
+  return createHash("sha256").update(String(id || "record")).digest("hex").slice(0, 10);
+}
+
+function recordSlug(value, fallback = "zaznam") {
+  return locationSlug(value).slice(0, 72) || fallback;
+}
+
+function newsPath(item) {
+  const prefix = item?.category === "warning" ? WARNING_ROUTE_PREFIX : NEWS_ROUTE_PREFIX;
+  return `${prefix}${recordSlug(item?.title, "sprava-o-medvedovi")}-${recordToken(item?.id)}`;
+}
+
+function warningPath(item) {
+  return `${WARNING_ROUTE_PREFIX}${recordSlug(item?.location || item?.title, "varovanie-pred-medvedom")}-${recordToken(item?.id)}`;
+}
+
+function detailPath(item, type) {
+  return type === "warning" ? warningPath(item) : newsPath(item);
 }
 
 async function notifyIndexNow(paths) {
@@ -345,13 +391,21 @@ function structuredDataForPage(pathname, page, origin) {
       "@type": "WebSite",
       "@id": websiteId,
       name: "Kde je Medveď",
-      alternateName: ["Kde je medved", "Mapa medveďov Slovensko", "Mapa výskytu medveďov"],
+      alternateName: [
+        "Kde je medved",
+        "Mapa medveďov Slovensko",
+        "Mapa medvedov na Slovensku",
+        "Mapa výskytu medveďov",
+        "Medvede na Slovensku",
+      ],
       url: `${origin}/`,
       inLanguage: "sk-SK",
       about: bearEntity,
       keywords: [
         "kde je medveď",
         "mapa medveďov na Slovensku",
+        "mapa medvedov na Slovensku",
+        "medvede na Slovensku",
         "výskyt medveďa",
         "medvedie varovania",
       ],
@@ -492,6 +546,26 @@ function structuredDataForPage(pathname, page, origin) {
     });
   }
 
+  if (page.record) {
+    const record = page.record;
+    const article = graph.find((item) => item["@id"] === `${canonical}#webpage`);
+    const sourceUrl = safeHttpUrl(
+      record.articleUrl || record.link || record.googleNewsUrl || record.url || ""
+    );
+    Object.assign(article, {
+      headline: record.title || record.location || page.title.split("|")[0].trim(),
+      author: { "@id": organizationId },
+      publisher: { "@id": organizationId },
+      datePublished: record.date || record.reportedAt || modified,
+      dateModified: record._scrapedAt || record.date || record.reportedAt || modified,
+      ...(record.summary || record.snippet || record.note
+        ? { abstract: record.summary || record.snippet || record.note }
+        : {}),
+      ...(sourceUrl ? { citation: [sourceUrl], isBasedOn: sourceUrl } : {}),
+      mainEntityOfPage: { "@id": `${canonical}#webpage` },
+    });
+  }
+
   if (pathname === "/o-mape") {
     const aboutPage = graph.find((item) => item["@id"] === `${canonical}#webpage`);
     aboutPage.citation = [
@@ -528,10 +602,10 @@ function structuredDataForPage(pathname, page, origin) {
 function buildSeoHead(pathname, page, origin) {
   const canonical = absoluteUrl(origin, pathname);
   const image = absoluteUrl(origin, "/assets/mascot/bear-map-mascot-transparent.png");
-  const ogType = page.schemaType === "Article" ? "article" : "website";
+  const ogType = /Article$/.test(page.schemaType) ? "article" : "website";
   const schema = JSON.stringify(structuredDataForPage(pathname, page, origin)).replaceAll("<", "\\u003c");
   return [
-    '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />',
+    `<meta name="robots" content="${escapeHtml(page.robots || "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1")}" />`,
     `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
     '<meta property="og:locale" content="sk_SK" />',
     `<meta property="og:type" content="${ogType}" />`,
@@ -606,6 +680,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
     const note = item.note ? `<p class="card-note">${escapeHtml(String(item.note).slice(0, 240))}</p>` : "";
     const kind = warningRecordKind(item);
     const freshness = recordFreshness(item.reportedAt);
+    const detail = warningPath(item);
     const withTime = item.datePrecision !== "date";
     const correction = correctionMailto(item, kind.label.toLocaleLowerCase("sk-SK"));
     const links = sourceLinks.length
@@ -615,9 +690,9 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
       : "";
     return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
-      <h4 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h4>
+      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}<div class="card-actions"><div class="card-main-actions mobile-source-duplicate">${links}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
+      ${note}<div class="card-actions"><div class="card-main-actions"><a class="card-link card-detail-link" href="${escapeHtml(detail)}">Zobraziť detail <span aria-hidden="true">→</span></a><div class="mobile-source-duplicate">${links}</div></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
     </article>`;
   }).join("\n");
 }
@@ -648,6 +723,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
       : "";
     const kind = newsRecordKind(item);
     const freshness = recordFreshness(item.date);
+    const detail = newsPath(item);
     const correction = correctionMailto(item, kind.label.toLocaleLowerCase("sk-SK"));
     const coverage = item.isIncident && Array.isArray(item.coverage) && item.coverage.length > 1
       ? `<details class="coverage-details" id="coverage-${escapeHtml(item.incidentId)}">
@@ -667,12 +743,107 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     const locations = renderSsrNewsLocations(item);
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
-      <h4 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h4>
+      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.title || "Správa o medveďovi")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(item.source || "verejný zdroj", href ? [{ label: item.source || "Zdroj", url: href }] : [])}${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
-      ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
-      ${locations}<div class="card-actions"><div class="card-main-actions mobile-source-duplicate">${link}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
+      ${item.summary || item.snippet ? `<p class="card-note">${escapeHtml(String(item.summary || item.snippet).slice(0, 320))}</p>` : ""}
+      ${locations}<div class="card-actions"><div class="card-main-actions"><a class="card-link card-detail-link" href="${escapeHtml(detail)}">Zobraziť súhrn <span aria-hidden="true">→</span></a><div class="mobile-source-duplicate">${link}</div></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
     </article>`;
   }).join("\n");
+}
+
+function warningArchiveItems(overview) {
+  const sightings = (overview?.warnings || []).map((item) => ({
+    ...item,
+    archiveType: "warning",
+  }));
+  const mediaWarnings = (overview?.news || [])
+    .filter((item) => item.category === "warning")
+    .map((item) => ({ ...item, archiveType: "news" }));
+  return sightings.concat(mediaWarnings).sort((a, b) =>
+    new Date(b.reportedAt || b.date || 0) - new Date(a.reportedAt || a.date || 0)
+  );
+}
+
+function archiveSearchText(item) {
+  return normalizeSearchText([
+    item.title,
+    item.location,
+    item.place,
+    item.source,
+    item.summary,
+    item.snippet,
+    item.note,
+    ...(Array.isArray(item.locations) ? item.locations.map((location) => location.place) : []),
+  ].filter(Boolean).join(" "));
+}
+
+function archiveQueryUrl(pathname, { page = 1, pageSize = ARCHIVE_PAGE_SIZE, query = "" } = {}) {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("strana", String(page));
+  if (pageSize !== ARCHIVE_PAGE_SIZE) params.set("pocet", String(pageSize));
+  if (query) params.set("q", query);
+  const suffix = params.toString();
+  return suffix ? `${pathname}?${suffix}#zoznam` : `${pathname}#zoznam`;
+}
+
+function renderArchiveFilters(pathname, { pageSize, query }) {
+  return `<form class="archive-toolbar" action="${escapeHtml(pathname)}" method="get" role="search">
+    <label class="archive-search"><span>Hľadať v záznamoch</span><span class="archive-search-field"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="${escapeHtml(query)}" placeholder="Lokalita, názov alebo zdroj" /></span></label>
+    <label class="archive-page-size"><span>Počet na stránku</span><select name="pocet">${[24, 50, 100].map((size) => `<option value="${size}"${size === pageSize ? " selected" : ""}>${size}</option>`).join("")}</select></label>
+    <button class="btn archive-submit" type="submit">Použiť filtre</button>
+    ${query || pageSize !== ARCHIVE_PAGE_SIZE ? `<a class="archive-reset" href="${escapeHtml(pathname)}">Zrušiť filtre</a>` : ""}
+  </form>`;
+}
+
+function renderArchivePagination(pathname, state) {
+  if (state.totalPages <= 1) return "";
+  const windowStart = Math.max(1, Math.min(state.page - 2, state.totalPages - 4));
+  const windowEnd = Math.min(state.totalPages, windowStart + 4);
+  const links = [];
+  if (state.page > 1) {
+    links.push(`<a class="pagination-direction" href="${escapeHtml(archiveQueryUrl(pathname, { ...state, page: state.page - 1 }))}"><i class="ph ph-arrow-left" aria-hidden="true"></i> Predchádzajúca</a>`);
+  }
+  for (let page = windowStart; page <= windowEnd; page++) {
+    links.push(page === state.page
+      ? `<span class="pagination-current" aria-current="page">${page}</span>`
+      : `<a href="${escapeHtml(archiveQueryUrl(pathname, { ...state, page }))}" aria-label="Strana ${page}">${page}</a>`);
+  }
+  if (state.page < state.totalPages) {
+    links.push(`<a class="pagination-direction" href="${escapeHtml(archiveQueryUrl(pathname, { ...state, page: state.page + 1 }))}">Ďalšia <i class="ph ph-arrow-right" aria-hidden="true"></i></a>`);
+  }
+  return `<nav class="archive-pagination" aria-label="Stránkovanie">${links.join("")}</nav>`;
+}
+
+function renderArchiveItems(items, kind) {
+  if (!items.length) {
+    return `<div class="archive-empty"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><h2>Nenašli sa žiadne záznamy</h2><p>Skúste kratší názov lokality alebo zrušte filtre.</p></div>`;
+  }
+  if (kind === "news") return renderSsrNews(items, "", items.length);
+  return items.map((item) => item.archiveType === "news"
+    ? renderSsrNews([item], "", 1)
+    : renderSsrWarnings([item], "", 1)
+  ).join("\n");
+}
+
+function archiveState(req, items) {
+  const query = String(req.query.q || "").trim().slice(0, 80);
+  const normalizedQuery = normalizeSearchText(query);
+  const requestedSize = Number(req.query.pocet);
+  const pageSize = ARCHIVE_PAGE_SIZES.has(requestedSize) ? requestedSize : ARCHIVE_PAGE_SIZE;
+  const filtered = normalizedQuery
+    ? items.filter((item) => archiveSearchText(item).includes(normalizedQuery))
+    : items;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const requestedPage = Math.max(1, Number.parseInt(req.query.strana, 10) || 1);
+  const page = Math.min(requestedPage, totalPages);
+  return {
+    query,
+    pageSize,
+    page,
+    totalPages,
+    total: filtered.length,
+    items: filtered.slice((page - 1) * pageSize, page * pageSize),
+  };
 }
 
 function includesLocation(value, locationName) {
@@ -971,7 +1142,10 @@ async function loadWarnings() {
 
 app.get("/api/warnings", async (_req, res) => {
   try {
-    const items = await loadWarnings();
+    const items = (await loadWarnings()).map((item) => ({
+      ...item,
+      detailUrl: warningPath(item),
+    }));
     // Krátka cache — schválené hlásenie sa má na webe objaviť rýchlo.
     res.set("Cache-Control", "public, max-age=60");
     res.json({ updatedAt: sightingsStore.meta.fetchedAt, count: items.length, items });
@@ -990,7 +1164,10 @@ app.get("/api/news", async (_req, res) => {
       scrapedTimes.length > 0
         ? new Date(Math.max(...scrapedTimes)).toISOString()
         : newsStore.meta.fetchedAt;
-    const items = data.map(({ _scrapedAt, ...item }) => item);
+    const items = data.map(({ _scrapedAt, ...item }) => ({
+      ...item,
+      detailUrl: newsPath(item),
+    }));
 
     res.set("Cache-Control", "no-store, max-age=0");
     res.json({ updatedAt, count: items.length, items });
@@ -1120,10 +1297,13 @@ async function refreshAll(reason) {
 
   let indexNow = null;
   if ((sources.sightings.ok || sources.news.ok) && reason !== "startup") {
-    const changedPaths = ["/", "/stats"];
+    const changedPaths = ["/", "/domov", "/spravy", "/varovania", "/stats"];
     try {
-      const { locations } = await loadLocationOverview();
+      const overview = await loadLocationOverview();
+      const { locations } = overview;
       changedPaths.push(...locations.map((location) => location.path));
+      changedPaths.push(...overview.news.map((item) => newsPath(item)));
+      changedPaths.push(...overview.warnings.map((item) => warningPath(item)));
     } catch (err) {
       console.error("[indexnow] location URLs unavailable:", err.message);
     }
@@ -1384,11 +1564,14 @@ app.post("/api/subscriptions/unsubscribe", async (req, res) => {
 async function renderPublicPage(req, res, pathname, page) {
   try {
     const origin = siteOrigin(req);
+    const hasArchiveParams = (pathname === "/spravy" || pathname === "/varovania") &&
+      Boolean(req.query.q || req.query.strana || req.query.pocet);
+    const seoPage = hasArchiveParams ? { ...page, robots: "noindex,follow" } : page;
     let html = await getPageTemplate(page.file);
-    html = html.replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, page, origin));
+    html = html.replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, seoPage, origin));
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
-    if (pathname === "/" || pathname === "/domov") {
+    if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
       const overview = await loadLocationOverview().catch((err) => {
         console.error("[seo] public overview SSR failed:", err.message);
         return {
@@ -1406,12 +1589,25 @@ async function renderPublicPage(req, res, pathname, page) {
           .replace("<!-- SSR_WARNING_COUNT -->", escapeHtml(overview.warnings.length))
           .replace("<!-- SSR_NEWS_COUNT -->", escapeHtml(overview.news.length))
           .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
-      } else {
+      } else if (pathname === "/domov") {
         html = html
           .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(overview))
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+      } else {
+        const archiveItems = pathname === "/spravy"
+          ? overview.news
+          : warningArchiveItems(overview);
+        const state = archiveState(req, archiveItems);
+        html = html
+          .replace("<!-- ARCHIVE_FILTERS -->", renderArchiveFilters(pathname, state))
+          .replace("<!-- ARCHIVE_ITEMS -->", renderArchiveItems(state.items, pathname === "/spravy" ? "news" : "warnings"))
+          .replace("<!-- ARCHIVE_PAGINATION -->", renderArchivePagination(pathname, state))
+          .replace("<!-- ARCHIVE_COUNT -->", escapeHtml(
+            `${slovakCount(state.total, "záznam", "záznamy", "záznamov")}, strana ${state.page} z ${state.totalPages}`
+          ))
           .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
       }
     }
@@ -1423,7 +1619,9 @@ async function renderPublicPage(req, res, pathname, page) {
       Link: `<${canonical}>; rel="canonical"`,
     });
     const modified = latestContentDate();
-    if (modified && pathname === "/") res.set("Last-Modified", new Date(modified).toUTCString());
+    if (modified && ["/", "/spravy", "/varovania"].includes(pathname)) {
+      res.set("Last-Modified", new Date(modified).toUTCString());
+    }
     res.type("html").send(html);
   } catch (err) {
     console.error(`[frontend] ${pathname} render failed:`, err.message);
@@ -1498,11 +1696,150 @@ async function renderLocationPage(req, res) {
   }
 }
 
+function findRecordToken(slug) {
+  return String(slug || "").match(/-([a-f0-9]{10})$/i)?.[1]?.toLowerCase() || "";
+}
+
+function recordLocations(record, recordType) {
+  if (recordType === "warning") {
+    return normalizeNewsLocations(record.location ? [record.location] : []);
+  }
+  return normalizeNewsLocations(
+    record.locations?.length
+      ? record.locations
+      : { place: record.place, lat: record.lat, lng: record.lng }
+  );
+}
+
+function renderDetailLocations(record, recordType, overview) {
+  const locations = recordLocations(record, recordType);
+  if (!locations.length) return '<p class="record-detail-empty">Lokalita nebola v zdroji spoľahlivo určená.</p>';
+  return `<div class="record-detail-locations">${locations.map((location) => {
+    const slug = locationSlug(location.place);
+    const hasPage = overview.locations.some((item) => item.slug === slug);
+    return hasPage
+      ? `<a href="${escapeHtml(locationPath(location.place))}"><i class="ph ph-map-pin" aria-hidden="true"></i>${escapeHtml(location.place)}</a>`
+      : `<span><i class="ph ph-map-pin" aria-hidden="true"></i>${escapeHtml(location.place)}</span>`;
+  }).join("")}</div>`;
+}
+
+function detailSource(record, recordType) {
+  if (recordType === "warning") {
+    const links = sightingSourceLinks(record)
+      .map((entry) => ({ ...entry, url: safeHttpUrl(entry.url) }))
+      .filter((entry) => entry.url);
+    return {
+      label: links.length
+        ? [...new Set(links.map((entry) => entry.label))].join(" · ")
+        : record.source || (record.sourceType === "report" ? "Moderované hlásenie" : "Verejný zdroj"),
+      links,
+    };
+  }
+  const url = safeHttpUrl(record.articleUrl || record.link || record.googleNewsUrl || "");
+  return {
+    label: record.source || "Verejný zdroj",
+    links: url ? [{ label: "Otvoriť pôvodný článok", url }] : [],
+  };
+}
+
+function renderDetailSources(source) {
+  if (!source.links.length) {
+    return `<p class="record-detail-empty">Pôvodný verejný odkaz nie je pri tomto zázname dostupný.</p>`;
+  }
+  return `<div class="record-source-actions">${source.links.map((link) =>
+    `<a class="btn" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>`
+  ).join("")}</div>`;
+}
+
+async function renderRecordPage(req, res, requestedKind) {
+  try {
+    const overview = await loadLocationOverview();
+    const token = findRecordToken(req.params.slug);
+    let record = null;
+    let recordType = requestedKind;
+
+    if (token) {
+      if (requestedKind === "news") {
+        record = overview.news.find((item) => recordToken(item.id) === token) || null;
+        if (record?.category === "warning") return res.redirect(301, newsPath(record));
+      } else {
+        record = overview.warnings.find((item) => recordToken(item.id) === token) || null;
+        if (!record) {
+          record = overview.news.find((item) =>
+            item.category === "warning" && recordToken(item.id) === token
+          ) || null;
+          if (record) recordType = "news";
+        }
+      }
+    }
+
+    if (!record) {
+      return res.status(404).set("X-Robots-Tag", "noindex, follow").type("text")
+        .send("Tento záznam sa nenašiel alebo už nie je verejne dostupný.");
+    }
+
+    const canonicalPath = detailPath(record, recordType);
+    if (req.path !== canonicalPath) return res.redirect(301, canonicalPath);
+
+    const isNewsArticle = recordType === "news";
+    const isWarningPage = requestedKind === "warning";
+    const title = record.title || record.location || "Záznam o výskyte medveďa";
+    const summary = String(record.summary || record.snippet || record.note ||
+      "Záznam obsahuje dostupnú lokalitu, dátum a pôvod informácie.").trim();
+    const date = record.date || record.reportedAt || record._scrapedAt || CONTENT_UPDATED;
+    const source = detailSource(record, recordType);
+    const page = {
+      title: `${title.slice(0, 72)} | Kde je Medveď`,
+      description: summary.slice(0, 158),
+      schemaType: isNewsArticle ? "NewsArticle" : "Article",
+      breadcrumbName: isWarningPage ? "Varovania pred medveďmi" : "Správy o medveďoch",
+      dateModified: record._scrapedAt || date,
+      record: { ...record, summary },
+    };
+    const relatedPool = requestedKind === "news" ? overview.news : warningArchiveItems(overview);
+    const related = relatedPool.filter((item) => String(item.id) !== String(record.id)).slice(0, 4);
+    const correction = correctionMailto(record, isWarningPage ? "varovanie" : "správa");
+    let html = await getPageTemplate("zaznam.html");
+    html = html
+      .replace("<!-- SEO_HEAD -->", buildSeoHead(canonicalPath, page, siteOrigin(req)))
+      .replaceAll("{{RECORD_TITLE}}", escapeHtml(title))
+      .replaceAll("<!-- RECORD_TYPE -->", isWarningPage ? "Varovanie pred medveďom" : "Správa o medveďoch")
+      .replace("<!-- RECORD_SUMMARY -->", escapeHtml(summary))
+      .replace("<!-- RECORD_DATE -->", escapeHtml(formatSlovakDate(date, Boolean(record.reportedAt && record.datePrecision !== "date"))))
+      .replace("<!-- RECORD_DATE_ISO -->", escapeHtml(date))
+      .replace("<!-- RECORD_SOURCE -->", escapeHtml(source.label))
+      .replace("<!-- RECORD_LOCATIONS -->", renderDetailLocations(record, recordType, overview))
+      .replace("<!-- RECORD_SOURCES -->", renderDetailSources(source))
+      .replace("<!-- RECORD_AI_NOTE -->", record.summaryGeneratedByAi
+        ? '<p class="record-ai-note"><i class="ph ph-sparkle" aria-hidden="true"></i>Súhrn bol vytvorený automaticky z dostupného textu zdroja a môže obsahovať nepresnosť. Rozhodujúci je pôvodný článok.</p>'
+        : "")
+      .replace("<!-- RECORD_RELATED -->", requestedKind === "news"
+        ? renderSsrNews(related, "Ďalšie správy momentálne nie sú dostupné.", 4)
+        : renderArchiveItems(related, "warnings"))
+      .replaceAll("<!-- RECORD_ARCHIVE_URL -->", requestedKind === "news" ? "/spravy" : "/varovania")
+      .replaceAll("<!-- RECORD_ARCHIVE_LABEL -->", requestedKind === "news" ? "Všetky správy" : "Všetky varovania")
+      .replace("<!-- RECORD_CORRECTION -->", escapeHtml(correction));
+
+    res.set({
+      "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+      "Content-Language": "sk",
+      "Last-Modified": new Date(record._scrapedAt || date).toUTCString(),
+      Link: `<${absoluteUrl(siteOrigin(req), canonicalPath)}>; rel="canonical"`,
+    });
+    return res.type("html").send(html);
+  } catch (err) {
+    console.error("[seo] record page render failed:", err.message);
+    return res.status(500).type("text").send("Stránku sa nepodarilo načítať.");
+  }
+}
+
 for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
   app.get(pathname, (req, res) => renderPublicPage(req, res, pathname, page));
 }
 
 app.get(`${LOCATION_ROUTE_PREFIX}:slug`, renderLocationPage);
+app.get(`${NEWS_ROUTE_PREFIX}:slug`, (req, res) => renderRecordPage(req, res, "news"));
+app.get(`${WARNING_ROUTE_PREFIX}:slug`, (req, res) => renderRecordPage(req, res, "warning"));
 
 // Jednoznačná kanonická URL pre staré alebo opisné varianty adresy.
 app.get(
@@ -1514,6 +1851,7 @@ app.get(
   ],
   (_req, res) => res.redirect(301, "/")
 );
+app.get("/zaznam.html", (_req, res) => res.redirect(301, "/spravy"));
 for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
   if (pathname !== "/") app.get(`/${page.file}`, (_req, res) => res.redirect(301, pathname));
 }
@@ -1548,10 +1886,19 @@ app.get("/sitemap.xml", async (req, res) => {
   });
 
   try {
-    const { locations } = await loadLocationOverview();
+    const overview = await loadLocationOverview();
+    const { locations } = overview;
     for (const location of locations) {
       rows.push(
         `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, location.path))}</loc>\n    <lastmod>${escapeHtml(location.latest)}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>`
+      );
+    }
+    const detailRows = new Map();
+    for (const item of overview.news) detailRows.set(newsPath(item), item.date || item._scrapedAt);
+    for (const item of overview.warnings) detailRows.set(warningPath(item), item.reportedAt || item._scrapedAt);
+    for (const [pathname, lastmod] of detailRows) {
+      rows.push(
+        `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod || latestContentDate() || CONTENT_UPDATED)}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
       );
     }
   } catch (err) {
@@ -1587,6 +1934,8 @@ app.get("/llms.txt", async (req, res) => {
 ## Najdôležitejšie stránky
 - [Aktuálna mapa](${absoluteUrl(origin, "/")})
 - [Domov projektu](${absoluteUrl(origin, "/domov")})
+- [Správy o medveďoch](${absoluteUrl(origin, "/spravy")})
+- [Varovania pred medveďmi](${absoluteUrl(origin, "/varovania")})
 - [Štatistiky hlásení](${absoluteUrl(origin, "/stats")})
 - [Bezpečnosť pri stretnutí s medveďom](${absoluteUrl(origin, "/bezpecnost")})
 - [Zdroje, metodika a obmedzenia](${absoluteUrl(origin, "/o-mape")})
@@ -1621,7 +1970,8 @@ app.get("/feed.xml", async (req, res) => {
       item.note ? String(item.note).slice(0, 400) : "",
       "Údaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa.",
     ].filter(Boolean).join(" ");
-    return `  <item>\n    <title>${escapeHtml(title)}</title>\n    <link>${escapeHtml(`${origin}/`)}</link>\n    <guid isPermaLink="false">${escapeHtml(item.id)}</guid>\n    <pubDate>${new Date(item.reportedAt || Date.now()).toUTCString()}</pubDate>\n    <description>${escapeHtml(description)}</description>\n  </item>`;
+    const detailUrl = absoluteUrl(origin, warningPath(item));
+    return `  <item>\n    <title>${escapeHtml(title)}</title>\n    <link>${escapeHtml(detailUrl)}</link>\n    <guid isPermaLink="true">${escapeHtml(detailUrl)}</guid>\n    <pubDate>${new Date(item.reportedAt || Date.now()).toUTCString()}</pubDate>\n    <description>${escapeHtml(description)}</description>\n  </item>`;
   }).join("\n");
   res
     .type("application/rss+xml")

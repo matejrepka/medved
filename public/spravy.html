@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Správy o medveďoch na Slovensku | Kde je Medveď</title>
+    <meta name="description" content="Najnovšie správy o medveďoch na Slovensku s krátkym vecným súhrnom, dátumom a odkazom na pôvodný zdroj." />
+    <!-- SEO_HEAD -->
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark = t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260731-archives1" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
+  </head>
+  <body class="archive-page">
+    <header class="site-header">
+      <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
+        <span class="brand-mark"><img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" /></span>
+        <span class="brand-name">Kde je Medve&#271;</span>
+      </a>
+      <nav class="main-nav" aria-label="Hlavné menu">
+        <a href="/">Mapa</a><a href="/domov">Domov</a><a href="/stats">Štatistiky</a><a href="/nahlas">Nahlásiť</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim"><i class="ph ph-moon" aria-hidden="true"></i></button>
+      </div>
+    </header>
+
+    <main class="knowledge-page archive-shell" id="mainContent">
+      <nav class="breadcrumbs" aria-label="Navigácia v hierarchii"><a href="/domov">Domov</a><span aria-hidden="true">/</span><span>Správy</span></nav>
+      <header class="archive-hero">
+        <p class="section-kicker">Priebežne aktualizovaný prehľad</p>
+        <h1>Správy o medveďoch na Slovensku</h1>
+        <p class="answer-lead">Najdôležitejšie informácie zo slovenských médií a verejných oznámení s dátumom, zdrojom a stručným súhrnom.</p>
+        <p class="review-note"><!-- SSR_UPDATED --></p>
+      </header>
+
+      <section class="archive-listing" id="zoznam" aria-labelledby="archiveListHeading">
+        <h2 class="sr-only" id="archiveListHeading">Zoznam správ o medveďoch</h2>
+        <!-- ARCHIVE_FILTERS -->
+        <p class="archive-count" role="status"><!-- ARCHIVE_COUNT --></p>
+        <div class="list archive-record-list"><!-- ARCHIVE_ITEMS --></div>
+        <!-- ARCHIVE_PAGINATION -->
+      </section>
+
+      <aside class="archive-context" aria-labelledby="newsContextHeading">
+        <h2 id="newsContextHeading">Ako vznikajú súhrny správ</h2>
+        <p>Nový článok prejde kontrolou relevantnosti a automatickým stručným zhrnutím. Súhrn nenahrádza pôvodný článok, preto pri dôležitom rozhodnutí vždy otvorte uvedený zdroj.</p>
+        <a class="text-link" href="/o-mape">Zdroje a metodika <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner"><div class="footer-main">
+        <div class="footer-brand">
+          <a class="footer-identity" href="/domov" aria-label="Kde je Medveď, domov"><span class="footer-brand-mark"><img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Logo Kde je Medveď" /></span><span class="footer-brand-copy"><strong>Kde je Medveď</strong><small>Prehľad, ktorý má stopu.</small></span></a>
+          <p class="footer-description">Nezávislý agregátor hlásení, varovaní a správ. Údaje sú orientačné a nenahrádzajú pokyny ŠOP SR ani tiesňových zložiek.</p>
+          <a class="footer-report-link" href="/nahlas"><i class="ph ph-map-pin-plus" aria-hidden="true"></i>Nahlásiť pozorovanie<i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="footer-nav">
+          <div class="footer-column"><h2>Preskúmajte</h2><nav class="footer-links" aria-label="Hlavné odkazy v pätičke"><a href="/">Aktuálna mapa</a><a href="/spravy">Správy</a><a href="/varovania">Varovania</a><a href="/stats">Štatistiky</a><a href="/bezpecnost">Bezpečnosť</a><a href="/nahlas">Nahlásiť výskyt</a></nav></div>
+          <div class="footer-column"><h2>O projekte</h2><nav class="footer-links footer-legal-links" aria-label="Informácie o projekte"><a href="/o-mape">O nás a ako to funguje</a><a href="/spomenuli-nas">Spomenuli nás</a><a href="/o-mape#kontakt">Kontakt</a><a href="/privacy">Ochrana súkromia</a><a href="/terms">Podmienky používania</a></nav></div>
+        </div>
+      </div><div class="footer-bottom"><p>© 2026 Kde je Medveď</p><p>Nezávislý informačný projekt pre Slovensko.</p></div></div>
+    </footer>
+    <script src="/page.js?v=20260731-archives1" defer></script>
+    <script src="/consent.js?v=20260714-footer2" defer></script>
+  </body>
+</html>

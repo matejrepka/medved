@@ -15,7 +15,8 @@
   ];
 
   const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
-  const isCurrent = (href) => currentPath === href;
+  const isCurrent = (href) => currentPath === href ||
+    (["/spravy", "/varovania"].includes(href) && currentPath.startsWith(`${href}/`));
 
   function navLink({ href, label, icon }, className = "") {
     const current = isCurrent(href);
@@ -98,6 +99,8 @@
 
       <nav class="drawer-nav" aria-label="Informácie">
         <h3>Informácie</h3>
+        ${navLink({ href: "/spravy", label: "Správy", icon: "newspaper-clipping" })}
+        ${navLink({ href: "/varovania", label: "Varovania", icon: "warning" })}
         ${navLink({ href: "/bezpecnost", label: "Bezpečnosť", icon: "shield-check" })}
         ${navLink({ href: "/o-mape", label: "O mape", icon: "info" })}
         ${navLink({ href: "/spomenuli-nas", label: "Spomenuli nás", icon: "newspaper" })}

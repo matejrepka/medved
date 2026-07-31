@@ -29,10 +29,15 @@ Live site: kdejemedved.sk
 - **Geokódovanie správ** – z titulku/popisu článku sa rozpozná slovenská obec/mesto a správa
   sa zobrazí ako značka na mape. Funguje offline cez lokálny gazetteer (`src/geo/sk-places.json`)
   s toleranciou na slovenské skloňovanie (napr. „v Ružomberku" → Ružomberok).
-- **AI predvyplnenie moderácie** – iba nové správy po stiahnutí spracuje cez OpenRouter model
-  `openrouter/free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
+- **AI predvyplnenie moderácie a súhrny** – iba nové správy po stiahnutí spracuje cez
+  jeden spoločný OpenRouter request. Model vytvorí krátky vecný súhrn, predvolí
+  „Správa / článok“ alebo „Medvedie varovanie“
   a pri varovaní doplní všetky spoľahlivo pomenované lokality jednotlivých pozorovaní;
-  admin môže lokality pred schválením pridať, odstrániť alebo opraviť.
+  admin môže lokality pred schválením pridať, odstrániť alebo opraviť. Počet položiek
+  na jeden cron beh aj rozostup requestov sú konfigurovateľné cez `.env`.
+- **SEO archívy a detaily** – `/spravy` a `/varovania` ponúkajú serverom vykreslený,
+  filtrovaný a stránkovaný zoznam. Každý verejný záznam má stabilnú detailnú URL,
+  štruktúrované dáta, interné odkazy a záznam v dynamickej sitemap.
 - **Udalosti a spravodajské pokrytie** – každý článok ostáva samostatným moderovaným
   záznamom, no admin ho môže pri schválení pripojiť k trvalej udalosti podľa skutočného
   dátumu a lokality. Verejný zoznam potom ukáže jednu udalosť s počtom zdrojov a rozbaliteľným
