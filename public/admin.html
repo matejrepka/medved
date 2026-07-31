@@ -574,6 +574,7 @@
       .review-loc-label i { color: var(--accent); }
       .review-loc-input {
         width: 100%;
+        min-height: 44px;
         padding: 0.55rem 0.8rem;
         font-family: var(--font-sans);
         font-size: 0.9rem;
@@ -603,6 +604,7 @@
         align-items: center;
         justify-content: center;
         gap: 5px;
+        min-height: 44px;
         padding: 0.55rem 0.8rem;
         color: var(--accent);
         background: var(--accent-soft);
@@ -659,6 +661,78 @@
         color: var(--ink-3);
       }
       .review-loc-hint.selected { color: var(--accent); }
+      .warning-location-list {
+        display: grid;
+        gap: 8px;
+      }
+      .warning-location-item {
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+      .warning-location-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .warning-location-number {
+        color: var(--ink-3);
+        font-size: 0.74rem;
+        font-weight: 700;
+      }
+      .warning-location-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 10px;
+        color: var(--ink-3);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .warning-location-remove:hover,
+      .warning-location-remove:focus-visible {
+        color: #b91c1c;
+        border-color: rgba(239, 68, 68, 0.45);
+        outline: none;
+      }
+      .warning-location-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 44px;
+        margin-top: 8px;
+        padding: 8px 12px;
+        color: var(--accent);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        font: 650 0.82rem var(--font-sans);
+        cursor: pointer;
+      }
+      .warning-location-add:disabled { opacity: 0.5; cursor: not-allowed; }
+      .edit-warning-location-list { display: grid; gap: 8px; }
+      .edit-warning-location-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(100px, 0.45fr) minmax(100px, 0.45fr) auto;
+        gap: 7px;
+        align-items: end;
+      }
+      .edit-warning-location-grid label {
+        display: grid;
+        gap: 4px;
+        margin: 0;
+      }
+      .edit-warning-location-grid label span {
+        color: var(--ink-3);
+        font-size: 0.72rem;
+      }
       .review-msg {
         margin: 10px 0 0;
         font-size: 0.82rem;
@@ -668,117 +742,19 @@
       .review-msg:empty { display: none; }
       [data-theme="dark"] .review-msg { color: #f87171; }
 
-      .incident-review {
+      .incident-auto-note {
+        display: flex;
+        gap: 10px;
         margin: 14px 0 0;
         padding: 12px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        background: var(--bg);
-      }
-      .incident-review legend {
-        padding: 0 6px;
-        color: var(--ink);
-        font-size: 0.84rem;
-        font-weight: 700;
-      }
-      .incident-review-intro {
-        margin: 0 0 10px;
-        color: var(--ink-3);
-        font-size: 0.76rem;
-        line-height: 1.45;
-      }
-      .incident-fields {
-        display: grid;
-        gap: 10px;
-      }
-      .incident-field label {
-        display: block;
-        margin-bottom: 5px;
         color: var(--ink-2);
-        font-size: 0.78rem;
-        font-weight: 650;
-      }
-      .incident-field input,
-      .incident-field select,
-      .incident-field textarea {
-        width: 100%;
-        min-height: 44px;
-        padding: 0.55rem 0.7rem;
-        color: var(--ink);
-        background: var(--surface);
-        border: 1px solid var(--line-strong);
-        border-radius: var(--radius-sm);
-        font: 1rem/1.35 var(--font-sans);
-      }
-      .incident-field textarea { min-height: 72px; resize: vertical; }
-      .incident-field input:focus,
-      .incident-field select:focus,
-      .incident-field textarea:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-soft);
-        outline: none;
-      }
-      .incident-search-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 7px;
-        margin-top: 10px;
-      }
-      .incident-search-row input {
-        flex: 1 1 220px;
-        min-width: 0;
-        min-height: 44px;
-        padding: 0.55rem 0.7rem;
-        color: var(--ink);
-        background: var(--surface);
-        border: 1px solid var(--line-strong);
-        border-radius: var(--radius-sm);
-        font: 1rem/1.35 var(--font-sans);
-      }
-      .incident-search-row .review-btn { min-height: 44px; }
-      .incident-search-label,
-      .incident-source-field { margin-top: 10px; }
-      .incident-match-results {
-        display: grid;
-        gap: 7px;
-        margin-top: 10px;
-      }
-      .incident-option {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 3px 9px;
-        min-height: 44px;
-        padding: 9px 10px;
-        color: var(--ink-2);
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        cursor: pointer;
-      }
-      .incident-option:has(input:checked) {
-        color: var(--ink);
-        border-color: var(--accent);
         background: var(--accent-soft);
       }
-      .incident-option input { grid-row: 1 / span 2; margin-top: 3px; accent-color: var(--accent); }
-      .incident-option strong { font-size: 0.88rem; }
-      .incident-option small { color: var(--ink-3); font-size: 0.78rem; line-height: 1.4; }
-      .incident-match-status {
-        margin: 0;
-        color: var(--ink-3);
-        font-size: 0.76rem;
-      }
-      .incident-create-fields { margin-top: 10px; }
-      .incident-create-fields[hidden] { display: none; }
-
-      @media (min-width: 720px) {
-        .incident-fields { grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.3fr); }
-        .incident-field.full { grid-column: 1 / -1; }
-        .incident-field input,
-        .incident-field select,
-        .incident-field textarea,
-        .incident-search-row input { font-size: 0.84rem; }
-      }
+      .incident-auto-note > i { flex: 0 0 auto; margin-top: 2px; color: var(--accent); font-size: 1.1rem; }
+      .incident-auto-note strong { color: var(--ink); font-size: 0.84rem; }
+      .incident-auto-note p { margin: 3px 0 0; color: var(--ink-3); font-size: 0.76rem; line-height: 1.45; }
 
       /* ---- Manual add form ---- */
       .add-form {
@@ -1187,6 +1163,8 @@
         .admin-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .admin-tab { padding: 10px 12px 12px; font-size: 0.82rem; }
         .admin-body { padding: 1.25rem clamp(12px, 4vw, 36px) 2rem; }
+        .review-loc-input,
+        .edit-warning-location-grid input { font-size: 16px; }
       }
       @media (max-width: 560px) {
         .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -1195,6 +1173,8 @@
         .review-btn { flex: 1; justify-content: center; padding: 10px 14px; }
         .edit-grid { grid-template-columns: 1fr; }
         .content-search { order: 3; width: 100%; flex-basis: 100%; }
+        .edit-warning-location-grid { grid-template-columns: 1fr 1fr; }
+        .edit-warning-location-grid label:first-child { grid-column: 1 / -1; }
       }
       @media (max-width: 400px) {
         .stats-grid { grid-template-columns: 1fr; }
@@ -1335,7 +1315,7 @@
                 <span class="section-count" id="pendingNewsCount">0</span>
               </div>
               <button class="btn-approve-all" id="approveAllNews" style="display:none">
-                <i class="ph ph-checks"></i> Schváliť bez spojenia
+                <i class="ph ph-checks"></i> Schváliť ako články
               </button>
             </div>
             <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
@@ -1394,6 +1374,10 @@
                 </div>
                 <div class="place-search-results" id="addPlaceResults" hidden></div>
                 <p class="add-hint" id="addPlaceHint"></p>
+                <div class="warning-location-list" id="addExtraLocations"></div>
+                <button class="warning-location-add" id="addExtraLocationButton" type="button" hidden>
+                  <i class="ph ph-plus"></i> Pridať ďalšiu lokalitu
+                </button>
               </div>
 
               <div class="add-field" data-field="description">
@@ -2009,25 +1993,13 @@
 
       let newsCardSeq = 0;
 
-      function suggestedSourceType(item) {
-        const text = [item.source, item.article_url, item.google_news_url, item.link]
-          .filter(Boolean).join(' ').toLocaleLowerCase('sk')
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (/sop sr|statna ochrana prirody|zasahovy tim|policia|policajny zbor|mestska policia|\bobec\b|\bmesto\b|sopsr\.sk|minv\.sk/.test(text)) return 'official_notice';
-        if (/tasr|sita|teraz\.sk|webnoviny/.test(text)) return 'syndication';
-        if (/markiza|joj|rtvs|stvr|sme|pravda|aktuality|dennik n|hnonline|topky/.test(text)) return 'national';
-        return 'local_original';
-      }
-
       function renderNewsCard(item) {
         const card = document.createElement('div');
         card.className = 'review-card';
         card.dataset.itemId = item.id;
 
         const groupName = 'cat-' + (++newsCardSeq);
-        const incidentGroupName = 'incident-' + newsCardSeq;
         const isWarning = item.category === 'warning';
-        const sourceType = suggestedSourceType(item);
         const articleHref = safeHttpHref(item.article_url || item.google_news_url || item.link);
 
         card.innerHTML =
@@ -2057,207 +2029,101 @@
             '</label>' +
           '</div>' +
           '<div class="review-loc"' + (isWarning ? '' : ' hidden') + '>' +
-            '<label class="review-loc-label" for="loc-' + groupName + '"><i class="ph ph-map-pin"></i> Lokalita na mape</label>' +
-            '<div class="place-search-row">' +
-              '<input class="review-loc-input" id="loc-' + groupName + '" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off">' +
-              '<button class="place-search-btn review-loc-search" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
-            '</div>' +
-            '<div class="place-search-results" hidden></div>' +
-            '<p class="review-loc-hint">Vyhľadajte a vyberte obec, dolinu, jazero alebo inú lokalitu. Zobrazí sa na verejnej mape hranatou značkou.</p>' +
+            '<div class="review-loc-label"><i class="ph ph-map-pin"></i> Lokality na mape</div>' +
+            '<div class="warning-location-list"></div>' +
+            '<button class="warning-location-add" type="button"><i class="ph ph-plus"></i> Pridať ďalšiu lokalitu</button>' +
+            '<p class="review-loc-hint">Každá lokalita vytvorí samostatnú značku na mape. Prvú lokalitu zachovávame aj pre staršie časti systému.</p>' +
           '</div>' +
-          '<fieldset class="incident-review">' +
-            '<legend>Priradenie k reálnej udalosti</legend>' +
-            '<p class="incident-review-intro">Dátum udalosti a lokalita sú oddelené od publikovania článku. Ak ich nemožno spoľahlivo určiť, ponechajte správu bez spojenia.</p>' +
-            '<div class="incident-fields">' +
-              '<div class="incident-field">' +
-                '<label for="event-date-' + groupName + '">Dátum udalosti</label>' +
-                '<input id="event-date-' + groupName + '" class="incident-event-date" type="date">' +
-              '</div>' +
-              '<div class="incident-field">' +
-                '<label for="incident-loc-' + groupName + '">Lokalita udalosti</label>' +
-                '<div class="place-search-row">' +
-                  '<input id="incident-loc-' + groupName + '" class="review-loc-input incident-locality" type="text" value="' + esc(item.place || '') + '" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off">' +
-                  '<button class="place-search-btn incident-loc-search" type="button"><i class="ph ph-magnifying-glass"></i> Lokalita</button>' +
-                '</div>' +
-                '<div class="place-search-results incident-loc-results" hidden></div>' +
-                '<p class="review-loc-hint incident-loc-hint">Vyhľadajte a vyberte presnú lokalitu udalosti.</p>' +
-              '</div>' +
-            '</div>' +
-            '<label class="review-loc-label incident-search-label" for="incident-query-' + groupName + '"><i class="ph ph-magnifying-glass"></i> Iná existujúca udalosť (voliteľné)</label>' +
-            '<div class="incident-search-row">' +
-              '<input id="incident-query-' + groupName + '" class="incident-query" type="search" placeholder="Názov alebo lokalita">' +
-              '<button class="review-btn incident-match-search" type="button"><i class="ph ph-git-merge"></i> Nájsť udalosť</button>' +
-            '</div>' +
-            '<div class="incident-match-results">' +
-              '<label class="incident-option">' +
-                '<input type="radio" name="' + incidentGroupName + '" value="ungrouped" checked>' +
-                '<strong>Schváliť bez spojenia</strong>' +
-                '<small>Bezpečná voľba, keď dátum alebo miesto nie sú isté.</small>' +
-              '</label>' +
-              '<label class="incident-option">' +
-                '<input type="radio" name="' + incidentGroupName + '" value="create">' +
-                '<strong>Vytvoriť novú udalosť</strong>' +
-                '<small>Použite, keď ide o samostatnú udalosť a údaje sú spoľahlivé.</small>' +
-              '</label>' +
-              '<p class="incident-match-status" aria-live="polite">Zatiaľ bez vyhľadania historických udalostí.</p>' +
-            '</div>' +
-            '<div class="incident-create-fields" hidden>' +
-              '<div class="incident-fields">' +
-                '<div class="incident-field full"><label>Názov udalosti</label><input class="incident-title" type="text" maxlength="300" value="' + esc(item.title || '') + '"></div>' +
-                '<div class="incident-field"><label>Presnosť dátumu</label><select class="incident-date-precision"><option value="day">Presný deň</option><option value="approximate">Približný deň</option></select></div>' +
-                '<div class="incident-field"><label>Stav udalosti</label><select class="incident-status"><option value="active">Aktívna</option><option value="resolved">Ukončená</option></select></div>' +
-                '<div class="incident-field full"><label>Krátke zhrnutie</label><textarea class="incident-summary" maxlength="1500">' + esc(item.snippet || '') + '</textarea></div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="incident-field incident-source-field">' +
-              '<label>Typ tohto zdroja</label>' +
-              '<select class="incident-source-type">' +
-                '<option value="official_notice"' + (sourceType === 'official_notice' ? ' selected' : '') + '>Úradné oznámenie (ŠOP, obec, polícia)</option>' +
-                '<option value="local_original"' + (sourceType === 'local_original' ? ' selected' : '') + '>Miestny alebo priamy zdroj</option>' +
-                '<option value="national"' + (sourceType === 'national' ? ' selected' : '') + '>Celoštátne médium</option>' +
-                '<option value="syndication"' + (sourceType === 'syndication' ? ' selected' : '') + '>Prevzatá správa alebo agentúra</option>' +
-                '<option value="other"' + (sourceType === 'other' ? ' selected' : '') + '>Iný zdroj</option>' +
-              '</select>' +
-            '</div>' +
-          '</fieldset>' +
+          '<div class="incident-auto-note">' +
+            '<i class="ph ph-git-merge" aria-hidden="true"></i>' +
+            '<div><strong>Automatické zoskupenie po schválení</strong>' +
+            '<p>Systém použije dátum udalosti a lokality z AI analýzy. Spoľahlivú zhodu pripojí alebo vytvorí novú udalosť; nejasný článok schváli bez núteného spojenia.</p></div>' +
+          '</div>' +
           '<p class="review-msg" role="alert"></p>';
 
         const locWrap = card.querySelector('.review-loc');
-        const locInput = card.querySelector('.review-loc-input');
-        const locSearch = card.querySelector('.review-loc-search');
-        const locResults = card.querySelector('.place-search-results');
-        const locHint = card.querySelector('.review-loc-hint');
+        const warningLocationList = card.querySelector('.warning-location-list');
+        const warningLocationAdd = card.querySelector('.warning-location-add');
         const msg = card.querySelector('.review-msg');
         const initialLat = Number(item.lat);
         const initialLng = Number(item.lng);
-        const locationPicker = wireLocationSearch(
-          locInput,
-          locSearch,
-          locResults,
-          locHint,
-          item.place && Number.isFinite(initialLat) && Number.isFinite(initialLng)
-            ? { name: item.place, label: item.place, lat: initialLat, lng: initialLng }
-            : null
-        );
+        const initialLocations = Array.isArray(item.locations) && item.locations.length
+          ? item.locations
+          : item.place
+            ? [{ place: item.place, lat: initialLat, lng: initialLng }]
+            : [];
+        const warningLocationEditors = [];
 
-        const incidentDateInput = card.querySelector('.incident-event-date');
-        const incidentLocalityInput = card.querySelector('.incident-locality');
-        const incidentQueryInput = card.querySelector('.incident-query');
-        const incidentMatchResults = card.querySelector('.incident-match-results');
-        const incidentMatchStatus = card.querySelector('.incident-match-status');
-        const incidentCreateFields = card.querySelector('.incident-create-fields');
-        const incidentPicker = wireLocationSearch(
-          incidentLocalityInput,
-          card.querySelector('.incident-loc-search'),
-          card.querySelector('.incident-loc-results'),
-          card.querySelector('.incident-loc-hint'),
-          item.place && Number.isFinite(initialLat) && Number.isFinite(initialLng)
-            ? { name: item.place, label: item.place, lat: initialLat, lng: initialLng }
-            : null
-        );
-
-        function incidentChoice() {
-          return card.querySelector('input[name="' + incidentGroupName + '"]:checked');
+        function renumberWarningLocations() {
+          const active = warningLocationEditors.filter(editor => editor.row.isConnected);
+          active.forEach((editor, index) => {
+            editor.number.textContent = 'Lokalita ' + (index + 1);
+            editor.remove.setAttribute('aria-label', 'Odstrániť lokalitu ' + (index + 1));
+          });
+          warningLocationAdd.disabled = active.length >= 12;
         }
 
-        function syncIncidentChoice() {
-          incidentCreateFields.hidden = incidentChoice()?.value !== 'create';
+        function addWarningLocation(initial = null, focus = false) {
+          const index = warningLocationEditors.length;
+          const place = initial?.place || initial?.name || '';
+          const lat = Number(initial?.lat);
+          const lng = Number(initial?.lng);
+          const selected = place && Number.isFinite(lat) && Number.isFinite(lng)
+            ? { name: place, label: place, lat, lng }
+            : null;
+          const row = document.createElement('div');
+          row.className = 'warning-location-item';
+          row.innerHTML =
+            '<div class="warning-location-head">' +
+              '<span class="warning-location-number"></span>' +
+              '<button class="warning-location-remove" type="button"><i class="ph ph-trash" aria-hidden="true"></i></button>' +
+            '</div>' +
+            '<div class="place-search-row">' +
+              '<input class="review-loc-input warning-location-input" id="warning-location-' + groupName + '-' + index + '" type="text" value="' + esc(place) + '" placeholder="napr. Važec" autocomplete="off">' +
+              '<button class="place-search-btn warning-location-search" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
+            '</div>' +
+            '<div class="place-search-results" hidden></div>' +
+            '<p class="review-loc-hint">Vyhľadajte a vyberte presný bod na Slovensku.</p>';
+          warningLocationList.appendChild(row);
+
+          const input = row.querySelector('.warning-location-input');
+          const remove = row.querySelector('.warning-location-remove');
+          const picker = wireLocationSearch(
+            input,
+            row.querySelector('.warning-location-search'),
+            row.querySelector('.place-search-results'),
+            row.querySelector('.review-loc-hint'),
+            selected
+          );
+          const editor = {
+            row,
+            input,
+            picker,
+            remove,
+            number: row.querySelector('.warning-location-number'),
+          };
+          warningLocationEditors.push(editor);
+          remove.addEventListener('click', () => {
+            row.remove();
+            if (!warningLocationEditors.some(candidate => candidate.row.isConnected)) {
+              addWarningLocation(null, true);
+            }
+            renumberWarningLocations();
+          });
+          renumberWarningLocations();
+          if (focus) input.focus();
+          return editor;
         }
 
-        incidentMatchResults.addEventListener('change', syncIncidentChoice);
-        syncIncidentChoice();
-
-        function invalidateIncidentMatches() {
-          const existing = incidentMatchResults.querySelectorAll('.incident-option.existing');
-          if (!existing.length) return;
-          existing.forEach((option) => option.remove());
-          if (incidentChoice()?.value === 'attach') {
-            card.querySelector('input[name="' + incidentGroupName + '"][value="ungrouped"]').checked = true;
-            syncIncidentChoice();
-          }
-          incidentMatchStatus.textContent = 'Dátum alebo lokalita sa zmenili. Vyhľadajte zhodu znova.';
-        }
-
-        incidentDateInput.addEventListener('change', invalidateIncidentMatches);
-        incidentLocalityInput.addEventListener('input', invalidateIncidentMatches);
-        incidentQueryInput.addEventListener('input', invalidateIncidentMatches);
-        card.querySelector('.incident-loc-results').addEventListener('click', () => {
-          setTimeout(invalidateIncidentMatches, 0);
-        });
-
-        card.querySelector('.incident-match-search').addEventListener('click', async function() {
-          const eventDate = incidentDateInput.value;
-          const locality = incidentLocalityInput.value.trim();
-          const manualQuery = incidentQueryInput.value.trim();
-          if (!manualQuery && (!eventDate || !locality)) {
-            incidentMatchStatus.textContent = 'Zadajte dátum a lokalitu, alebo názov inej existujúcej udalosti.';
-            (!eventDate ? incidentDateInput : incidentLocalityInput).focus();
-            return;
-          }
-
-          this.disabled = true;
-          this.innerHTML = '<i class="ph ph-spinner spin"></i> Hľadám';
-          incidentMatchStatus.textContent = 'Hľadám možné zhody v histórii.';
-          incidentMatchResults.querySelectorAll('.incident-option.existing').forEach((option) => option.remove());
-          const requestKey = eventDate + '|' + locality + '|' + manualQuery;
-
-          try {
-            const params = manualQuery
-              ? new URLSearchParams({ q: manualQuery })
-              : new URLSearchParams({ eventDate, locality, title: item.title || '' });
-            const selectedIncidentPlace = incidentPicker.getSelected();
-            if (selectedIncidentPlace) {
-              params.set('lat', selectedIncidentPlace.lat);
-              params.set('lng', selectedIncidentPlace.lng);
-            }
-            const res = await authFetch('/api/admin/incidents?' + params.toString());
-            const data = await res.json();
-            if (!res.ok || !data.ok) throw new Error(data.error || 'Vyhľadávanie zlyhalo.');
-            if (requestKey !== incidentDateInput.value + '|' + incidentLocalityInput.value.trim() + '|' + incidentQueryInput.value.trim()) {
-              incidentMatchStatus.textContent = 'Dátum alebo lokalita sa zmenili. Vyhľadajte zhodu znova.';
-              return;
-            }
-
-            const matches = data.incidents || [];
-            if (!matches.length) {
-              incidentMatchStatus.textContent = 'Nenašla sa presvedčivá zhoda. Skontrolujte údaje alebo vytvorte novú udalosť.';
-              const create = card.querySelector('input[name="' + incidentGroupName + '"][value="create"]');
-              create.checked = true;
-              syncIncidentChoice();
-              return;
-            }
-
-            matches.forEach((match) => {
-              const label = document.createElement('label');
-              label.className = 'incident-option existing';
-              const radio = document.createElement('input');
-              radio.type = 'radio';
-              radio.name = incidentGroupName;
-              radio.value = 'attach';
-              radio.dataset.incidentId = match.id;
-              const strong = document.createElement('strong');
-              strong.textContent = match.title;
-              const small = document.createElement('small');
-              const reasons = match.match?.reasons?.join(', ') || 'súvisiaci záznam';
-              small.textContent = match.event_date + ', ' + match.locality + ', zdroje: ' +
-                match.source_count + ', ' + reasons;
-              label.append(radio, strong, small);
-              incidentMatchResults.insertBefore(label, incidentMatchStatus);
-            });
-            incidentMatchStatus.textContent = 'Možné zhody sú len návrhy. Pripojenie vyžaduje váš výber.';
-          } catch (err) {
-            incidentMatchStatus.textContent = err.message;
-          } finally {
-            this.disabled = false;
-            this.innerHTML = '<i class="ph ph-git-merge"></i> Nájsť udalosť';
-          }
-        });
+        initialLocations.forEach(location => addWarningLocation(location));
+        if (!initialLocations.length) addWarningLocation();
+        warningLocationAdd.addEventListener('click', () => addWarningLocation(null, true));
 
         card.querySelectorAll('.review-cat input[type="radio"]').forEach(r => {
           r.addEventListener('change', () => {
-            const warn = card.querySelector('input[type="radio"]:checked').value === 'warning';
+            const warn = card.querySelector('.review-cat input[type="radio"]:checked').value === 'warning';
             locWrap.hidden = !warn;
-            if (warn) locInput.focus();
+            if (warn) warningLocationEditors.find(editor => editor.row.isConnected)?.input.focus();
           });
         });
 
@@ -2267,42 +2133,29 @@
 
         card.querySelector('.review-btn.approve').addEventListener('click', () => {
           const category = card.querySelector('.review-cat input[type="radio"]:checked').value;
-          const place = locInput.value.trim();
-          if (category === 'warning' && !place) {
-            msg.textContent = 'Zadajte lokalitu pre medvedie varovanie.';
-            locInput.focus();
+          const locations = warningLocationEditors
+            .filter(editor => editor.row.isConnected)
+            .map(editor => {
+              const place = editor.input.value.trim();
+              const selected = editor.picker.getSelected();
+              return place
+                ? { place, lat: selected ? selected.lat : null, lng: selected ? selected.lng : null }
+                : null;
+            })
+            .filter(Boolean);
+          if (category === 'warning' && !locations.length) {
+            msg.textContent = 'Zadajte aspoň jednu lokalitu pre medvedie varovanie.';
+            warningLocationEditors.find(editor => editor.row.isConnected)?.input.focus();
             return;
           }
-          const selected = locationPicker.getSelected();
-          const incidentSelected = incidentPicker.getSelected();
-          const choice = incidentChoice();
-          const incidentAction = choice?.value || 'ungrouped';
-          if (incidentAction === 'create' && (!incidentDateInput.value || !incidentLocalityInput.value.trim())) {
-            msg.textContent = 'Nová udalosť potrebuje dátum a spoľahlivú lokalitu.';
-            (!incidentDateInput.value ? incidentDateInput : incidentLocalityInput).focus();
-            return;
-          }
-          if (incidentAction === 'attach' && !choice.dataset.incidentId) {
-            msg.textContent = 'Vyberte existujúcu udalosť.';
-            return;
-          }
+          const primaryLocation = locations[0] || null;
           reviewNews(item.id, {
             status: 'approved',
             category,
-            place,
-            lat: selected ? selected.lat : null,
-            lng: selected ? selected.lng : null,
-            incidentAction,
-            incidentId: choice?.dataset.incidentId || null,
-            eventDate: incidentDateInput.value || null,
-            eventDatePrecision: card.querySelector('.incident-date-precision').value,
-            incidentLocality: incidentLocalityInput.value.trim() || null,
-            incidentLat: incidentSelected ? incidentSelected.lat : null,
-            incidentLng: incidentSelected ? incidentSelected.lng : null,
-            incidentTitle: card.querySelector('.incident-title').value.trim(),
-            incidentSummary: card.querySelector('.incident-summary').value.trim(),
-            incidentStatus: card.querySelector('.incident-status').value,
-            sourceType: card.querySelector('.incident-source-type').value,
+            locations: category === 'warning' ? locations : [],
+            place: primaryLocation?.place || null,
+            lat: primaryLocation?.lat ?? null,
+            lng: primaryLocation?.lng ?? null,
           }, card);
         });
 
@@ -2363,7 +2216,7 @@
         const cards = Array.from(document.querySelectorAll('#' + listId + ' .review-card'));
         if (!cards.length) return;
         const confirmation = type === 'news'
-          ? 'Schváliť ' + cards.length + ' správ ako články bez spojenia s udalosťou?'
+          ? 'Schváliť ' + cards.length + ' správ ako bežné články? Automatické zoskupenie sa použije iba tam, kde AI našla spoľahlivý dátum a lokalitu.'
           : 'Schváliť ' + cards.length + ' položiek?';
         if (!confirm(confirmation)) return;
 
@@ -2388,7 +2241,7 @@
               ? '/api/admin/news/' + encodeURIComponent(itemId) + '/review'
               : '/api/admin/' + kind + '/' + encodeURIComponent(itemId) + '/status';
             const body = kind === 'news'
-              ? { status: 'approved', category: 'article', incidentAction: 'ungrouped' }
+              ? { status: 'approved', category: 'article' }
               : { status: 'approved' };
             const res = await authFetch(url, {
               method: 'POST',
@@ -2448,11 +2301,14 @@
         addPlaceHint.dataset.defaultHint = hint;
         addPlaceHint.textContent = hint;
         addPlaceHint.classList.remove('selected');
+        document.getElementById('addExtraLocationButton').hidden = type !== 'news-warning';
+        document.getElementById('addExtraLocations').hidden = type !== 'news-warning';
       }
 
       addForm.querySelectorAll('input[name="addType"]').forEach(r => {
         r.addEventListener('change', () => {
           addLocationPicker.reset();
+          clearExtraLocations();
           syncAddForm();
         });
       });
@@ -2465,6 +2321,54 @@
         addPlaceHint,
         null
       );
+      const addExtraLocations = document.getElementById('addExtraLocations');
+      const addExtraLocationButton = document.getElementById('addExtraLocationButton');
+      const addExtraLocationEditors = [];
+
+      function activeExtraLocations() {
+        return addExtraLocationEditors.filter(editor => editor.row.isConnected);
+      }
+
+      function clearExtraLocations() {
+        addExtraLocations.innerHTML = '';
+        addExtraLocationButton.disabled = false;
+      }
+
+      function addExtraLocation() {
+        const row = document.createElement('div');
+        row.className = 'warning-location-item';
+        row.innerHTML =
+          '<div class="warning-location-head"><span class="warning-location-number">Ďalšia lokalita</span>' +
+            '<button class="warning-location-remove" type="button" aria-label="Odstrániť lokalitu"><i class="ph ph-trash" aria-hidden="true"></i></button></div>' +
+          '<div class="place-search-row">' +
+            '<input class="review-loc-input" type="text" placeholder="napr. Važec" autocomplete="off">' +
+            '<button class="place-search-btn" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
+          '</div>' +
+          '<div class="place-search-results" hidden></div>' +
+          '<p class="review-loc-hint">Vyhľadajte a vyberte presný bod na Slovensku.</p>';
+        addExtraLocations.appendChild(row);
+        const input = row.querySelector('input');
+        const editor = {
+          row,
+          input,
+          picker: wireLocationSearch(
+            input,
+            row.querySelector('.place-search-btn'),
+            row.querySelector('.place-search-results'),
+            row.querySelector('.review-loc-hint'),
+            null
+          ),
+        };
+        addExtraLocationEditors.push(editor);
+        row.querySelector('.warning-location-remove').addEventListener('click', () => {
+          row.remove();
+          addExtraLocationButton.disabled = activeExtraLocations().length >= 11;
+        });
+        addExtraLocationButton.disabled = activeExtraLocations().length >= 11;
+        input.focus();
+      }
+
+      addExtraLocationButton.addEventListener('click', addExtraLocation);
 
       function showAddMessage(text, ok) {
         addMsg.textContent = text;
@@ -2497,12 +2401,27 @@
         }
 
         const selectedPlace = addLocationPicker.getSelected();
+        const extraLocations = activeExtraLocations().map(editor => {
+          const selected = editor.picker.getSelected();
+          const place = editor.input.value.trim();
+          return place
+            ? { place, lat: selected ? selected.lat : null, lng: selected ? selected.lng : null }
+            : null;
+        }).filter(Boolean);
+        const locations = type === 'news-warning'
+          ? [{
+              place: val('addPlace'),
+              lat: selectedPlace ? selectedPlace.lat : null,
+              lng: selectedPlace ? selectedPlace.lng : null,
+            }, ...extraLocations]
+          : [];
 
         const payload = {
           type,
           title: vis.title ? val('addTitle') : null,
           location: vis.location ? val('addLocation') : null,
           place: vis.place ? val('addPlace') : null,
+          locations,
           description: vis.description ? val('addDescription') : null,
           source: vis.source ? val('addSource') : null,
           link: vis.link ? val('addLink') : null,
@@ -2526,6 +2445,7 @@
             showAddMessage('Položka bola pridaná a je hneď viditeľná na webe.', true);
             addForm.reset();
             addLocationPicker.reset();
+            clearExtraLocations();
             syncAddForm();
             loadStats();
           } else {
@@ -2621,13 +2541,21 @@
         openId: null,
       };
 
+      function contentNewsLocations(record) {
+        if (Array.isArray(record.locations) && record.locations.length) return record.locations;
+        return record.place ? [{ place: record.place, lat: record.lat, lng: record.lng }] : [];
+      }
+
       const COLUMNS = {
         news: [
           { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || 'Bez titulku') + '</strong>' },
           { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
           { key: 'published_at', label: 'Publikované', render: (r) => formatDateTime(r.published_at) },
           { key: 'scraped_at', label: 'Importované', render: (r) => formatDateTime(r.scraped_at) },
-          { key: 'place', label: 'Lokalita', render: (r) => esc(r.place || 'Bez lokality') },
+          { key: 'place', label: 'Lokality', render: (r) => {
+            const names = contentNewsLocations(r).map(location => location.place || location.name).filter(Boolean);
+            return esc(names.length ? names.join(', ') : 'Bez lokality');
+          } },
           { key: 'category', label: 'Kategória', render: (r) => catBadge(r.category) },
           { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status) },
           { key: 'incident_id', label: 'Udalosť', render: (r) => r.incident_id
@@ -2678,7 +2606,7 @@
 
       function searchableText(type, r) {
         const parts = type === 'news'
-          ? [r.title, r.source, r.snippet, r.place, r.link, r.id]
+          ? [r.title, r.source, r.snippet, r.place, ...contentNewsLocations(r).map(location => location.place), r.link, r.id]
           : [r.location, r.note, r.source, r.url, r.id];
         return parts.filter(Boolean).join(' ').toLowerCase();
       }
@@ -2811,9 +2739,11 @@
             field('Importované', '<input type="datetime-local" value="' + toLocalInputValue(r.scraped_at) + '" disabled>') +
             field('Stav', '<select data-f="status">' + sel(r.status, [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
             field('Kategória', '<select data-f="category">' + sel(r.category === 'warning' ? 'warning' : 'article', [['article','Článok'],['warning','Medvedie varovanie']]) + '</select>') +
-            field('Lokalita (obec)', '<input data-f="place" type="text" value="' + esc(r.place || '') + '">') +
-            field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
-            field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
+            '<div class="edit-field full edit-warning-locations"><label>Lokality varovania</label>' +
+              '<div class="edit-warning-location-list"></div>' +
+              '<button class="warning-location-add edit-warning-location-add" type="button"><i class="ph ph-plus"></i> Pridať lokalitu</button>' +
+              '<p class="add-hint">Názov je povinný. Ak súradnice chýbajú, server lokalitu vyhľadá pri uložení.</p>' +
+            '</div>' +
             field('Odkaz', '<input data-f="link" type="url" value="' + esc(r.link || '') + '">', true) +
             field('Pôvodná adresa článku', '<input type="url" value="' + esc(r.article_url || r.google_news_url || r.link || '') + '" disabled>', true) +
             field('Krátky popis', '<textarea data-f="snippet">' + esc(r.snippet || '') + '</textarea>', true) +
@@ -2857,6 +2787,52 @@
         };
         const msg = editTr.querySelector('.edit-msg');
         const saveBtn = editTr.querySelector('.edit-save');
+        const editLocationEditors = [];
+
+        if (type === 'news') {
+          const wrap = editTr.querySelector('.edit-warning-locations');
+          const list = editTr.querySelector('.edit-warning-location-list');
+          const add = editTr.querySelector('.edit-warning-location-add');
+          const category = editTr.querySelector('[data-f="category"]');
+
+          function activeEditLocations() {
+            return editLocationEditors.filter(editor => editor.row.isConnected);
+          }
+
+          function addEditLocation(location = null, focus = false) {
+            const row = document.createElement('div');
+            row.className = 'warning-location-item edit-warning-location-grid';
+            row.innerHTML =
+              '<label><span>Názov lokality</span><input data-location-place type="text" value="' + esc(location?.place || location?.name || '') + '" placeholder="napr. Východná"></label>' +
+              '<label><span>Lat</span><input data-location-lat type="number" step="any" value="' + (location?.lat == null ? '' : esc(location.lat)) + '"></label>' +
+              '<label><span>Lng</span><input data-location-lng type="number" step="any" value="' + (location?.lng == null ? '' : esc(location.lng)) + '"></label>' +
+              '<button class="warning-location-remove" type="button" aria-label="Odstrániť lokalitu"><i class="ph ph-trash" aria-hidden="true"></i></button>';
+            list.appendChild(row);
+            const editor = {
+              row,
+              place: row.querySelector('[data-location-place]'),
+              lat: row.querySelector('[data-location-lat]'),
+              lng: row.querySelector('[data-location-lng]'),
+            };
+            editLocationEditors.push(editor);
+            row.querySelector('.warning-location-remove').addEventListener('click', () => {
+              row.remove();
+              if (category.value === 'warning' && !activeEditLocations().length) addEditLocation(null, true);
+              add.disabled = activeEditLocations().length >= 12;
+            });
+            add.disabled = activeEditLocations().length >= 12;
+            if (focus) editor.place.focus();
+          }
+
+          contentNewsLocations(rec).forEach(location => addEditLocation(location));
+          if (category.value === 'warning' && !activeEditLocations().length) addEditLocation();
+          add.addEventListener('click', () => addEditLocation(null, true));
+          category.addEventListener('change', () => {
+            wrap.hidden = category.value !== 'warning';
+            if (category.value === 'warning' && !activeEditLocations().length) addEditLocation(null, true);
+          });
+          wrap.hidden = category.value !== 'warning';
+        }
 
         editTr.querySelector('.edit-cancel').addEventListener('click', () => {
           editTr.remove();
@@ -2869,7 +2845,13 @@
                 title: get('title'), source: get('source'),
                 publishedAt: fromLocalInputValue(get('publishedAt')),
                 status: get('status'), category: get('category'),
-                place: get('place'), lat: get('lat'), lng: get('lng'),
+                locations: get('category') === 'warning'
+                  ? editLocationEditors.filter(editor => editor.row.isConnected).map(editor => ({
+                      place: editor.place.value.trim(),
+                      lat: editor.lat.value,
+                      lng: editor.lng.value,
+                    })).filter(location => location.place)
+                  : [],
                 link: get('link'), snippet: get('snippet'),
               }
             : {
@@ -2920,10 +2902,20 @@
         const lat = numOrNull(p.lat), lng = numOrNull(p.lng);
         const hasCoords = lat != null && lng != null;
         if (type === 'news') {
+          const locations = Array.isArray(p.locations) ? p.locations.map(location => ({
+            place: location.place,
+            lat: numOrNull(location.lat),
+            lng: numOrNull(location.lng),
+          })) : [];
+          const primary = locations[0] || null;
           Object.assign(rec, {
             title: p.title || null, source: p.source || null,
             published_at: p.publishedAt, status: p.status, category: p.category,
-            place: p.place || null, lat, lng, has_coords: hasCoords,
+            locations,
+            place: primary?.place || null,
+            lat: primary?.lat ?? null,
+            lng: primary?.lng ?? null,
+            has_coords: primary?.lat != null && primary?.lng != null,
             link: p.link || null, snippet: p.snippet || null,
           });
         } else {

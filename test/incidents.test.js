@@ -6,6 +6,7 @@ import {
   inferIncidentSourceType,
   rankIncidentSuggestions,
   scoreIncidentMatch,
+  selectAutomaticIncidentMatch,
 } from "../src/incidents.js";
 
 test("incident suggestions use event date instead of article publication date", () => {
@@ -25,7 +26,7 @@ test("incident suggestions use event date instead of article publication date", 
   assert.ok(match.score >= 80);
 });
 
-test("uncertain candidates are ranked but never merged by the matcher", () => {
+test("suggestion ranking excludes unrelated historical incidents", () => {
   const incidents = [
     { id: "near", event_date: "2026-07-10", locality: "Zvolen", title: "Pozorovanie pri priehrade" },
     { id: "far", event_date: "2025-02-10", locality: "Poprad", title: "Medveď v lese" },
@@ -40,7 +41,7 @@ test("uncertain candidates are ranked but never merged by the matcher", () => {
   assert.equal(incidents[0].incident_id, undefined);
 });
 
-test("nearby coordinates support a locality match without deciding it automatically", () => {
+test("nearby coordinates support a locality match", () => {
   const incident = {
     id: "nearby",
     event_date: "2026-07-10",
@@ -59,6 +60,30 @@ test("nearby coordinates support a locality match without deciding it automatica
   assert.ok(match.distanceKm < 2);
   assert.ok(match.reasons.some((reason) => reason.includes("vzdialenosť")));
   assert.equal(incident.news_id, undefined);
+});
+
+test("automatic matching accepts one exact day and locality match", () => {
+  const criteria = {
+    eventDate: "2026-07-10",
+    locality: "Zvolen",
+    title: "Medveď pri priehrade",
+  };
+  const suggestions = rankIncidentSuggestions([
+    { id: "exact", event_date: "2026-07-10", locality: "Zvolen", title: "Medveď pri priehrade" },
+    { id: "old", event_date: "2026-06-01", locality: "Zvolen", title: "Staršie pozorovanie" },
+  ], criteria);
+
+  assert.equal(selectAutomaticIncidentMatch(suggestions, criteria)?.id, "exact");
+});
+
+test("automatic matching refuses two equally strong incident candidates", () => {
+  const criteria = { eventDate: "2026-07-10", locality: "Zvolen" };
+  const suggestions = rankIncidentSuggestions([
+    { id: "one", event_date: "2026-07-10", locality: "Zvolen", title: "Prvé pozorovanie" },
+    { id: "two", event_date: "2026-07-10", locality: "Zvolen", title: "Druhé pozorovanie" },
+  ], criteria);
+
+  assert.equal(selectAutomaticIncidentMatch(suggestions, criteria), null);
 });
 
 test("public grouping keeps all article coverage and promotes stronger source", () => {
@@ -87,6 +112,33 @@ test("public grouping keeps all article coverage and promotes stronger source", 
   assert.equal(result[0].articleUrl, "https://sopsr.sk/notice");
   assert.deepEqual(result[0].coverage.map((item) => item.id), ["official", "national"]);
   assert.equal(result[0].category, "warning");
+});
+
+test("public incident card keeps every warning location from associated coverage", () => {
+  const result = groupNewsByIncidents({
+    articles: [{
+      id: "multi",
+      source: "Miestne noviny",
+      title: "Viacero pozorovaní",
+      date: "2026-07-03",
+      category: "warning",
+      locations: [
+        { place: "Važec", lat: 49.06, lng: 19.99 },
+        { place: "Východná", lat: 49.06, lng: 19.9 },
+      ],
+    }],
+    incidents: [{
+      id: "incident-multi",
+      event_date: "2026-07-03",
+      locality: "Važec",
+      title: "Pozorovania pod Tatrami",
+      primary_news_id: "multi",
+    }],
+    links: [{ incident_id: "incident-multi", news_id: "multi", source_type: "local_original" }],
+  });
+
+  assert.deepEqual(result[0].locations.map((location) => location.place), ["Važec", "Východná"]);
+  assert.deepEqual(result[0].coverage[0].locations.map((location) => location.place), ["Važec", "Východná"]);
 });
 
 test("source inference describes type, not universal authority", () => {

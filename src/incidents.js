@@ -1,3 +1,5 @@
+import { mergeNewsLocations, normalizeNewsLocations } from "./news-locations.js";
+
 const SOURCE_TYPE_PRIORITY = Object.freeze({
   official_notice: 10,
   local_original: 20,
@@ -147,6 +149,30 @@ export function rankIncidentSuggestions(incidents, criteria = {}, limit = 6) {
     .slice(0, limit);
 }
 
+/**
+ * Automatic attachment is intentionally stricter than the suggestion list.
+ * A match needs the same calendar day plus either the same normalized locality
+ * or coordinates within 2 km. A close runner-up makes the result ambiguous.
+ */
+export function selectAutomaticIncidentMatch(suggestions = [], criteria = {}) {
+  const locality = normalizeIncidentText(criteria.locality || criteria.place);
+  const eligible = (suggestions || []).filter((incident) => {
+    const match = incident.match || scoreIncidentMatch(incident, criteria);
+    const sameLocality = locality && normalizeIncidentText(incident.locality) === locality;
+    const samePoint = match.distanceKm !== null && match.distanceKm <= 2;
+    return match.score >= 85 && match.dateDistanceDays === 0 && (sameLocality || samePoint);
+  });
+
+  if (!eligible.length) return null;
+  const sorted = [...eligible].sort((a, b) =>
+    (b.match?.score || 0) - (a.match?.score || 0)
+  );
+  const first = sorted[0];
+  const second = sorted[1];
+  if (second && (first.match?.score || 0) - (second.match?.score || 0) < 15) return null;
+  return first;
+}
+
 function articlePublicUrl(article) {
   return article.articleUrl || article.article_url || article.googleNewsUrl || article.google_news_url || article.link || null;
 }
@@ -160,6 +186,7 @@ function publicCoverageArticle(article, link = {}) {
     url: articlePublicUrl(article),
     sourceType: link.source_type || inferIncidentSourceType(article),
     sourceTypeLabel: sourceTypeLabel(link.source_type || inferIncidentSourceType(article)),
+    locations: normalizeNewsLocations(article.locations),
   };
 }
 
@@ -196,6 +223,11 @@ export function groupNewsByIncidents({ articles = [], incidents = [], links = []
       .filter(Boolean)
       .sort()
       .pop() || null;
+    const articleLocations = mergeNewsLocations(entries.map(({ article }) => article));
+    const locations = articleLocations.length
+      ? articleLocations
+      : normalizeNewsLocations({ place: incident.locality, lat: incident.lat, lng: incident.lng });
+    const primaryLocation = locations[0] || null;
 
     grouped.push({
       id: `incident-${incidentId}`,
@@ -205,10 +237,12 @@ export function groupNewsByIncidents({ articles = [], incidents = [], links = []
       snippet: incident.summary || primary.snippet || "",
       date: incident.event_date,
       eventDate: incident.event_date,
-      place: incident.locality,
-      lat: incident.lat,
-      lng: incident.lng,
-      hasCoords: Number.isFinite(Number(incident.lat)) && Number.isFinite(Number(incident.lng)),
+      place: primaryLocation?.place || incident.locality,
+      lat: primaryLocation?.lat ?? incident.lat,
+      lng: primaryLocation?.lng ?? incident.lng,
+      hasCoords: Boolean(primaryLocation?.hasCoords) ||
+        (Number.isFinite(Number(incident.lat)) && Number.isFinite(Number(incident.lng))),
+      locations,
       category: entries.some(({ article }) => article.category === "warning") ? "warning" : "article",
       status: incident.status,
       verificationStatus: incident.verification_status || "reported",

@@ -1223,6 +1223,53 @@ main {
   font-size: 0.95em;
 }
 
+.news-location-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.news-location-label,
+.news-location-name,
+.news-location-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.news-location-label {
+  gap: 5px;
+  padding-left: 0;
+  color: var(--ink-3);
+}
+
+.news-location-name {
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.news-location-links a {
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.news-location-links a:hover,
+.news-location-links a:focus-visible {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  outline: none;
+}
+
 /* Varovanie s mapovou lokalitou je klikateľné (vycentruje mapu). */
 .card.news.has-place {
   cursor: pointer;

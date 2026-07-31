@@ -16,11 +16,19 @@ test("parseClassificationResponse validates and normalizes model JSON", () => {
   assert.deepEqual(results.get(0), {
     category: "warning",
     place: "Morské oko",
+    places: ["Morské oko"],
+    eventDate: null,
+    eventDatePrecision: "unknown",
+    eventDateConfidence: null,
     confidence: 1,
   });
   assert.deepEqual(results.get(1), {
     category: "article",
     place: null,
+    places: [],
+    eventDate: null,
+    eventDatePrecision: "unknown",
+    eventDateConfidence: null,
     confidence: 0.8,
   });
 });
@@ -75,13 +83,67 @@ test("classifyFreshNews prefills warning location and clears article coordinates
   assert.equal(requestedModel, "openrouter/free");
   assert.equal(items[0].category, "warning");
   assert.equal(items[0].place, "Morské oko");
+  assert.deepEqual(items[0].locations, [{
+    place: "Morské oko",
+    lat: 48.9150886,
+    lng: 22.1978148,
+    hasCoords: true,
+  }]);
   assert.equal(items[0].lat, 48.9150886);
   assert.equal(items[0].hasCoords, true);
   assert.equal(items[1].category, "article");
   assert.equal(items[1].place, null);
+  assert.deepEqual(items[1].locations, []);
   assert.equal(items[1].lat, null);
   assert.equal(items[1].lng, null);
   assert.equal(items[1].hasCoords, false);
+});
+
+test("classifyFreshNews extracts and geocodes every concrete warning location", async () => {
+  const items = [{ title: "Medvede videli pri Važci aj vo Východnej" }];
+  const coordinates = {
+    Važec: [49.06, 19.99],
+    Východná: [49.06, 19.9],
+  };
+  const fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            results: [{
+              index: 0,
+              category: "warning",
+              places: ["Važec", "Východná", "Važec"],
+              eventDate: "2026-07-30",
+              eventDatePrecision: "day",
+              eventDateConfidence: 0.94,
+              confidence: 0.97,
+            }],
+          }),
+        },
+      }],
+    }),
+  });
+
+  await classifyFreshNews(items, {
+    apiKey: "test-key",
+    fetchImpl,
+    resolveLocation: async (name) => ({
+      name,
+      lat: coordinates[name][0],
+      lng: coordinates[name][1],
+    }),
+  });
+
+  assert.equal(items[0].place, "Važec");
+  assert.deepEqual(items[0].locations.map((location) => location.place), ["Važec", "Východná"]);
+  assert.equal(items[0].locations.every((location) => location.hasCoords), true);
+  assert.deepEqual(items[0].aiClassification.places, ["Važec", "Východná"]);
+  assert.equal(items[0].aiClassification.eventDate, "2026-07-30");
+  assert.equal(items[0].aiClassification.eventDatePrecision, "day");
+  assert.equal(items[0].aiClassification.eventDateConfidence, 0.94);
 });
 
 test("classifyFreshNews leaves items unchanged when API key is missing", async () => {

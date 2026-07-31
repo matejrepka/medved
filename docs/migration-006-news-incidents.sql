@@ -1,8 +1,8 @@
 -- Migration 006: durable real-world incidents for approved news coverage.
 --
--- Conservative by design: this migration creates no incidents and attaches no
--- historic article automatically. Existing approved news remains public and
--- ungrouped until an administrator makes an explicit decision.
+-- Conservative by design: the migration itself creates no incidents and attaches
+-- no historic articles. Existing approved news remains public and ungrouped.
+-- Future approvals use the server's high-confidence automatic matcher.
 --
 -- Supabase SQL Editor: run this entire file with no partial text selection.
 -- PL/pgSQL function bodies must include both matching named delimiters below.
@@ -64,6 +64,28 @@ create unique index if not exists news_source_aliases_url_unique_idx
   on public.news_source_aliases (normalized_value)
   where alias_type = 'url';
 
+-- A warning article may describe several distinct sightings. The ordered child
+-- rows remain attached to the independent news record; the first one is also
+-- mirrored in news_logs.place/lat/lng for backward compatibility.
+create table if not exists public.news_warning_locations (
+  news_id text not null references public.news_logs(id) on delete cascade,
+  position smallint not null check (position between 0 and 11),
+  place text not null check (length(trim(place)) between 1 and 160),
+  lat double precision,
+  lng double precision,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (news_id, position),
+  check ((lat is null and lng is null) or (lat is not null and lng is not null))
+);
+
+create unique index if not exists news_warning_locations_name_unique_idx
+  on public.news_warning_locations (news_id, lower(trim(place)));
+
+create index if not exists news_warning_locations_coordinates_idx
+  on public.news_warning_locations (lat, lng)
+  where lat is not null and lng is not null;
+
 create table if not exists public.news_incident_audit (
   id bigserial primary key,
   news_id text references public.news_logs(id) on delete set null,
@@ -86,6 +108,7 @@ create index if not exists news_incident_audit_news_created_idx
 alter table public.news_incidents enable row level security;
 alter table public.incident_news_links enable row level security;
 alter table public.news_source_aliases enable row level security;
+alter table public.news_warning_locations enable row level security;
 alter table public.news_incident_audit enable row level security;
 
 create or replace function public.refresh_news_incident_primary(p_incident_id uuid)
@@ -131,6 +154,14 @@ begin
 end;
 $incident_primary$;
 
+-- Remove the earlier single-location overload if a partial/older copy of this
+-- migration was already executed. The replacement below accepts locations as
+-- an additional final JSON argument.
+drop function if exists public.moderate_news_with_incident(
+  text, text, text, text, double precision, double precision, text, uuid,
+  date, text, text, double precision, double precision, text, text, text, text, text
+);
+
 create or replace function public.moderate_news_with_incident(
   p_news_id text,
   p_status text,
@@ -149,7 +180,8 @@ create or replace function public.moderate_news_with_incident(
   p_incident_summary text default null,
   p_incident_status text default 'active',
   p_source_type text default 'other',
-  p_actor text default 'admin'
+  p_actor text default 'admin',
+  p_warning_locations jsonb default '[]'::jsonb
 )
 returns jsonb
 language plpgsql
@@ -212,6 +244,38 @@ begin
       end,
       updated_at = now()
   where id = p_news_id;
+
+  if p_status = 'approved' then
+    delete from public.news_warning_locations where news_id = p_news_id;
+
+    if p_category = 'warning' then
+      if jsonb_typeof(coalesce(p_warning_locations, '[]'::jsonb)) <> 'array' then
+        raise exception 'Lokality varovania musia byť pole.';
+      end if;
+      if jsonb_array_length(coalesce(p_warning_locations, '[]'::jsonb)) > 12 then
+        raise exception 'Jedno varovanie môže mať najviac 12 lokalít.';
+      end if;
+
+      insert into public.news_warning_locations (news_id, position, place, lat, lng)
+      select
+        p_news_id,
+        (entry.ordinality - 1)::smallint,
+        trim(entry.location ->> 'place'),
+        nullif(entry.location ->> 'lat', '')::double precision,
+        nullif(entry.location ->> 'lng', '')::double precision
+      from jsonb_array_elements(coalesce(p_warning_locations, '[]'::jsonb))
+        with ordinality as entry(location, ordinality)
+      where entry.ordinality <= 12
+        and nullif(trim(entry.location ->> 'place'), '') is not null;
+
+      if not exists (
+        select 1 from public.news_warning_locations where news_id = p_news_id
+      ) and nullif(trim(p_place), '') is not null then
+        insert into public.news_warning_locations (news_id, position, place, lat, lng)
+        values (p_news_id, 0, trim(p_place), p_lat, p_lng);
+      end if;
+    end if;
+  end if;
 
   if p_status = 'rejected' then
     delete from public.incident_news_links where news_id = p_news_id;
@@ -361,10 +425,10 @@ $incident_moderation$;
 revoke all on function public.refresh_news_incident_primary(uuid) from public, anon, authenticated;
 revoke all on function public.moderate_news_with_incident(
   text, text, text, text, double precision, double precision, text, uuid,
-  date, text, text, double precision, double precision, text, text, text, text, text
+  date, text, text, double precision, double precision, text, text, text, text, text, jsonb
 ) from public, anon, authenticated;
 grant execute on function public.refresh_news_incident_primary(uuid) to service_role;
 grant execute on function public.moderate_news_with_incident(
   text, text, text, text, double precision, double precision, text, uuid,
-  date, text, text, double precision, double precision, text, text, text, text, text
+  date, text, text, double precision, double precision, text, text, text, text, text, jsonb
 ) to service_role;
