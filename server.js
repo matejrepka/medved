@@ -16,6 +16,12 @@ import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { sightingSourceLinks } from "./src/sightings-dedupe.js";
 import { mergeWarnings } from "./src/warnings.js";
+import {
+  correctionMailto,
+  newsRecordKind,
+  recordFreshness,
+  warningRecordKind,
+} from "./src/record-presentation.js";
 import { classifyFreshNews } from "./src/ai/news-classifier.js";
 import {
   classifyReportSpam,
@@ -566,15 +572,21 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
         ? "moderované hlásenie"
         : item.source || "verejný zdroj";
     const note = item.note ? `<p class="card-note">${escapeHtml(String(item.note).slice(0, 240))}</p>` : "";
+    const kind = warningRecordKind(item);
+    const freshness = recordFreshness(item.reportedAt);
+    const withTime = item.datePrecision !== "date";
+    const correction = correctionMailto(item, kind.label.toLocaleLowerCase("sk-SK"));
     const links = sourceLinks.length
       ? `<div class="source-links">${sourceLinks.map((entry) =>
           `<a class="card-link" href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.label)} <span aria-hidden="true">→</span></a>`
         ).join("")}</div>`
       : "";
     return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
+      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}">${escapeHtml(freshness.label)}</span></div>
       <h3 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h3>
-      <div class="card-meta"><span class="meta-source">${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}">${escapeHtml(formatSlovakDate(item.reportedAt, true))}</time></div>
-      ${note}${links}
+      <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené" : "Dátum záznamu"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
+      ${note}<div class="card-actions">${links}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>
     </article>`;
   }).join("\n");
 }
@@ -586,10 +598,15 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     const link = href
       ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať správu <span aria-hidden="true">→</span></a>`
       : "";
+    const kind = newsRecordKind(item);
+    const freshness = recordFreshness(item.date);
+    const correction = correctionMailto(item, kind.label.toLocaleLowerCase("sk-SK"));
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}">
+      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}">${escapeHtml(freshness.label)}</span></div>
       <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
-      <div class="card-meta"><span class="meta-source">${escapeHtml(item.source || "verejný zdroj")}</span><time datetime="${escapeHtml(item.date || "")}">${escapeHtml(formatSlovakDate(item.date))}</time></div>
-      ${link}
+      <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(item.source || "verejný zdroj")}</span><time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      <div class="card-actions">${link}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>
     </article>`;
   }).join("\n");
 }
