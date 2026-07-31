@@ -10,6 +10,7 @@ import {
   selectAutomaticIncidentMatch,
 } from "../incidents.js";
 import { newsLocations, normalizeNewsLocations } from "../news-locations.js";
+import { isSlovakCoordinate } from "../geo/coordinates.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
@@ -37,7 +38,7 @@ function asNullableNumber(value) {
 }
 
 function hasCoordinates(lat, lng) {
-  return asNullableNumber(lat) !== null && asNullableNumber(lng) !== null;
+  return isSlovakCoordinate(asNullableNumber(lat), asNullableNumber(lng));
 }
 
 function rowToSighting(row) {
@@ -51,7 +52,7 @@ function rowToSighting(row) {
     note: row.note || "",
     lat: row.lat,
     lng: row.lng,
-    hasCoords: Boolean(row.has_coords),
+    hasCoords: hasCoordinates(row.lat, row.lng),
     reportedAt: row.reported_at,
     datePrecision: payload.datePrecision,
     url: row.url,
@@ -330,7 +331,7 @@ export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString
       note: item.note || null,
       lat: asNullableNumber(item.lat),
       lng: asNullableNumber(item.lng),
-      has_coords: Boolean(item.hasCoords),
+      has_coords: hasCoordinates(item.lat, item.lng),
       reported_at: toIso(item.reportedAt),
       url: item.url || null,
       payload: item,
@@ -406,7 +407,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
     place: item.place || null,
     lat: asNullableNumber(item.lat),
     lng: asNullableNumber(item.lng),
-    has_coords: Boolean(item.hasCoords),
+    has_coords: hasCoordinates(item.lat, item.lng),
     category: item.category === "warning" ? "warning" : "article",
     status: "pending",
     payload: item,
@@ -666,7 +667,7 @@ export async function saveBearReport(report) {
       description: report.description || null,
       lat: asNullableNumber(report.lat),
       lng: asNullableNumber(report.lng),
-      has_coords: Boolean(report.lat && report.lng),
+      has_coords: hasCoordinates(report.lat, report.lng),
       reported_date: toIso(report.reportedDate),
       status: approved ? "approved" : "pending",
       reviewed_at: approved ? new Date().toISOString() : null,

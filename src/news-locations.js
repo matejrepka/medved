@@ -1,3 +1,5 @@
+import { isSlovakCoordinate } from "./geo/coordinates.js";
+
 const DEFAULT_MAX_LOCATIONS = 12;
 
 function cleanPlace(value) {
@@ -29,13 +31,16 @@ export function normalizeNewsLocations(value, { max = DEFAULT_MAX_LOCATIONS } = 
     const key = normalizeLocationName(place);
     if (!key) continue;
 
-    const lat = nullableNumber(object.lat);
-    const lng = nullableNumber(object.lng);
+    const candidateLat = nullableNumber(object.lat);
+    const candidateLng = nullableNumber(object.lng);
+    const validCoordinates = isSlovakCoordinate(candidateLat, candidateLng);
+    const lat = validCoordinates ? candidateLat : null;
+    const lng = validCoordinates ? candidateLng : null;
     const location = {
       place,
       lat,
       lng,
-      hasCoords: lat !== null && lng !== null,
+      hasCoords: validCoordinates,
     };
 
     const existing = byName.get(key);

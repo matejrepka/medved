@@ -27,6 +27,20 @@ test("legacy warning columns remain a valid single-location fallback", () => {
   }]);
 });
 
+test("missing, zero, and out-of-country coordinates are not map-ready", () => {
+  const result = normalizeNewsLocations([
+    { place: "Missing", lat: null, lng: null },
+    { place: "Gulf of Guinea", lat: 0, lng: 0 },
+    { place: "Outside Slovakia", lat: 50.1, lng: 19.1 },
+  ]);
+
+  assert.deepEqual(result, [
+    { place: "Missing", lat: null, lng: null, hasCoords: false },
+    { place: "Gulf of Guinea", lat: null, lng: null, hasCoords: false },
+    { place: "Outside Slovakia", lat: null, lng: null, hasCoords: false },
+  ]);
+});
+
 test("incident listing merges locations from all associated articles", () => {
   const result = mergeNewsLocations([
     { locations: [{ place: "Važec", lat: 49.06, lng: 19.99 }] },

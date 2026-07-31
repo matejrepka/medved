@@ -661,8 +661,8 @@ function newsLocations(n) {
     const key = normalizeSearchText(place);
     if (!place || !key || seen.has(key)) return [];
     seen.add(key);
-    const lat = mapCoord(location.lat);
-    const lng = mapCoord(location.lng);
+    const lat = mapCoord(location.lat, "lat");
+    const lng = mapCoord(location.lng, "lng");
     return [{ place, lat, lng, hasCoords: lat !== null && lng !== null }];
   });
 }
@@ -695,8 +695,8 @@ elNews.addEventListener("click", (event) => {
   const link = event.target.closest("[data-news-marker]");
   if (!link) return;
   event.preventDefault();
-  const lat = mapCoord(link.dataset.lat);
-  const lng = mapCoord(link.dataset.lng);
+  const lat = mapCoord(link.dataset.lat, "lat");
+  const lng = mapCoord(link.dataset.lng, "lng");
   if (lat === null || lng === null) return;
   focusMapMarker(link.dataset.newsMarker, lat, lng);
 });
@@ -813,10 +813,13 @@ function sightingCoordKey(value) {
   return Number.isFinite(number) ? number.toFixed(5) : "";
 }
 
-function mapCoord(value) {
+function mapCoord(value, axis) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  if (!Number.isFinite(number)) return null;
+  if (axis === "lat" && (number < 47.65 || number > 49.7)) return null;
+  if (axis === "lng" && (number < 16.75 || number > 22.65)) return null;
+  return number;
 }
 
 function sightingDedupeKey(s) {

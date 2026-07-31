@@ -2,6 +2,10 @@
 // gazetteer obsahuje iba obce, preto body záujmu (jazerá, doliny, vrchy…)
 // dohľadávame cez OpenStreetMap Nominatim.
 
+import { isSlovakCoordinate } from "./coordinates.js";
+
+export { isSlovakCoordinate } from "./coordinates.js";
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const CACHE_LIMIT = 100;
@@ -16,19 +20,6 @@ function normalizeQuery(value) {
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Malá tolerancia okolo hraníc SR. Country filter zostáva hlavnou kontrolou,
-// toto navyše odfiltruje chybné alebo podvrhnuté súradnice.
-export function isSlovakCoordinate(lat, lng) {
-  return (
-    Number.isFinite(lat) &&
-    Number.isFinite(lng) &&
-    lat >= 47.65 &&
-    lat <= 49.7 &&
-    lng >= 16.75 &&
-    lng <= 22.65
-  );
 }
 
 function remember(key, results) {
