@@ -560,6 +560,7 @@ export async function saveManualTumedved(item) {
         ? [{ key: "tumedved", label: "tumedved.sk", url: item.url, sourceId: item.id }]
         : [],
     },
+    status: "approved",
     scraped_at: now,
     updated_at: now,
   });

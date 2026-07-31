@@ -45,6 +45,9 @@ Live site: kdejemedved.sk
   režimu a zvolená vrstva mapy sa pamätá samostatne.
 - **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org),
   výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
+- **Telegram upozornenia a mobilná moderácia** – voliteľná, predvolene vypnutá
+  integrácia používa trváci DB outbox, retry a súkromné schvaľovanie/zamietanie s auditom.
+  Nastavenie je popísané v [`docs/telegram-notifications.md`](docs/telegram-notifications.md).
 
 ## Prehľad
 

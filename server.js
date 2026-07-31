@@ -24,6 +24,8 @@ import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
+import { readTelegramConfig } from "./src/telegram/config.js";
+import { TelegramService, webhookSecretMatches } from "./src/telegram/service.js";
 import {
   deleteEmailSubscription,
   hashIp,
@@ -60,6 +62,11 @@ const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
 const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
 const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
+const parsedTelegramConfig = readTelegramConfig();
+const telegramConfig = {
+  ...parsedTelegramConfig,
+  enabled: parsedTelegramConfig.enabled && isSupabaseConfigured(),
+};
 
 function normalizeSiteOrigin(value) {
   if (!value) return null;
@@ -754,6 +761,19 @@ const newsStore = new ScheduledDataStore({
   recordRun: recordScrapeRun,
 });
 
+const telegramService = new TelegramService({ config: telegramConfig });
+
+async function flushTelegramNotifications(context) {
+  if (!telegramConfig.enabled) return;
+  try {
+    // Bounded, awaited delivery is important on ephemeral/serverless instances.
+    // The durable outbox retains anything not reached in these batches.
+    await telegramService.runAvailable(3);
+  } catch (err) {
+    console.error(`[telegram] ${context} outbox flush failed:`, err.message);
+  }
+}
+
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true");
@@ -770,7 +790,12 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(self), camera=(), microphone=()");
-  if (req.path === "/admin" || req.path.startsWith("/api/admin") || req.path.startsWith("/api/cron")) {
+  if (
+    req.path === "/admin" ||
+    req.path.startsWith("/api/admin") ||
+    req.path.startsWith("/api/cron") ||
+    req.path.startsWith("/api/telegram")
+  ) {
     res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   next();
@@ -983,6 +1008,10 @@ async function refreshAll(reason, requestOrigin = null) {
     source.children ? Object.values(source.children) : [source]
   );
 
+  // DB triggre vytvorili outbox položky spolu s novým obsahom. Worker
+  // zobudíme hneď; interval ostáva poistkou pre retry a reštart procesu.
+  await flushTelegramNotifications(`${reason} refresh`);
+
   let indexNow = null;
   if ((sources.sightings.ok || sources.news.ok) && reason !== "startup") {
     const changedPaths = ["/", "/stats"];
@@ -1020,6 +1049,29 @@ app.all("/api/cron/refresh", async (req, res) => {
   });
 });
 
+// Telegram posiela secret v hlavičke nastavenej pri registrácii webhooku.
+// Callback navyše prejde kontrolou konkrétneho povoleného súkromného chatu.
+app.post("/api/telegram/webhook", async (req, res) => {
+  if (!telegramConfig.enabled) return res.status(404).json({ ok: false });
+  const receivedSecret = req.get("x-telegram-bot-api-secret-token");
+  if (!webhookSecretMatches(telegramConfig.webhookSecret, receivedSecret)) {
+    return res.status(401).json({ ok: false });
+  }
+
+  try {
+    const result = await telegramService.handleUpdate(req.body);
+    if (result?.status) {
+      await newsStore.loadFromDatabase().catch((err) => {
+        console.error("[telegram moderation] news reload failed:", err.message);
+      });
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("[telegram webhook] callback failed:", err.message);
+    return res.status(500).json({ ok: false });
+  }
+});
+
 // --- Bear report (public) ---
 
 app.post("/api/reports", async (req, res) => {
@@ -1044,6 +1096,7 @@ app.post("/api/reports", async (req, res) => {
       ...report,
       status: "pending",
     });
+    await flushTelegramNotifications("public report");
 
     console.log(
       `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=pending`
@@ -1664,6 +1717,8 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       }
     }
 
+    await flushTelegramNotifications("admin warning");
+
     res.json({ ok: true });
   } catch (err) {
     console.error("[manual warning] save failed:", err.message);
@@ -1730,8 +1785,9 @@ app.use(
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
   console.log(
-    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron`
+    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}`
   );
+  telegramService.start();
   sightingsStore.start().catch((err) => {
     console.error("[sightings] startup load failed:", err.message);
   });

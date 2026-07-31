@@ -64,7 +64,7 @@ create index if not exists news_logs_scraped_at_idx
 
 create table if not exists public.scrape_runs (
   id bigserial primary key,
-  source text not null check (source in ('tumedved', 'news')),
+  source text not null check (source in ('tumedved', 'sightings', 'news')),
   status text not null check (status in ('success', 'error')),
   reason text,
   item_count integer,
