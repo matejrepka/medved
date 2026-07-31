@@ -1,7 +1,7 @@
 {
   "name": "Kde je Medveď – mapa výskytu medveďov",
   "short_name": "Kde je Medveď",
-  "description": "Aktuálna mapa hláseného výskytu medveďov na Slovensku.",
+  "description": "Centralizovaná mapa hlásení a verejných varovaní o medveďoch na Slovensku.",
   "lang": "sk",
   "start_url": "/",
   "scope": "/",

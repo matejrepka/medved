@@ -1132,6 +1132,10 @@ main {
   display: none;
 }
 
+.home-listing-cta {
+  display: none;
+}
+
 .card {
   padding: 14px 16px;
   background: var(--surface);
@@ -4861,6 +4865,45 @@ html.dialog-open body {
   /* Mobile initializes with three records per section. */
   .map-first-page .list > .ssr-list-item:nth-of-type(n + 4) {
     display: none;
+  }
+
+  /* Domov je stručný prehľad. Celé zoznamy zostávajú na mapovej stránke. */
+  .home-landing-page .columns .list > .ssr-list-item:nth-of-type(n + 4) {
+    display: none;
+  }
+
+  .home-landing-page .columns .list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    padding-bottom: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .home-listing-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 12px;
+    padding: 11px 14px;
+    color: var(--accent);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .home-listing-cta:hover,
+  .home-listing-cta:focus-visible {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    text-decoration: none;
   }
 
   :root {

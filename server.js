@@ -58,6 +58,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
+const CANONICAL_SITE_ORIGIN = "https://kdejemedved.sk";
 const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
 const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
@@ -68,34 +69,21 @@ const telegramConfig = {
   enabled: parsedTelegramConfig.enabled && isSupabaseConfigured(),
 };
 
-function normalizeSiteOrigin(value) {
-  if (!value) return null;
-  try {
-    const url = new URL(String(value).trim());
-    if (!['http:', 'https:'].includes(url.protocol)) return null;
-    return url.origin;
-  } catch {
-    return null;
-  }
-}
-
-const CONFIGURED_SITE_ORIGIN = normalizeSiteOrigin(process.env.SITE_URL);
-
 const PUBLIC_PAGES = {
   "/": {
     file: "index.html",
-    title: "Kde je Medveď? Aktuálna mapa medveďov na Slovensku",
+    title: "Kde je Medveď | Aktuálna mapa varovaní na Slovensku",
     description:
-      "Kde je medveď? Aktuálna mapa spája hlásenia, varovania a správy z viacerých slovenských zdrojov. Overte lokalitu, dátum a pôvod informácie.",
+      "Centralizovaná mapa hláseného výskytu medveďov na Slovensku. Spája hlásenia, verejné varovania a správy s dátumom a pôvodným zdrojom.",
     schemaType: "CollectionPage",
     dynamicLastmod: true,
     priority: "1.0",
   },
   "/domov": {
     file: "domov.html",
-    title: "Kde je Medveď | Hlásenia, mapa a bezpečnostné informácie",
+    title: "Kde je Medveď | Slovenská mapa hlásení a varovaní",
     description:
-      "Spoznajte projekt Kde je Medveď. Nájdete tu aktuálnu mapu hlásení, bezpečnostné odporúčania, štatistiky a možnosť nahlásiť pozorovanie.",
+      "Kde je Medveď centralizuje hlásenia, verejné varovania a slovenské správy na jednej priebežne aktualizovanej mape s uvedením zdroja a dátumu.",
     schemaType: "WebPage",
     dynamicLastmod: true,
     changefreq: "daily",
@@ -175,12 +163,9 @@ const PUBLIC_PAGES = {
 
 const pageTemplateCache = new Map();
 
-function siteOrigin(req) {
-  if (CONFIGURED_SITE_ORIGIN) return CONFIGURED_SITE_ORIGIN;
-  const host = req.get("host") || `localhost:${PORT}`;
-  // Host sa zapisuje do HTML, preto povoľ iba znaky platné v hostname/porte.
-  const safeHost = /^[a-z0-9.:[\]-]+$/i.test(host) ? host : `localhost:${PORT}`;
-  return normalizeSiteOrigin(`${req.protocol}://${safeHost}`) || `http://localhost:${PORT}`;
+function siteOrigin() {
+  // Verejné SEO URL nesmú závisieť od preview hostu ani Host hlavičky požiadavky.
+  return CANONICAL_SITE_ORIGIN;
 }
 
 function escapeHtml(value) {
@@ -216,8 +201,8 @@ function locationPath(value) {
   return `${LOCATION_ROUTE_PREFIX}${encodeURIComponent(locationSlug(value))}`;
 }
 
-async function notifyIndexNow(paths, requestOrigin = null) {
-  const submissionOrigin = CONFIGURED_SITE_ORIGIN || normalizeSiteOrigin(requestOrigin);
+async function notifyIndexNow(paths) {
+  const submissionOrigin = CANONICAL_SITE_ORIGIN;
   if (!submissionOrigin || !INDEXNOW_KEY) {
     return { ok: false, skipped: true, reason: "Verejná URL alebo INDEXNOW_KEY nie je nastavený" };
   }
@@ -438,21 +423,25 @@ function structuredDataForPage(pathname, page, origin) {
         isAccessibleForFree: true,
         dateModified: modified,
         license: absoluteUrl(origin, "/terms"),
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `${origin}/#faq`,
-        mainEntity: faqEntities(origin).map(({ question, answer, answerUrl }) => ({
-          "@type": "Question",
-          name: question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: answer,
-            ...(answerUrl ? { url: answerUrl } : {}),
-          },
-        })),
       }
     );
+  }
+
+  // FAQ schema patrí iba na stránku, kde návštevník vidí rovnaké otázky a odpovede.
+  if (pathname === "/domov") {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${canonical}#faq`,
+      mainEntity: faqEntities(origin).map(({ question, answer, answerUrl }) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: answer,
+          ...(answerUrl ? { url: answerUrl } : {}),
+        },
+      })),
+    });
   }
 
   if (page.location) {
@@ -985,7 +974,7 @@ function refreshResultMessage(result) {
   return [header, ...details].join("\n");
 }
 
-async function refreshAll(reason, requestOrigin = null) {
+async function refreshAll(reason) {
   const [sightingsResult, newsResult] = await Promise.allSettled([
     sightingsStore.refresh(reason),
     newsStore.refresh(reason),
@@ -1021,7 +1010,7 @@ async function refreshAll(reason, requestOrigin = null) {
     } catch (err) {
       console.error("[indexnow] location URLs unavailable:", err.message);
     }
-    indexNow = await notifyIndexNow(changedPaths, requestOrigin);
+    indexNow = await notifyIndexNow(changedPaths);
   }
 
   return {
@@ -1042,7 +1031,7 @@ app.all("/api/cron/refresh", async (req, res) => {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  const result = await refreshAll("cron", siteOrigin(req));
+  const result = await refreshAll("cron");
   res.status(result.ok ? 200 : 502).json({
     ...result,
     message: refreshResultMessage(result),
@@ -1338,7 +1327,7 @@ app.get("/llms.txt", async (req, res) => {
     .set("Cache-Control", "public, max-age=3600")
     .send(`# Kde je Medveď
 
-> Nezávislý slovenský agregátor informácií o hlásenom výskyte medveďov. Na jednom mieste spája moderované hlásenia, verejné mapy a varovania, relevantné slovenské správy, štatistiky a bezpečnostné odporúčania.
+> Centralizovaná, priebežne aktualizovaná mapa hláseného výskytu medveďov na Slovensku. Na jednom mieste spája moderované hlásenia, verejné mapy a varovania, relevantné slovenské správy, štatistiky a bezpečnostné odporúčania.
 
 ## Najdôležitejšie stránky
 - [Aktuálna mapa](${absoluteUrl(origin, "/")})
@@ -1745,7 +1734,7 @@ app.delete("/api/admin/subscriptions/:id", adminAuth, async (req, res) => {
 });
 
 app.post("/api/admin/refresh", adminAuth, async (req, res) => {
-  const result = await refreshAll("admin", siteOrigin(req));
+  const result = await refreshAll("admin");
   res.status(result.ok ? 200 : 502).json({
     ...result,
     message: refreshResultMessage(result),
