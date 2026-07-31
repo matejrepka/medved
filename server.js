@@ -601,7 +601,7 @@ function renderSsrNewsLocations(item) {
   if (!locations.length || (item.category !== "warning" && !item.isIncident)) return "";
 
   return `<div class="news-location-links" aria-label="Lokality varovania">
-    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Zobraziť na mape</span>
+    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Lokality</span>
     ${locations.map((location, index) => location.hasCoords
       ? `<a href="#mapViewport" data-news-marker="${escapeHtml(`${item.id}:location:${index}`)}" data-lat="${escapeHtml(location.lat)}" data-lng="${escapeHtml(location.lng)}" aria-label="Zobraziť lokalitu ${escapeHtml(location.place)} na mape">${escapeHtml(location.place)}</a>`
       : `<span class="news-location-name">${escapeHtml(location.place)}</span>`

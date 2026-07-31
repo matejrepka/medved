@@ -1129,8 +1129,9 @@ function renderSightings() {
           <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        <div class="card-actions">
-          <div class="card-main-actions">${mapAction}${sourceLinks}</div>
+        <div class="card-actions card-actions-sighting">
+          ${mapAction}
+          <div class="card-main-actions">${sourceLinks}</div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
         </div>
       </article>`;
@@ -1231,7 +1232,7 @@ function newsLocationLinksHtml(n) {
   const locations = newsLocations(n);
   if (!locations.length) return "";
   return `<div class="news-location-links" aria-label="Lokality varovania">
-    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Zobraziť na mape</span>
+    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Lokality</span>
     ${locations.map((location, index) => location.hasCoords
       ? `<a href="#mapViewport" data-news-marker="${esc(newsMarkerId(n.id, index))}" data-lat="${location.lat}" data-lng="${location.lng}" aria-label="Zobraziť lokalitu ${esc(location.place)} na mape">${esc(location.place)}</a>`
       : `<span class="news-location-name">${esc(location.place)}</span>`
