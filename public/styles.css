@@ -6556,9 +6556,15 @@ html.dialog-open body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .record-related .card {
+  min-width: 0;
   margin: 0;
 }
 
@@ -6612,6 +6618,104 @@ html.dialog-open body {
   .record-detail-grid,
   .record-related > .list {
     grid-template-columns: 1fr;
+  }
+
+  .record-related > .list {
+    gap: 10px;
+  }
+
+  .record-related .card {
+    padding: 14px 16px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .record-related .record-signals {
+    margin-bottom: 6px;
+  }
+
+  .record-related .card-title {
+    margin-bottom: 2px;
+    font-size: 1.02rem;
+    line-height: 1.27;
+  }
+
+  .record-related .card-meta {
+    gap: 2px 12px;
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  .record-related .card-meta > span,
+  .record-related .card-meta > time {
+    max-width: 100%;
+  }
+
+  .record-related .card-note {
+    display: -webkit-box;
+    margin-top: 8px;
+    overflow: hidden;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+  }
+
+  .record-related .card.news .card-note {
+    -webkit-line-clamp: 1;
+  }
+
+  .record-related .card.sighting .card-note {
+    -webkit-line-clamp: 2;
+  }
+
+  .record-related .card:hover {
+    transform: none;
+    background: var(--surface-2);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+
+  .record-related .card-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px 12px;
+  }
+
+  .record-related .card-primary-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .record-related .card-primary-actions > .card-detail-action {
+    flex: 1 1 auto;
+  }
+
+  .record-related .mobile-source-duplicate {
+    display: none;
+  }
+
+  .record-related .card-correction {
+    grid-column: 2;
+    min-height: 34px;
+    margin-left: auto;
+  }
+
+  .record-related .meta-source.has-mobile-source-links .meta-source-text {
+    display: none;
+  }
+
+  .record-related .meta-source-links-mobile {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    min-width: 0;
+  }
+
+  .record-related .meta-source-link {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .archive-toolbar {
