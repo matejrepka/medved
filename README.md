@@ -57,6 +57,9 @@ Live site: kdejemedved.sk
 - **Telegram upozornenia a mobilná moderácia** – voliteľná, predvolene vypnutá
   integrácia používa trváci DB outbox, retry a súkromné schvaľovanie/zamietanie s auditom.
   Nastavenie je popísané v [`docs/telegram-notifications.md`](docs/telegram-notifications.md).
+- **E-mailové upozornenia** – potvrdený odber (double opt-in), výber všetkých oblastí
+  alebo konkrétnej lokality, trváci outbox, retry, ochrana pred duplicitami a odhlásenie
+  jedným kliknutím. Nastavenie je v [`docs/email-notifications.md`](docs/email-notifications.md).
 
 ## Prehľad
 
@@ -83,11 +86,12 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 
 ## Databázové migrácie
 
-Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom
-`docs/migration-006-news-incidents.sql` v Supabase SQL Editore. Pri existujúcej databáze
-stačí po už nasadených migráciách 001-005 spustiť migráciu 006.
+Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom migrácie
+`docs/migration-006-news-incidents.sql` a `docs/migration-007-email-notifications.sql`
+v Supabase SQL Editore. Pri existujúcej databáze ich po migráciách 001-005 spustite
+v tomto poradí.
 
-V SQL Editore spustite celý obsah migrácie 006 bez označeného čiastkového výberu.
+V SQL Editore spustite celý obsah migrácií bez označeného čiastkového výberu.
 Editor pri označenom texte vykoná iba výber; telo PL/pgSQL funkcie by tak mohlo zostať
 bez koncového oddeľovača. Migráciu možno po takomto prerušení bezpečne spustiť znova.
 

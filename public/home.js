@@ -86,7 +86,7 @@
         throw new Error(data.error || "Odber sa nepodarilo uložiť.");
       }
 
-      showMessage("Odber bol uložený. Ďakujeme.", "success");
+      showMessage(data.message || "Skontrolujte si e-mail a potvrďte odber.", "success");
       form.reset();
       syncAreaField();
     } catch (error) {

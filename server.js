@@ -30,10 +30,15 @@ import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
+import { mergeLocationPages } from "./src/location-pages.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import { readTelegramConfig } from "./src/telegram/config.js";
 import { TelegramService, webhookSecretMatches } from "./src/telegram/service.js";
+import { readEmailConfig } from "./src/email/config.js";
+import { EmailService } from "./src/email/service.js";
+import { verifyEmailToken } from "./src/email/tokens.js";
 import {
+  confirmEmailSubscription,
   deleteEmailSubscription,
   hashIp,
   loadAllNews,
@@ -45,6 +50,7 @@ import {
   loadNewsLogs,
   loadPendingNews,
   loadTumedvedLogs,
+  markEmailConfirmationSent,
   recordScrapeRun,
   saveBearReport,
   saveEmailSubscription,
@@ -57,6 +63,7 @@ import {
   updateNewsFields,
   updateSightingFields,
   updateSightingStatus,
+  unsubscribeEmailSubscription,
   reviewNewsWithAutomaticIncident,
 } from "./src/db/repository.js";
 
@@ -65,7 +72,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
-const CANONICAL_SITE_ORIGIN = "https://kdejemedved.sk";
+const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk";
 const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
 const LOCATION_ROUTE_PREFIX = "/vyskyt-medveda/";
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
@@ -74,6 +81,11 @@ const parsedTelegramConfig = readTelegramConfig();
 const telegramConfig = {
   ...parsedTelegramConfig,
   enabled: parsedTelegramConfig.enabled && isSupabaseConfigured(),
+};
+const parsedEmailConfig = readEmailConfig();
+const emailConfig = {
+  ...parsedEmailConfig,
+  enabled: parsedEmailConfig.enabled && isSupabaseConfigured(),
 };
 
 const PUBLIC_PAGES = {
@@ -152,7 +164,7 @@ const PUBLIC_PAGES = {
     description:
       "Ako služba Kde je Medveď spracúva kontaktné, technické a analytické údaje, používa cookies a chráni súkromie návštevníkov a oznamovateľov.",
     schemaType: "WebPage",
-    lastmod: CONTENT_UPDATED,
+    lastmod: "2026-07-31T00:00:00+02:00",
     changefreq: "yearly",
     priority: "0.2",
   },
@@ -162,7 +174,7 @@ const PUBLIC_PAGES = {
     description:
       "Pravidlá používania služby Kde je Medveď, externých zdrojov, používateľských hlásení, e-mailových upozornení a orientačných údajov mapy.",
     schemaType: "WebPage",
-    lastmod: CONTENT_UPDATED,
+    lastmod: "2026-07-31T00:00:00+02:00",
     changefreq: "yearly",
     priority: "0.2",
   },
@@ -283,7 +295,7 @@ function faqEntities(origin) {
     },
     {
       question: "Čo robiť, keď stretnem medveďa?",
-      answer: "Bezpečnosť – Zásahový tím pre medveďa hnedého ŠOP SR",
+      answer: "Bezpečnosť: Zásahový tím pre medveďa hnedého ŠOP SR",
       answerUrl: "https://zasahovytim.sopsr.sk/bezpecnost/",
     },
     {
@@ -379,7 +391,7 @@ function structuredDataForPage(pathname, page, origin) {
       {
         "@type": "WebApplication",
         "@id": `${origin}/#application`,
-        name: "Kde je Medveď – mapa výskytu medveďov",
+        name: "Kde je Medveď: mapa výskytu medveďov",
         url: `${origin}/`,
         applicationCategory: "TravelApplication",
         applicationSubCategory: "Mapa výskytu medveďov a verejných varovaní",
@@ -458,7 +470,7 @@ function structuredDataForPage(pathname, page, origin) {
     graph.push({
       "@type": "Dataset",
       "@id": datasetId,
-      name: `Hlásený výskyt medveďa – ${page.location.name}`,
+      name: `Hlásený výskyt medveďa: ${page.location.name}`,
       description: page.description,
       url: canonical,
       about: [
@@ -466,6 +478,9 @@ function structuredDataForPage(pathname, page, origin) {
         { "@type": "Place", name: page.location.name },
       ],
       spatialCoverage: { "@type": "Place", name: page.location.name },
+      ...(page.location.first && page.location.latest
+        ? { temporalCoverage: `${page.location.first}/${page.location.latest}` }
+        : {}),
       variableMeasured: ["hlásenia výskytu", "verejné varovania", "súvisiace správy"],
       creator: { "@id": organizationId },
       inLanguage: "sk-SK",
@@ -535,7 +550,7 @@ function buildSeoHead(pathname, page, origin) {
     '<meta name="twitter:image:alt" content="Ilustrácia medveďa pri mape Slovenska" />',
     '<meta name="theme-color" content="#1f4b30" />',
     '<link rel="manifest" href="/manifest.webmanifest" />',
-    '<link rel="alternate" type="application/rss+xml" title="Aktuálne hlásenia – Kde je Medveď" href="/feed.xml" />',
+    '<link rel="alternate" type="application/rss+xml" title="Aktuálne hlásenia: Kde je Medveď" href="/feed.xml" />',
     `<script type="application/ld+json">${schema}</script>`,
   ].join("\n    ");
 }
@@ -706,7 +721,7 @@ async function loadLocationOverview() {
       gz,
       includeAllLocations: true,
     });
-    const locations = report.allLocations.map((location) => {
+    const locationCandidates = report.allLocations.map((location) => {
       const warningItems = warnings.filter((item) =>
         itemBelongsToLocation(item, location.name, "warning")
       );
@@ -728,7 +743,10 @@ async function loadLocationOverview() {
         newsItems,
         latest,
       };
-    }).filter((location) => location.total >= 2);
+    });
+    const locations = mergeLocationPages(locationCandidates).filter(
+      (location) => location.total >= 2
+    );
     const overview = {
       warnings,
       news,
@@ -789,6 +807,21 @@ function renderHomeStats(overview) {
     .join("\n");
 }
 
+function renderLocationSummary(location) {
+  const first = location.first || location.latest;
+  const latest = location.latest || location.first;
+  const range = first && latest
+    ? `<time datetime="${escapeHtml(first)}">${escapeHtml(formatSlovakDate(first))}</time><span>až</span><time datetime="${escapeHtml(latest)}">${escapeHtml(formatSlovakDate(latest))}</time>`
+    : "Dátum nie je dostupný";
+
+  return `<dl class="location-summary" aria-label="Súhrn záznamov pre lokalitu ${escapeHtml(location.name)}">
+    <div><dt>Spolu záznamov</dt><dd>${escapeHtml(location.total)}</dd></div>
+    <div><dt>Hlásenia a varovania</dt><dd>${escapeHtml(location.sightings)}</dd></div>
+    <div><dt>Súvisiace správy</dt><dd>${escapeHtml(location.news)}</dd></div>
+    <div class="location-summary-range"><dt>Obdobie záznamov</dt><dd>${range}</dd></div>
+  </dl>`;
+}
+
 function slovakCount(value, one, few, many) {
   const count = Number(value) || 0;
   const word = count === 1 ? one : count >= 2 && count <= 4 ? few : many;
@@ -820,6 +853,7 @@ const newsStore = new ScheduledDataStore({
 });
 
 const telegramService = new TelegramService({ config: telegramConfig });
+const emailService = new EmailService({ config: emailConfig });
 
 async function flushTelegramNotifications(context) {
   if (!telegramConfig.enabled) return;
@@ -832,6 +866,15 @@ async function flushTelegramNotifications(context) {
   }
 }
 
+async function flushEmailNotifications(context) {
+  if (!emailConfig.enabled) return;
+  try {
+    await emailService.runAvailable(3);
+  } catch (err) {
+    console.error(`[email] ${context} outbox flush failed:`, err.message);
+  }
+}
+
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", process.env.TRUST_PROXY === "true");
@@ -841,6 +884,7 @@ app.set("trust proxy", process.env.TRUST_PROXY === "true");
 app.use(compression());
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // Základné bezpečnostné a indexačné hlavičky. Verejné JSON API ostáva dostupné,
 // administračné a cron URL sa však nemajú objavovať vo výsledkoch vyhľadávania.
@@ -979,6 +1023,7 @@ app.get("/api/status", (_req, res) => {
   res.json({
     supabaseConfigured: isSupabaseConfigured(),
     refreshMode: "external-cron",
+    emailNotificationsEnabled: emailConfig.enabled,
     sightings: sightingsStore.meta,
     news: newsStore.meta,
   });
@@ -1038,7 +1083,7 @@ function refreshResultMessage(result) {
       return `${source.label}: načítané${count}.`;
     }
     const phase = REFRESH_PHASE_LABELS[source.stage] || "obnove";
-    return `${source.label}: zlyhalo pri ${phase} – ${source.error}`;
+    return `${source.label}: zlyhalo pri ${phase}, ${source.error}`;
   });
   return [header, ...details].join("\n");
 }
@@ -1069,6 +1114,7 @@ async function refreshAll(reason) {
   // DB triggre vytvorili outbox položky spolu s novým obsahom. Worker
   // zobudíme hneď; interval ostáva poistkou pre retry a reštart procesu.
   await flushTelegramNotifications(`${reason} refresh`);
+  await flushEmailNotifications(`${reason} refresh`);
 
   let indexNow = null;
   if ((sources.sightings.ok || sources.news.ok) && reason !== "startup") {
@@ -1122,6 +1168,7 @@ app.post("/api/telegram/webhook", async (req, res) => {
       await newsStore.loadFromDatabase().catch((err) => {
         console.error("[telegram moderation] news reload failed:", err.message);
       });
+      if (result.status === "approved") await flushEmailNotifications("telegram approval");
     }
     return res.json({ ok: true });
   } catch (err) {
@@ -1169,28 +1216,157 @@ app.post("/api/reports", async (req, res) => {
 
 // --- Email subscriptions (public) ---
 
+const subscriptionAttempts = new Map();
+
+function subscriptionRateLimited(req) {
+  const key = String(req.ip || req.socket.remoteAddress || "unknown");
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const recent = (subscriptionAttempts.get(key) || []).filter((time) => now - time < windowMs);
+  recent.push(now);
+  subscriptionAttempts.set(key, recent);
+  if (subscriptionAttempts.size > 1000) {
+    for (const [candidate, attempts] of subscriptionAttempts) {
+      if (!attempts.some((time) => now - time < windowMs)) subscriptionAttempts.delete(candidate);
+    }
+  }
+  return recent.length > 5;
+}
+
+function emailActionPage({ title, message, status = 200, action = null }) {
+  const actionHtml = action
+    ? `<form method="post" action="${escapeHtml(action.url)}"><button type="submit" style="border:0;border-radius:10px;background:#d66a24;color:#fff;padding:13px 20px;font:700 16px Arial;cursor:pointer">${escapeHtml(action.label)}</button></form>`
+    : `<p><a href="/" style="color:#365f43;font-weight:700">Späť na mapu</a></p>`;
+  return {
+    status,
+    html: `<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex,nofollow"><title>${escapeHtml(title)} – Kde je Medveď</title></head><body style="margin:0;background:#f3f0e8;color:#18221b;font-family:Arial,sans-serif"><main style="max-width:620px;margin:8vh auto;padding:32px;background:#fff;border:1px solid #d9ded8;border-radius:18px"><h1>${escapeHtml(title)}</h1><p style="font-size:17px;line-height:1.65">${escapeHtml(message)}</p>${actionHtml}</main></body></html>`,
+  };
+}
+
 app.post("/api/subscriptions", async (req, res) => {
   const { email, notifyType, areaName } = req.body || {};
 
-  if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  if (
+    !email || typeof email !== "string" || email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  ) {
     return res.status(400).json({ ok: false, error: "Zadajte platnú emailovú adresu." });
   }
 
-  if (notifyType === "area" && (!areaName || !areaName.trim())) {
+  if (notifyType === "area" && (!areaName || !areaName.trim() || areaName.trim().length > 120)) {
     return res.status(400).json({ ok: false, error: "Zadajte oblasť pre upozornenia." });
+  }
+  if (subscriptionRateLimited(req)) {
+    res.set("Retry-After", "900");
+    return res.status(429).json({ ok: false, error: "Priveľa pokusov. Skúste to znova o 15 minút." });
+  }
+  if (!emailConfig.enabled) {
+    return res.status(503).json({ ok: false, error: "E-mailové upozornenia momentálne nie sú dostupné." });
   }
 
   try {
-    await saveEmailSubscription({
+    const subscription = await saveEmailSubscription({
       email: email.trim().toLowerCase(),
       notifyType: notifyType === "area" ? "area" : "all",
       areaName: notifyType === "area" ? areaName.trim() : null,
     });
 
-    res.json({ ok: true });
+    if (subscription?.needsConfirmation) {
+      await emailService.sendConfirmation(subscription);
+      await markEmailConfirmationSent(subscription.id);
+    }
+
+    res.json({
+      ok: true,
+      message: "Ak odber ešte nie je aktívny, skontrolujte si e-mail a potvrďte ho kliknutím na odkaz.",
+    });
   } catch (err) {
     console.error("[subscriptions] save failed:", err.message);
-    res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť odber." });
+    res.status(500).json({ ok: false, error: "Nepodarilo sa odoslať potvrdenie odberu. Skúste to znova." });
+  }
+});
+
+app.get("/api/subscriptions/confirm", async (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const verified = verifyEmailToken(token, {
+    purpose: "confirm",
+    secret: emailConfig.tokenSecret,
+  });
+  if (!verified) {
+    const page = emailActionPage({
+      title: "Neplatný odkaz",
+      message: "Potvrdzovací odkaz je neplatný alebo vypršal. Vyplňte formulár odberu znova.",
+      status: 400,
+    });
+    return res.status(page.status).type("html").send(page.html);
+  }
+
+  try {
+    const subscription = await confirmEmailSubscription(verified);
+    const page = subscription
+      ? emailActionPage({
+          title: "Odber je potvrdený",
+          message: "E-mailové upozornenia sú aktívne. Budeme posielať iba nové hlásenia podľa vášho výberu.",
+        })
+      : emailActionPage({
+          title: "Odber sa nepotvrdil",
+          message: "Odkaz už nie je platný. Vyplňte formulár odberu znova.",
+          status: 400,
+        });
+    return res.status(page.status).type("html").send(page.html);
+  } catch (err) {
+    console.error("[subscriptions] confirmation failed:", err.message);
+    const page = emailActionPage({
+      title: "Odber sa nepotvrdil",
+      message: "Nastala technická chyba. Skúste potvrdzovací odkaz znova neskôr.",
+      status: 500,
+    });
+    return res.status(page.status).type("html").send(page.html);
+  }
+});
+
+app.get("/api/subscriptions/unsubscribe", (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const verified = verifyEmailToken(token, {
+    purpose: "unsubscribe",
+    secret: emailConfig.tokenSecret,
+  });
+  const page = verified
+    ? emailActionPage({
+        title: "Zrušiť odber upozornení?",
+        message: "Po potvrdení vám už pre tento odber nebudeme posielať ďalšie upozornenia.",
+        action: {
+          url: `/api/subscriptions/unsubscribe?token=${encodeURIComponent(token)}`,
+          label: "Zrušiť odber",
+        },
+      })
+    : emailActionPage({
+        title: "Neplatný odkaz",
+        message: "Odkaz na zrušenie odberu nie je platný.",
+        status: 400,
+      });
+  return res.status(page.status).type("html").send(page.html);
+});
+
+app.post("/api/subscriptions/unsubscribe", async (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const verified = verifyEmailToken(token, {
+    purpose: "unsubscribe",
+    secret: emailConfig.tokenSecret,
+  });
+  if (!verified) return res.status(400).send("Invalid unsubscribe token");
+
+  try {
+    const subscription = await unsubscribeEmailSubscription(verified);
+    if (!subscription) return res.status(400).send("Invalid unsubscribe token");
+    const page = emailActionPage({
+      title: "Odber je zrušený",
+      message: "Pre tento odber vám už nebudeme posielať ďalšie upozornenia.",
+    });
+    return res.status(page.status).type("html").send(page.html);
+  } catch (err) {
+    console.error("[subscriptions] unsubscribe failed:", err.message);
+    return res.status(500).send("Unsubscribe failed");
   }
 });
 
@@ -1224,8 +1400,8 @@ async function renderPublicPage(req, res, pathname, page) {
       } else {
         html = html
           .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(overview))
-          .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings))
-          .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news))
+          .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
+          .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
           .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
       }
@@ -1264,12 +1440,12 @@ async function renderLocationPage(req, res) {
     const pathname = location.path;
     const origin = siteOrigin(req);
     const page = {
-      title: `Výskyt medveďa – ${location.name} | Aktuálne hlásenia`,
+      title: `Výskyt medveďa - ${location.name} | Aktuálne hlásenia`,
       description:
         `Aktuálne hlásenia, varovania a správy o výskyte medveďa v lokalite ${location.name}. ` +
         "Prehľad z viacerých zdrojov s dátumami a pôvodnými odkazmi.",
       schemaType: "CollectionPage",
-      breadcrumbName: `Výskyt medveďa – ${location.name}`,
+      breadcrumbName: `Výskyt medveďa - ${location.name}`,
       dateModified: location.latest,
       location,
     };
@@ -1285,6 +1461,7 @@ async function renderLocationPage(req, res) {
         "v aktuálnom súbore údajov"
       )
       .replace("<!-- LOCATION_UPDATED -->", renderSsrUpdated(location.latest))
+      .replace("<!-- LOCATION_SUMMARY -->", renderLocationSummary(location))
       .replace(
         "<!-- LOCATION_WARNINGS -->",
         renderSsrWarnings(location.warningItems, "Pre túto lokalitu zatiaľ nemáme samostatné hlásenie; súvisí však s ňou spravodajský záznam.")
@@ -1386,7 +1563,7 @@ app.get("/llms.txt", async (req, res) => {
   try {
     const { topLocations } = await loadLocationOverview();
     locationLinks = `\n## Najčastejšie lokality v aktuálnych dátach\n${topLocations
-      .map((location) => `- [Výskyt medveďa – ${location.name}](${absoluteUrl(origin, location.path)})`)
+      .map((location) => `- [Výskyt medveďa: ${location.name}](${absoluteUrl(origin, location.path)})`)
       .join("\n")}\n`;
   } catch (err) {
     console.error("[seo] llms location links failed:", err.message);
@@ -1414,9 +1591,9 @@ ${locationLinks}
 - Relevantné slovenské správy s odkazom na pôvodný článok
 
 ## Strojovo čitateľné dáta
-- [Aktuálne varovania – JSON](${absoluteUrl(origin, "/api/warnings")})
-- [Aktuálne správy – JSON](${absoluteUrl(origin, "/api/news")})
-- [Štatistiky – JSON](${absoluteUrl(origin, "/api/stats")})
+- [Aktuálne varovania, JSON](${absoluteUrl(origin, "/api/warnings")})
+- [Aktuálne správy, JSON](${absoluteUrl(origin, "/api/news")})
+- [Štatistiky, JSON](${absoluteUrl(origin, "/api/stats")})
 - [RSS najnovších hlásení](${absoluteUrl(origin, "/feed.xml")})
 
 ## Dôležité obmedzenie
@@ -1428,7 +1605,7 @@ app.get("/feed.xml", async (req, res) => {
   const origin = siteOrigin(req);
   const warnings = await loadWarnings().catch(() => []);
   const items = warnings.slice(0, 50).map((item) => {
-    const title = `${item.location || "Slovensko"} – hlásený výskyt medveďa`;
+    const title = `${item.location || "Slovensko"}: hlásený výskyt medveďa`;
     const description = [
       `Lokalita: ${item.location || "neuvedená"}.`,
       `Čas hlásenia: ${formatSlovakDate(item.reportedAt, true)}.`,
@@ -1440,7 +1617,7 @@ app.get("/feed.xml", async (req, res) => {
   res
     .type("application/rss+xml")
     .set("Cache-Control", "public, max-age=300")
-    .send(`<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n  <title>Kde je Medveď – aktuálne hlásenia</title>\n  <link>${escapeHtml(`${origin}/`)}</link>\n  <description>Najnovšie moderované hlásenia výskytu medveďov na Slovensku.</description>\n  <language>sk-SK</language>\n  <lastBuildDate>${new Date(latestContentDate() || Date.now()).toUTCString()}</lastBuildDate>\n${items}\n</channel>\n</rss>\n`);
+    .send(`<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n  <title>Kde je Medveď: aktuálne hlásenia</title>\n  <link>${escapeHtml(`${origin}/`)}</link>\n  <description>Najnovšie moderované hlásenia výskytu medveďov na Slovensku.</description>\n  <language>sk-SK</language>\n  <lastBuildDate>${new Date(latestContentDate() || Date.now()).toUTCString()}</lastBuildDate>\n${items}\n</channel>\n</rss>\n`);
 });
 
 // --- Basic Auth pre administráciu ---
@@ -1621,6 +1798,7 @@ app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   }
   try {
     await updateBearReportStatus(Number(req.params.id), status);
+    if (status === "approved") await flushEmailNotifications("report approval");
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -1639,6 +1817,7 @@ app.post("/api/admin/sightings/:id/status", adminAuth, async (req, res) => {
     await sightingsStore.loadFromDatabase().catch((err) => {
       console.error("[sighting status] reload failed:", err.message);
     });
+    if (status === "approved") await flushEmailNotifications("sighting approval");
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -1851,6 +2030,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     }
 
     await flushTelegramNotifications("admin warning");
+    await flushEmailNotifications("admin warning");
 
     res.json({ ok: true });
   } catch (err) {
@@ -1918,9 +2098,10 @@ app.use(
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
   console.log(
-    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}`
+    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}; email: ${emailConfig.enabled ? "enabled" : `disabled (${emailConfig.missing.join(", ") || "Supabase"})`}`
   );
   telegramService.start();
+  emailService.start();
   sightingsStore.start().catch((err) => {
     console.error("[sightings] startup load failed:", err.message);
   });

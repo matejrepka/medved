@@ -273,7 +273,8 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: window.innerWidth < 900 ? 'bottom' : 'right',
+          position: 'bottom',
+          align: 'center',
           labels: { color: colors.textColor }
         }
       }
@@ -305,12 +306,3 @@ async function loadData() {
 syncThemeButton(currentTheme());
 setStatus("Načítavam štatistiky…");
 loadData();
-
-window.addEventListener("resize", () => {
-  if (!timeOfDayChart) return;
-  const nextPos = window.innerWidth < 900 ? "bottom" : "right";
-  if (timeOfDayChart.options.plugins.legend.position !== nextPos) {
-    timeOfDayChart.options.plugins.legend.position = nextPos;
-    timeOfDayChart.update();
-  }
-});

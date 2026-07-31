@@ -146,7 +146,12 @@ create table if not exists public.email_subscriptions (
     check (notify_type in ('all', 'area')),
   area_name text,
   active boolean not null default true,
-  created_at timestamptz not null default now()
+  confirmed_at timestamptz,
+  confirmation_nonce text,
+  confirmation_sent_at timestamptz,
+  unsubscribed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists email_subscriptions_active_idx

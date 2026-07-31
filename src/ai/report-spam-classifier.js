@@ -81,7 +81,7 @@ export async function classifyReportSpam(report, options = {}) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.SITE_URL || "https://kdejemedved.sk",
+        "HTTP-Referer": process.env.SITE_URL || "https://www.kdejemedved.sk",
         "X-OpenRouter-Title": "Kde je Medved",
       },
       body: JSON.stringify({

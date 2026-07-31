@@ -1456,32 +1456,46 @@ async function loadData() {
   syncLoadStatus();
   // News načítavame bez cache, aby sa moderácia kategórie/lokality hneď
   // prejavila aj na mape.
-  const [sRes, nRes] = await Promise.allSettled([
-    fetch(`/api/warnings?v=${API_VERSION}`).then((r) => r.json()),
-    fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" }).then((r) => r.json()),
-  ]);
+  // Každý zdroj spracujeme hneď po jeho doručení. Pomalší endpoint správ tak
+  // už neblokuje prvé hlásenia na mape. Zoznam pod mapou odložíme do ďalšej
+  // úlohy, aby prehliadač dostal príležitosť značky najprv vykresliť.
+  const sourceFailed = { sightings: false, news: false };
+  const renderListAfterMarkers = (renderList) => setTimeout(renderList, 0);
+
+  const sightingsRequest = fetch(`/api/warnings?v=${API_VERSION}`, { credentials: "omit" })
+    .then((response) => response.json())
+    .then((payload) => {
+      if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta hlásení");
+      state.sightings = dedupeSightings(payload.items);
+      state.sightingsUpdatedAt = payload.updatedAt;
+      state.loaded.sightings = true;
+      renderMarkers();
+      renderListAfterMarkers(renderSightings);
+    })
+    .catch(() => {
+      sourceFailed.sightings = true;
+    });
+
+  const newsRequest = fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" })
+    .then((response) => response.json())
+    .then((payload) => {
+      if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta správ");
+      state.news = payload.items;
+      state.newsUpdatedAt = payload.updatedAt;
+      state.loaded.news = true;
+      renderMarkers();
+      renderListAfterMarkers(renderNews);
+    })
+    .catch(() => {
+      sourceFailed.news = true;
+    });
+
+  await Promise.all([sightingsRequest, newsRequest]);
 
   const failures = [];
+  if (sourceFailed.sightings) failures.push("hlásenia");
+  if (sourceFailed.news) failures.push("správy");
 
-  if (sRes.status === "fulfilled" && Array.isArray(sRes.value.items)) {
-    state.sightings = dedupeSightings(sRes.value.items);
-    state.sightingsUpdatedAt = sRes.value.updatedAt;
-    state.loaded.sightings = true;
-    renderSightings();
-  } else {
-    failures.push("hlásenia");
-  }
-
-  if (nRes.status === "fulfilled" && Array.isArray(nRes.value.items)) {
-    state.news = nRes.value.items;
-    state.newsUpdatedAt = nRes.value.updatedAt;
-    state.loaded.news = true;
-    renderNews();
-  } else {
-    failures.push("správy");
-  }
-
-  renderMarkers();
   state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
   setUpdated(state.updatedAt);
   syncDateFilterLimits();

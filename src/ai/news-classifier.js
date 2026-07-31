@@ -153,7 +153,7 @@ async function classifyBatch(items, { apiKey, model, fetchImpl }) {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": process.env.SITE_URL || "https://kdejemedved.sk",
+      "HTTP-Referer": process.env.SITE_URL || "https://www.kdejemedved.sk",
       // HTTP hlavičky musia zostať ASCII; názov s „ď“ Node fetch odmietne.
       "X-OpenRouter-Title": "Kde je Medved",
     },

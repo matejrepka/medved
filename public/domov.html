@@ -140,11 +140,13 @@
         </div>
       </section>
 
-      <div class="columns">
-        <section class="panel" aria-labelledby="sightingsHead">
-          <div class="section-head">
-            <h2 id="sightingsHead">Aktuálne hlásenia a medvedie varovania</h2>
-            <span class="src">viac verejných zdrojov</span>
+      <div class="columns home-activity-grid">
+        <section class="panel activity-panel" aria-labelledby="sightingsHead">
+          <div class="activity-panel-heading">
+            <div>
+              <h2 id="sightingsHead">Aktuálne hlásenia a medvedie varovania</h2>
+              <p>Terénne hlásenia a verejné záznamy</p>
+            </div>
           </div>
 
           <div id="sightingsList" class="list" aria-live="polite">
@@ -156,10 +158,12 @@
           </a>
         </section>
 
-        <section class="panel" aria-labelledby="newsHead">
-          <div class="section-head">
-            <h2 id="newsHead">Aktuálne správy o medveďoch</h2>
-            <span class="src">slovenské médiá a ŠOP SR</span>
+        <section class="panel activity-panel" aria-labelledby="newsHead">
+          <div class="activity-panel-heading">
+            <div>
+              <h2 id="newsHead">Aktuálne správy o medveďoch</h2>
+              <p>Oficiálne upozornenia a správy médií</p>
+            </div>
           </div>
           <div id="newsList" class="list" aria-live="polite">
             <!-- SSR_NEWS -->
@@ -338,7 +342,7 @@
                   href="https://zasahovytim.sopsr.sk/bezpecnost/"
                   target="_blank"
                   rel="noopener noreferrer"
-                >Bezpečnosť – Zásahový tím pre medveďa hnedého ŠOP SR</a>
+                >Bezpečnosť: Zásahový tím pre medveďa hnedého ŠOP SR</a>
               </p>
             </details>
             <details>
@@ -428,8 +432,8 @@
               <span>Prihlásiť sa na odber</span>
             </button>
             <p class="notify-privacy">
-              Prihlásením súhlasíte so spracovaním e-mailu na evidenciu odberu.
-              Súhlas môžete kedykoľvek odvolať.
+              Odber aktivujete až kliknutím na odkaz v potvrdzovacom e-maile.
+              Súhlas môžete kedykoľvek odvolať odkazom v každom upozornení.
               <a href="/privacy">Ako chránime vaše údaje</a>
             </p>
             <div id="notifyMessage" class="form-message" role="alert"></div>

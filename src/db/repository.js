@@ -1258,51 +1258,71 @@ export async function saveEmailSubscription(sub) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
+  const nonce = crypto.randomBytes(24).toString("base64url");
   const row = {
     email: sub.email,
     notify_type: sub.notifyType || "all",
     area_name: sub.areaName || null,
-    active: true,
+    active: false,
+    confirmed_at: null,
+    confirmation_nonce: nonce,
+    confirmation_sent_at: null,
+    unsubscribed_at: null,
+    updated_at: new Date().toISOString(),
   };
 
   const existing = await findEmailSubscription(supabase, row.email, row.area_name);
 
   if (existing) {
+    if (existing.active && existing.confirmed_at) {
+      return { ...existing, needsConfirmation: false, alreadyActive: true };
+    }
+
+    const lastSent = new Date(existing.confirmation_sent_at || 0).getTime();
+    if (Number.isFinite(lastSent) && Date.now() - lastSent < 5 * 60 * 1000) {
+      return { ...existing, needsConfirmation: false, confirmationPending: true };
+    }
+
     const { data, error } = await supabase
       .from("email_subscriptions")
       .update({
         notify_type: row.notify_type,
-        active: true,
+        active: false,
+        confirmed_at: null,
+        confirmation_nonce: nonce,
+        confirmation_sent_at: null,
+        unsubscribed_at: null,
+        updated_at: row.updated_at,
       })
       .eq("id", existing.id)
-      .select("id")
+      .select("id,email,notify_type,area_name,active,confirmed_at,confirmation_nonce,confirmation_sent_at")
       .single();
 
     if (error) throw error;
-    return data;
+    return { ...data, needsConfirmation: true };
   }
 
   const { data, error } = await supabase
     .from("email_subscriptions")
     .insert(row)
-    .select("id")
+    .select("id,email,notify_type,area_name,active,confirmed_at,confirmation_nonce,confirmation_sent_at")
     .single();
 
   if (error) {
     if (isUniqueViolation(error)) {
       const duplicate = await findEmailSubscription(supabase, row.email, row.area_name);
-      if (duplicate) return duplicate;
+      if (duplicate) return { ...duplicate, needsConfirmation: false, confirmationPending: true };
     }
     throw error;
   }
 
-  return data;
+  return { ...data, needsConfirmation: true };
 }
 
 async function findEmailSubscription(supabase, email, areaName) {
   let query = supabase
     .from("email_subscriptions")
-    .select("id")
+    .select("id,email,notify_type,area_name,active,confirmed_at,confirmation_nonce,confirmation_sent_at")
     .eq("email", email)
     .limit(1);
 
@@ -1311,6 +1331,65 @@ async function findEmailSubscription(supabase, email, areaName) {
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return data || null;
+}
+
+export async function markEmailConfirmationSent(id) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("email_subscriptions")
+    .update({
+      confirmation_sent_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("active", false);
+  if (error) throw error;
+}
+
+export async function confirmEmailSubscription({ id, email, nonce }) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("email_subscriptions")
+    .update({
+      active: true,
+      confirmed_at: now,
+      unsubscribed_at: null,
+      updated_at: now,
+    })
+    .eq("id", id)
+    .eq("email", email)
+    .eq("confirmation_nonce", nonce)
+    .select("id,email,notify_type,area_name,active,confirmed_at,confirmation_nonce")
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+export async function unsubscribeEmailSubscription({ id, email, nonce }) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("email_subscriptions")
+    .update({ active: false, unsubscribed_at: now, updated_at: now })
+    .eq("id", id)
+    .eq("email", email)
+    .eq("confirmation_nonce", nonce)
+    .select("id,email,notify_type,area_name,active")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+
+  const { error: cancelError } = await supabase
+    .from("email_notification_outbox")
+    .update({ status: "cancelled", locked_at: null, updated_at: now })
+    .eq("subscription_id", id)
+    .in("status", ["pending", "processing"]);
+  if (cancelError) throw cancelError;
+  return data;
 }
 
 function isUniqueViolation(error) {
@@ -1323,7 +1402,7 @@ export async function loadEmailSubscriptions() {
 
   const { data, error } = await supabase
     .from("email_subscriptions")
-    .select("id,email,notify_type,area_name,active,created_at")
+    .select("id,email,notify_type,area_name,active,confirmed_at,confirmation_sent_at,unsubscribed_at,created_at")
     .order("created_at", { ascending: false })
     .limit(500);
 

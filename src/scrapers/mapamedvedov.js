@@ -1,5 +1,5 @@
 const PAGE_URL = "https://mapamedvedov.sk/";
-const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://kdejemedved.sk)";
+const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://www.kdejemedved.sk)";
 
 function dateOnlyToIso(value) {
   const match = String(value || "").match(/^(\d{4}-\d{2}-\d{2})$/);
@@ -97,4 +97,3 @@ export async function fetchMapamedvedov() {
     .map(normalize)
     .filter((item) => item.reportedAt);
 }
-

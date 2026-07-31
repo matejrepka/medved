@@ -4,7 +4,7 @@ import { parseHTML } from "linkedom";
 const ACTUALITY_URL = "https://www.sprejnamedveda.sk/aktuality/";
 const DATA_URL = "https://www.sprejnamedveda.sk/mapa-2/";
 const POSTS_URL = "https://www.sprejnamedveda.sk/wp-json/wp/v2/posts";
-const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://kdejemedved.sk)";
+const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://www.kdejemedved.sk)";
 
 function dateOnlyToIso(value) {
   const match = String(value || "").match(/^(\d{4}-\d{2}-\d{2})$/);

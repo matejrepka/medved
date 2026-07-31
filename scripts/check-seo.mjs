@@ -45,6 +45,9 @@ const locationTemplate = await readFile(path.join(root, "public", "location.html
 if (!locationTemplate.includes("<!-- LOCATION_NAME -->")) {
   errors.push("location.html: chýba LOCATION_NAME token");
 }
+if (!locationTemplate.includes("<!-- LOCATION_SUMMARY -->")) {
+  errors.push("location.html: chýba LOCATION_SUMMARY token");
+}
 
 const manifest = JSON.parse(await readFile(path.join(root, "public", "manifest.webmanifest"), "utf8"));
 if (manifest.lang !== "sk") errors.push("manifest.webmanifest: lang musí byť sk");
@@ -55,8 +58,11 @@ for (const route of ["/robots.txt", "/sitemap.xml", "/llms.txt", "/feed.xml"]) {
 }
 if (!server.includes("LOCATION_ROUTE_PREFIX")) errors.push("server.js: chýbajú lokalitné SEO stránky");
 if (!server.includes("notifyIndexNow")) errors.push("server.js: chýba IndexNow aktualizácia");
-if (!server.includes('const CANONICAL_SITE_ORIGIN = "https://kdejemedved.sk"')) {
-  errors.push("server.js: kanonický origin musí byť https://kdejemedved.sk");
+if (!server.includes('const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk"')) {
+  errors.push("server.js: kanonický origin musí byť https://www.kdejemedved.sk");
+}
+if (!server.includes("mergeLocationPages(locationCandidates)")) {
+  errors.push("server.js: lokalitné stránky musia byť deduplikované podľa slugu");
 }
 if (!/if \(pathname === "\/domov"\) \{\s*graph\.push\(\{\s*"@type": "FAQPage"/m.test(server)) {
   errors.push("server.js: FAQ schema musí byť naviazaná na viditeľné FAQ na /domov");

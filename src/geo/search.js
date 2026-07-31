@@ -50,7 +50,7 @@ async function fetchFromNominatim(query) {
   if (elapsed < 1000) await wait(1000 - elapsed);
   lastRequestAt = Date.now();
 
-  const site = process.env.SITE_URL || "https://kdejemedved.sk";
+  const site = process.env.SITE_URL || "https://www.kdejemedved.sk";
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",

@@ -2500,7 +2500,7 @@
           table.className = 'sub-table';
           table.innerHTML =
             '<thead><tr>' +
-              '<th>Email</th><th>Typ</th><th>Oblasť</th><th>Dátum</th><th></th>' +
+              '<th>Email</th><th>Typ</th><th>Oblasť</th><th>Stav</th><th>Dátum</th><th></th>' +
             '</tr></thead><tbody></tbody>';
 
           const tbody = table.querySelector('tbody');
@@ -2509,10 +2509,16 @@
             const typeBadge = sub.notify_type === 'area'
               ? '<span class="sub-type-badge area">oblasť</span>'
               : '<span class="sub-type-badge all">všetko</span>';
+            const subscriptionStatus = sub.active && sub.confirmed_at
+              ? 'aktívny'
+              : sub.confirmation_sent_at && !sub.unsubscribed_at
+                ? 'čaká na potvrdenie'
+                : 'neaktívny';
             tr.innerHTML =
               '<td>' + esc(sub.email) + '</td>' +
               '<td>' + typeBadge + '</td>' +
               '<td>' + esc(sub.area_name || 'Všetky oblasti') + '</td>' +
+              '<td>' + esc(subscriptionStatus) + '</td>' +
               '<td>' + formatDateTime(sub.created_at) + '</td>' +
               '<td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>';
             tr.querySelector('.sub-delete').addEventListener('click', () => deleteSub(sub.id, tr));
