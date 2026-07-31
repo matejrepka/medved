@@ -29,7 +29,7 @@ import {
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
-import { INCIDENT_SOURCE_TYPES } from "./src/incidents.js";
+import { normalizeNewsLocations } from "./src/news-locations.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import { readTelegramConfig } from "./src/telegram/config.js";
 import { TelegramService, webhookSecretMatches } from "./src/telegram/service.js";
@@ -57,7 +57,7 @@ import {
   updateNewsFields,
   updateSightingFields,
   updateSightingStatus,
-  reviewNewsWithIncident,
+  reviewNewsWithAutomaticIncident,
 } from "./src/db/repository.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -592,6 +592,23 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
   }).join("\n");
 }
 
+function renderSsrNewsLocations(item) {
+  const locations = normalizeNewsLocations(
+    item.locations?.length
+      ? item.locations
+      : { place: item.place, lat: item.lat, lng: item.lng }
+  );
+  if (!locations.length || (item.category !== "warning" && !item.isIncident)) return "";
+
+  return `<div class="news-location-links" aria-label="Lokality varovania">
+    <span class="news-location-label"><i class="ph ph-map-pin" aria-hidden="true"></i> Lokality</span>
+    ${locations.map((location, index) => location.hasCoords
+      ? `<a href="#mapViewport" data-news-marker="${escapeHtml(`${item.id}:location:${index}`)}" data-lat="${escapeHtml(location.lat)}" data-lng="${escapeHtml(location.lng)}">${escapeHtml(location.place)}</a>`
+      : `<span class="news-location-name">${escapeHtml(location.place)}</span>`
+    ).join("")}
+  </div>`;
+}
+
 function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limit = 12) {
   if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
   return items.slice(0, limit).map((item) => {
@@ -617,13 +634,14 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     const official = item.verificationStatus === "official_notice"
       ? '<span class="meta-official">Obsahuje úradné oznámenie</span>'
       : "";
+    const locations = renderSsrNewsLocations(item);
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}">${escapeHtml(freshness.label)}</span></div>
       <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
       <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}${item.place ? `<span class="meta-place">${escapeHtml(item.place)}</span>` : ""}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
-      <div class="card-actions">${link}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>${coverage}
+      ${locations}<div class="card-actions">${link}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>${coverage}
     </article>`;
   }).join("\n");
 }
@@ -636,7 +654,12 @@ function includesLocation(value, locationName) {
 
 function itemBelongsToLocation(item, locationName, type) {
   if (type === "warning") return includesLocation(item.location, locationName);
-  return [item.place, item.title, item.snippet].some((value) =>
+  return [
+    item.place,
+    ...(Array.isArray(item.locations) ? item.locations.map((location) => location.place) : []),
+    item.title,
+    item.snippet,
+  ].some((value) =>
     includesLocation(value, locationName)
   );
 }
@@ -1467,6 +1490,34 @@ async function resolveAdminLocation(name, latValue, lngValue) {
   return results[0] || null;
 }
 
+function adminInputError(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+async function resolveAdminLocations(value, legacy = null) {
+  const raw = Array.isArray(value) && value.length ? value : legacy ? [legacy] : [];
+  if (raw.length > 12) throw adminInputError("Jedno varovanie môže mať najviac 12 lokalít.");
+
+  const candidates = normalizeNewsLocations(raw);
+  if (!candidates.length) {
+    throw adminInputError("Pri medvedom varovaní zadajte aspoň jednu lokalitu.");
+  }
+
+  const resolved = [];
+  for (const candidate of candidates) {
+    const location = await resolveAdminLocation(candidate.place, candidate.lat, candidate.lng);
+    if (!location) {
+      throw adminInputError(
+        `Lokalita „${candidate.place}“ sa na Slovensku nenašla. Skontrolujte názov alebo ju vyhľadajte a vyberte zo zoznamu.`
+      );
+    }
+    resolved.push({ place: location.name, lat: location.lat, lng: location.lng });
+  }
+  return normalizeNewsLocations(resolved);
+}
+
 // Explicitné vyhľadávanie pre admina. Na rozdiel od lokálneho gazetteeru nájde
 // aj doliny, jazerá, vrchy a ďalšie pomenované body na mape.
 app.get("/api/admin/locations", adminAuth, async (req, res) => {
@@ -1588,10 +1639,9 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
   try {
-    await reviewNewsWithIncident(req.params.id, {
+    await reviewNewsWithAutomaticIncident(req.params.id, {
       status,
       category: "article",
-      incidentAction: "ungrouped",
       actor: "admin",
     });
     await newsStore.loadFromDatabase().catch((err) => {
@@ -1606,24 +1656,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
 // Schválenie správy s kategorizáciou (varovanie/článok) a úpravou lokality.
 // Pri 'warning' prijmeme vybraný bod na mape alebo názov geokódujeme.
 app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
-  const {
-    status,
-    category,
-    place,
-    lat,
-    lng,
-    incidentAction = "ungrouped",
-    incidentId,
-    eventDate,
-    eventDatePrecision,
-    incidentLocality,
-    incidentLat,
-    incidentLng,
-    incidentTitle,
-    incidentSummary,
-    incidentStatus,
-    sourceType,
-  } = req.body || {};
+  const { status, category, locations, place, lat, lng } = req.body || {};
   if (!["approved", "rejected"].includes(status)) {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
@@ -1634,77 +1667,21 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
     if (status === "approved") {
       const cat = category === "warning" ? "warning" : "article";
       fields.category = cat;
+      let warningLocations = [];
       let warningLocation = null;
 
       if (cat === "warning") {
-        const name = typeof place === "string" ? place.trim() : "";
-        if (!name) {
-          return res
-            .status(400)
-            .json({ ok: false, error: "Pri medvedom varovaní zadajte lokalitu." });
-        }
-        warningLocation = await resolveAdminLocation(name, lat, lng);
-        if (!warningLocation) {
-          return res.status(400).json({
-            ok: false,
-            error: `Lokalita „${name}“ sa na Slovensku nenašla. Skontrolujte názov alebo ju vyhľadajte a vyberte zo zoznamu.`,
-          });
-        }
-        fields.place = warningLocation.name;
+        warningLocations = await resolveAdminLocations(locations, { place, lat, lng });
+        warningLocation = warningLocations[0];
+        fields.locations = warningLocations;
+        fields.place = warningLocation.place;
         fields.lat = warningLocation.lat;
         fields.lng = warningLocation.lng;
       }
 
-      fields.incidentAction = ["create", "attach", "ungrouped"].includes(incidentAction)
-        ? incidentAction
-        : "ungrouped";
-      fields.sourceType = INCIDENT_SOURCE_TYPES.includes(sourceType) ? sourceType : "other";
-
-      if (fields.incidentAction === "attach") {
-        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(incidentId || ""))) {
-          return res.status(400).json({ ok: false, error: "Vyberte existujúcu udalosť." });
-        }
-        fields.incidentId = incidentId;
-      }
-
-      if (fields.incidentAction === "create") {
-        const dateValue = typeof eventDate === "string" ? eventDate.trim() : "";
-        const locality = typeof incidentLocality === "string" ? incidentLocality.trim() : "";
-        const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(dateValue)
-          ? new Date(`${dateValue}T12:00:00Z`)
-          : null;
-        if (!parsedDate || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== dateValue) {
-          return res.status(400).json({ ok: false, error: "Zadajte platný dátum skutočnej udalosti." });
-        }
-        if (!locality) {
-          return res.status(400).json({ ok: false, error: "Zadajte lokalitu skutočnej udalosti." });
-        }
-
-        const selectedIncidentLocation =
-          warningLocation && locality.toLocaleLowerCase("sk") === warningLocation.name.toLocaleLowerCase("sk")
-            ? warningLocation
-            : await resolveAdminLocation(locality, incidentLat, incidentLng);
-        if (!selectedIncidentLocation) {
-          return res.status(400).json({
-            ok: false,
-            error: `Lokalita udalosti „${locality}“ sa na Slovensku nenašla. Vyhľadajte ju a vyberte zo zoznamu.`,
-          });
-        }
-
-        fields.eventDate = dateValue;
-        fields.eventDatePrecision = eventDatePrecision === "approximate" ? "approximate" : "day";
-        fields.incidentLocality = selectedIncidentLocation.name;
-        fields.incidentLat = selectedIncidentLocation.lat;
-        fields.incidentLng = selectedIncidentLocation.lng;
-        fields.incidentTitle = typeof incidentTitle === "string" ? incidentTitle.trim().slice(0, 300) : "";
-        fields.incidentSummary = typeof incidentSummary === "string" ? incidentSummary.trim().slice(0, 1500) : "";
-        fields.incidentStatus = ["active", "resolved", "archived"].includes(incidentStatus)
-          ? incidentStatus
-          : "active";
-      }
     }
 
-    const incidentResult = await reviewNewsWithIncident(req.params.id, fields);
+    const incidentResult = await reviewNewsWithAutomaticIncident(req.params.id, fields);
     // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
@@ -1716,11 +1693,12 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
       place: fields.place || null,
       lat: fields.lat ?? null,
       lng: fields.lng ?? null,
+      locations: fields.locations || [],
       incident: incidentResult || null,
     });
   } catch (err) {
     console.error("[news review] failed:", err.message);
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(err.statusCode || 500).json({ ok: false, error: err.message });
   }
 });
 
@@ -1737,14 +1715,24 @@ app.get("/api/admin/content", adminAuth, async (_req, res) => {
 
 app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
   try {
-    await updateNewsFields(req.params.id, req.body || {});
+    const fields = { ...(req.body || {}) };
+    if (fields.category === "warning" && Array.isArray(fields.locations)) {
+      fields.locations = await resolveAdminLocations(fields.locations, {
+        place: fields.place,
+        lat: fields.lat,
+        lng: fields.lng,
+      });
+    } else if (fields.category === "article") {
+      fields.locations = [];
+    }
+    await updateNewsFields(req.params.id, fields);
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news edit] reload failed:", err.message);
     });
     res.json({ ok: true });
   } catch (err) {
     console.error("[news edit] failed:", err.message);
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(err.statusCode || 500).json({ ok: false, error: err.message });
   }
 });
 
@@ -1767,7 +1755,7 @@ app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
 //   tumedved     -> tumedved_logs (hlásenie so štítkom tumedved.sk)
 //   warning      -> bear_reports so statusom approved (všeobecné varovanie)
 app.post("/api/admin/warnings", adminAuth, async (req, res) => {
-  const { type, title, location, description, source, link, place, lat, lng, date } = req.body || {};
+  const { type, title, location, description, source, link, locations, place, lat, lng, date } = req.body || {};
 
   if (!["news", "news-warning", "tumedved", "warning"].includes(type)) {
     return res.status(400).json({ ok: false, error: "Neplatný typ položky." });
@@ -1796,11 +1784,10 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       if (!cleanTitle) {
         return res.status(400).json({ ok: false, error: "Titulok je povinný." });
       }
-      if (type === "news-warning" && !geo) {
-        return res
-          .status(400)
-          .json({ ok: false, error: "Pri medvedom varovaní zo správ zadajte lokalitu." });
-      }
+      const warningLocations = type === "news-warning"
+        ? await resolveAdminLocations(locations, { place, lat, lng })
+        : [];
+      const primaryLocation = warningLocations[0] || null;
 
       await saveManualNews({
         id: `manual-news-${Date.now()}`,
@@ -1810,9 +1797,10 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
         snippet: description?.trim() || null,
         publishedAt: reportedAt.toISOString(),
         category: type === "news-warning" ? "warning" : "article",
-        place: type === "news-warning" ? geo.name : null,
-        lat: type === "news-warning" ? geo.lat : null,
-        lng: type === "news-warning" ? geo.lng : null,
+        locations: warningLocations,
+        place: primaryLocation?.place || null,
+        lat: primaryLocation?.lat ?? null,
+        lng: primaryLocation?.lng ?? null,
       });
 
       await newsStore.loadFromDatabase().catch((err) => {
@@ -1855,7 +1843,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("[manual warning] save failed:", err.message);
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(err.statusCode || 500).json({ ok: false, error: err.message });
   }
 });
 

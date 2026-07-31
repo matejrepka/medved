@@ -31,7 +31,8 @@ Live site: kdejemedved.sk
   s toleranciou na slovenské skloňovanie (napr. „v Ružomberku" → Ružomberok).
 - **AI predvyplnenie moderácie** – iba nové správy po stiahnutí spracuje cez OpenRouter model
   `openrouter/free`. Model predvolí „Správa / článok“ alebo „Medvedie varovanie“
-  a pri varovaní doplní najpresnejšiu lokalitu; admin výsledok pred schválením skontroluje.
+  a pri varovaní doplní všetky spoľahlivo pomenované lokality jednotlivých pozorovaní;
+  admin môže lokality pred schválením pridať, odstrániť alebo opraviť.
 - **Udalosti a spravodajské pokrytie** – každý článok ostáva samostatným moderovaným
   záznamom, no admin ho môže pri schválení pripojiť k trvalej udalosti podľa skutočného
   dátumu a lokality. Verejný zoznam potom ukáže jednu udalosť s počtom zdrojov a rozbaliteľným
@@ -76,8 +77,8 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 
 - Dáta sa zbierajú z viacerých verejných zdrojov a ukladajú sa do vlastnej databázovej vrstvy.
 - Podobné mapové hlásenia sa zlučujú, aby sa na mape nezobrazovali duplicity.
-- Správy sa filtrujú podľa relevantnosti, geokódujú z textu a zobrazujú vedľa hlásení.
-- Admin časť podporuje moderáciu nových správ a používateľských hlásení.
+- AI pri nových správach oddeľuje dátum udalosti od publikovania a vyhľadá všetky spoľahlivé lokality.
+- Admin časť podporuje moderáciu nových správ a používateľských hlásení; po schválení správy server automaticky pripojí jednoznačnú zhodu alebo vytvorí novú udalosť.
 - Frontend je navrhnutý ako mapový prehľad s filtrami, vyhľadávaním a prepínaním vrstiev.
 
 ## Databázové migrácie
@@ -90,10 +91,11 @@ V SQL Editore spustite celý obsah migrácie 006 bez označeného čiastkového 
 Editor pri označenom texte vykoná iba výber; telo PL/pgSQL funkcie by tak mohlo zostať
 bez koncového oddeľovača. Migráciu možno po takomto prerušení bezpečne spustiť znova.
 
-Migrácia 005 zámerne nerobí historický backfill a nevytvára žiadne automatické spojenia.
-Existujúce správy ostanú schválené a nezoskupené. Nové priradenia sa ukladajú transakčne
+Migrácia 006 zámerne nerobí historický backfill ani spätne nespája staré správy.
+Existujúce správy ostanú schválené a nezoskupené. Budúce spoľahlivé priradenia sa po schválení vyberú automaticky a ukladajú transakčne
 cez serverový service-role klient; funkcia RPC nemá oprávnenie pre `anon` ani
-`authenticated` rolu.
+`authenticated` rolu. Tá istá migrácia pridáva usporiadané lokality varovaní;
+prvá lokalita zostáva zrkadlená v pôvodných stĺpcoch kvôli spätnej kompatibilite.
 
 ## Verejné zverejnenie
 

@@ -3,7 +3,13 @@ import crypto from "node:crypto";
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
 import { decodeHtmlEntities } from "../html-text.js";
 import { dedupeSightings, sightingSourceLinks } from "../sightings-dedupe.js";
-import { groupNewsByIncidents, rankIncidentSuggestions } from "../incidents.js";
+import {
+  groupNewsByIncidents,
+  inferIncidentSourceType,
+  rankIncidentSuggestions,
+  selectAutomaticIncidentMatch,
+} from "../incidents.js";
+import { newsLocations, normalizeNewsLocations } from "../news-locations.js";
 
 const WRITE_CHUNK_SIZE = 200;
 const SIGHTINGS_LIMIT = 1000;
@@ -134,9 +140,22 @@ function newsCategory(row, hasCoords) {
   return looksLikeBearWarning(row, hasCoords) ? "warning" : "article";
 }
 
-function rowToNews(row) {
-  const lat = asNullableNumber(row.lat);
-  const lng = asNullableNumber(row.lng);
+function payloadNewsLocations(row) {
+  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
+  return normalizeNewsLocations(
+    payload.locations?.length
+      ? payload.locations
+      : payload.aiClassification?.places || { place: row?.place, lat: row?.lat, lng: row?.lng }
+  );
+}
+
+function rowToNews(row, storedLocations = []) {
+  const locations = normalizeNewsLocations(
+    storedLocations.length ? storedLocations : payloadNewsLocations(row)
+  );
+  const primary = locations[0] || null;
+  const lat = asNullableNumber(primary?.lat ?? row.lat);
+  const lng = asNullableNumber(primary?.lng ?? row.lng);
   return {
     id: row.id,
     source: row.source,
@@ -146,13 +165,67 @@ function rowToNews(row) {
     articleUrl: row.article_url,
     snippet: decodeHtmlEntities(row.snippet || ""),
     date: row.published_at,
-    place: row.place,
+    place: primary?.place || row.place,
     lat,
     lng,
     hasCoords: hasCoordinates(lat, lng),
+    locations,
     category: newsCategory(row, hasCoordinates(lat, lng)),
     _scrapedAt: row.scraped_at,
   };
+}
+
+async function loadNewsWarningLocations(newsIds) {
+  const supabase = getSupabase();
+  const byNewsId = new Map();
+  const unique = [...new Set((newsIds || []).filter(Boolean))];
+  if (!supabase || !unique.length) return byNewsId;
+
+  try {
+    for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
+      const { data, error } = await supabase
+        .from("news_warning_locations")
+        .select("news_id,position,place,lat,lng")
+        .in("news_id", unique.slice(i, i + WRITE_CHUNK_SIZE))
+        .order("position", { ascending: true });
+      if (error) throw error;
+      for (const row of data || []) {
+        if (!byNewsId.has(row.news_id)) byNewsId.set(row.news_id, []);
+        byNewsId.get(row.news_id).push(row);
+      }
+    }
+  } catch (error) {
+    if (!isMissingRelation(error)) throw error;
+  }
+  return byNewsId;
+}
+
+async function replaceNewsWarningLocations(newsId, value) {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+  const locations = normalizeNewsLocations(value);
+
+  const { error: deleteError } = await supabase
+    .from("news_warning_locations")
+    .delete()
+    .eq("news_id", newsId);
+  if (deleteError) {
+    if (isMissingRelation(deleteError)) return false;
+    throw deleteError;
+  }
+  if (!locations.length) return true;
+
+  const { error } = await supabase.from("news_warning_locations").insert(
+    locations.map((location, position) => ({
+      news_id: newsId,
+      position,
+      place: location.place,
+      lat: location.lat,
+      lng: location.lng,
+    }))
+  );
+  if (error) throw error;
+  return true;
 }
 
 async function upsertChunks(table, rows, options) {
@@ -345,6 +418,11 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
   // pribudol, nech zápis nespadne na konflikte primárneho kľúča.
   await upsertChunks("news_logs", rows, { onConflict: "id", ignoreDuplicates: true });
 
+  for (const item of freshItems) {
+    const locations = newsLocations(item);
+    if (locations.length) await replaceNewsWarningLocations(item.id, locations);
+  }
+
   console.log(`[news] saved ${freshItems.length} new, ${knownIds.size} already known`);
 }
 
@@ -463,7 +541,7 @@ export async function loadNewsLogs() {
   if (!supabase) return [];
 
   const columns =
-    "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,scraped_at";
+    "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,payload,scraped_at";
 
   const [approvedResult, warningResult, mapCandidateResult] = await Promise.all([
     supabase
@@ -504,7 +582,8 @@ export async function loadNewsLogs() {
     rowsById.set(row.id, row);
   }
 
-  const articles = [...rowsById.values()].map(rowToNews);
+  let locationMap = await loadNewsWarningLocations([...rowsById.keys()]);
+  const articles = [...rowsById.values()].map((row) => rowToNews(row, locationMap.get(row.id)));
   if (!articles.length) return [];
 
   // Incident tables are additive. Before migration 006 is deployed, preserve
@@ -535,7 +614,12 @@ export async function loadNewsLogs() {
     if (missingNewsIds.length) {
       const coverageRows = await loadApprovedNewsRowsByIds(missingNewsIds, columns);
       for (const row of coverageRows) rowsById.set(row.id, row);
-      articles.splice(0, articles.length, ...[...rowsById.values()].map(rowToNews));
+      locationMap = await loadNewsWarningLocations([...rowsById.keys()]);
+      articles.splice(
+        0,
+        articles.length,
+        ...[...rowsById.values()].map((row) => rowToNews(row, locationMap.get(row.id)))
+      );
     }
 
     const { data, error } = await supabase
@@ -653,6 +737,7 @@ export async function saveManualNews(item) {
   });
 
   if (error) throw error;
+  await replaceNewsWarningLocations(item.id, item.category === "warning" ? newsLocations(item) : []);
 }
 
 export async function saveManualTumedved(item) {
@@ -732,13 +817,23 @@ export async function loadPendingNews() {
 
   const { data, error } = await supabase
     .from("news_logs")
-    .select("id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,scraped_at,updated_at")
+    .select("id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,payload,scraped_at,updated_at")
     .eq("status", "pending")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(100);
 
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+  const locationMap = await loadNewsWarningLocations(rows.map((row) => row.id));
+  return rows.map((row) => {
+    const { payload, ...publicRow } = row;
+    return {
+      ...publicRow,
+      locations: normalizeNewsLocations(
+        locationMap.get(row.id)?.length ? locationMap.get(row.id) : payloadNewsLocations(row)
+      ),
+    };
+  });
 }
 
 export async function updateNewsStatus(id, status) {
@@ -770,9 +865,15 @@ export async function reviewNews(id, fields) {
     update.category = category;
 
     if (category === "warning") {
-      const lat = asNullableNumber(fields.lat);
-      const lng = asNullableNumber(fields.lng);
-      update.place = fields.place || null;
+      const locations = normalizeNewsLocations(
+        fields.locations?.length
+          ? fields.locations
+          : { place: fields.place, lat: fields.lat, lng: fields.lng }
+      );
+      const primary = locations[0] || null;
+      const lat = asNullableNumber(primary?.lat);
+      const lng = asNullableNumber(primary?.lng);
+      update.place = primary?.place || null;
       update.lat = lat;
       update.lng = lng;
       update.has_coords = hasCoordinates(lat, lng);
@@ -786,6 +887,12 @@ export async function reviewNews(id, fields) {
 
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
+  if (fields.status === "approved") {
+    await replaceNewsWarningLocations(
+      id,
+      fields.category === "warning" ? fields.locations : []
+    );
+  }
   await refreshIncidentPrimaryForNews(id);
 }
 
@@ -812,6 +919,7 @@ export async function reviewNewsWithIncident(id, fields) {
     p_incident_status: fields.incidentStatus || "active",
     p_source_type: fields.sourceType || "other",
     p_actor: fields.actor || "admin",
+    p_warning_locations: normalizeNewsLocations(fields.locations),
   };
 
   const { data, error } = await supabase.rpc("moderate_news_with_incident", params);
@@ -832,6 +940,117 @@ export async function reviewNewsWithIncident(id, fields) {
     throw new Error("Zoskupovanie udalostí nie je nasadené. Najprv spustite migráciu 006.");
   }
   throw error;
+}
+
+function validExactEventDate(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const date = new Date(`${text}T12:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === text
+    ? text
+    : null;
+}
+
+/**
+ * Routine moderation path. The moderator approves the independent article;
+ * reliable AI facts are then used to attach/create its durable incident.
+ * Missing or ambiguous facts deliberately produce an approved ungrouped item.
+ */
+export async function reviewNewsWithAutomaticIncident(id, fields) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  if (fields.status !== "approved") {
+    return reviewNewsWithIncident(id, {
+      ...fields,
+      incidentAction: "ungrouped",
+      actor: fields.actor || "admin:auto-cluster",
+    });
+  }
+
+  const { data: row, error } = await supabase
+    .from("news_logs")
+    .select("id,source,title,link,google_news_url,article_url,snippet,published_at,payload")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+
+  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
+  const analysis = payload.aiClassification && typeof payload.aiClassification === "object"
+    ? payload.aiClassification
+    : {};
+  const eventDate = validExactEventDate(analysis.eventDate);
+  const eventDateConfidence = Number(analysis.eventDateConfidence);
+  const locations = normalizeNewsLocations(fields.category === "warning" ? fields.locations : []);
+  const reliableFacts =
+    fields.category === "warning" &&
+    locations.length > 0 &&
+    eventDate &&
+    analysis.eventDatePrecision === "day" &&
+    Number.isFinite(eventDateConfidence) &&
+    eventDateConfidence >= 0.8;
+
+  const automaticFields = {
+    ...fields,
+    locations,
+    incidentAction: "ungrouped",
+    sourceType: inferIncidentSourceType(row),
+    actor: fields.actor || "admin:auto-cluster",
+  };
+
+  if (!reliableFacts) {
+    const result = await reviewNewsWithIncident(id, automaticFields);
+    return { ...result, automatic: true, reason: "insufficient_evidence" };
+  }
+
+  const matches = new Map();
+  let hasAmbiguousCandidate = false;
+  for (const location of locations) {
+    const criteria = {
+      eventDate,
+      locality: location.place,
+      lat: location.lat,
+      lng: location.lng,
+      title: row.title,
+      summary: row.snippet,
+    };
+    const suggestions = await loadIncidentSuggestions(criteria);
+    if (suggestions.some((incident) => (incident.match?.score || 0) >= 60)) {
+      hasAmbiguousCandidate = true;
+    }
+    const match = selectAutomaticIncidentMatch(suggestions, criteria);
+    if (match) matches.set(String(match.id), { incident: match, location });
+  }
+
+  if (matches.size === 1) {
+    const [{ incident }] = matches.values();
+    const result = await reviewNewsWithIncident(id, {
+      ...automaticFields,
+      incidentAction: "attach",
+      incidentId: incident.id,
+    });
+    return { ...result, automatic: true, reason: "high_confidence_match" };
+  }
+
+  if (matches.size > 1 || hasAmbiguousCandidate) {
+    const result = await reviewNewsWithIncident(id, automaticFields);
+    return { ...result, automatic: true, reason: "ambiguous_match" };
+  }
+
+  const primary = locations[0];
+  const result = await reviewNewsWithIncident(id, {
+    ...automaticFields,
+    incidentAction: "create",
+    eventDate,
+    eventDatePrecision: "day",
+    incidentLocality: primary.place,
+    incidentLat: primary.lat,
+    incidentLng: primary.lng,
+    incidentTitle: row.title,
+    incidentSummary: row.snippet,
+    incidentStatus: "active",
+  });
+  return { ...result, automatic: true, reason: "new_reliable_incident" };
 }
 
 export async function loadIncidentSuggestions(criteria = {}) {
@@ -889,13 +1108,23 @@ export async function loadAllNews({ limit = ADMIN_NEWS_LIMIT } = {}) {
   const { data, error } = await supabase
     .from("news_logs")
     .select(
-      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,scraped_at,updated_at"
+      "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,payload,scraped_at,updated_at"
     )
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(limit);
 
   if (error) throw error;
-  const rows = data || [];
+  const rawRows = data || [];
+  const locationMap = await loadNewsWarningLocations(rawRows.map((row) => row.id));
+  const rows = rawRows.map((row) => {
+    const { payload, ...publicRow } = row;
+    return {
+      ...publicRow,
+      locations: normalizeNewsLocations(
+        locationMap.get(row.id)?.length ? locationMap.get(row.id) : payloadNewsLocations(row)
+      ),
+    };
+  });
   if (!rows.length) return rows;
 
   let links = [];
@@ -952,6 +1181,7 @@ export async function updateNewsFields(id, fields) {
   if (!supabase) return;
 
   const update = { updated_at: new Date().toISOString() };
+  let locationsToStore = null;
 
   if (typeof fields.title === "string") update.title = fields.title.trim() || null;
   if (typeof fields.source === "string") update.source = fields.source.trim() || null;
@@ -971,8 +1201,28 @@ export async function updateNewsFields(id, fields) {
     update.has_coords = hasCoordinates(update.lat, update.lng);
   }
 
+  if (fields.category === "article") {
+    locationsToStore = [];
+    update.place = null;
+    update.lat = null;
+    update.lng = null;
+    update.has_coords = false;
+  } else if ("locations" in fields || "place" in fields || "lat" in fields || "lng" in fields) {
+    locationsToStore = normalizeNewsLocations(
+      fields.locations?.length
+        ? fields.locations
+        : { place: fields.place, lat: fields.lat, lng: fields.lng }
+    );
+    const primary = locationsToStore[0] || null;
+    update.place = primary?.place || null;
+    update.lat = primary?.lat ?? null;
+    update.lng = primary?.lng ?? null;
+    update.has_coords = Boolean(primary?.hasCoords);
+  }
+
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
+  if (locationsToStore !== null) await replaceNewsWarningLocations(id, locationsToStore);
   await refreshIncidentPrimaryForNews(id);
 }
 
