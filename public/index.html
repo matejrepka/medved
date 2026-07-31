@@ -40,7 +40,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=20260731-map-controls2" />
+    <link rel="stylesheet" href="/styles.css?v=20260731-record-trust1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -197,18 +197,24 @@
           <div class="dialog-heading">
             <div>
               <h2 id="legendTitle">Legenda mapy</h2>
-              <p>Mapa rozlišuje moderované hlásenia a verejné varovania zo správ.</p>
+              <p>Značka ukazuje vrstvu mapy. Štítok pri zázname vysvetľuje pôvod informácie.</p>
             </div>
             <button class="dialog-close" id="legendCloseBtn" type="button" aria-label="Zavrieť legendu">
               <i class="ph ph-x" aria-hidden="true"></i>
             </button>
           </div>
           <div class="map-legend-list">
-            <p><span class="lg-dot" aria-hidden="true"></span> Medvedie varovanie</p>
-            <p><span class="lg-dot news" aria-hidden="true"></span> Varovanie zo správ</p>
+            <p><span class="lg-dot" aria-hidden="true"></span> Hlásenie alebo záznam z verejnej mapy</p>
+            <p><span class="lg-dot news" aria-hidden="true"></span> Lokalizované varovanie zo správy</p>
           </div>
+          <dl class="record-legend">
+            <div><dt>Oficiálne upozornenie</dt><dd>Zdrojom je ŠOP SR alebo jej verejný informačný kanál.</dd></div>
+            <div><dt>Záznam z verejného zdroja</dt><dd>Prevzatý z prepojenej verejnej mapy, nie terénne overenie projektom Kde je Medveď.</dd></div>
+            <div><dt>Komunitné hlásenie</dt><dd>Prešlo moderáciou obsahu, nie odborným overením na mieste.</dd></div>
+            <div><dt>Súvisiaca správa</dt><dd>Dopĺňa kontext, sama nepotvrdzuje aktuálnu polohu zvieraťa.</dd></div>
+          </dl>
           <p class="map-legend-note">
-            Bod označuje miesto a čas záznamu. Medveď sa mohol presunúť a môže sa vyskytnúť aj mimo označených miest.
+            Časový štítok vyjadruje vek záznamu, nie čas od posledného pohybu zvieraťa. Medveď sa mohol presunúť a môže sa vyskytnúť aj mimo označených miest.
           </p>
         </dialog>
       </section>
@@ -230,7 +236,7 @@
             <div class="activity-panel-heading">
               <div>
                 <h3 id="sightingsHead">Hlásenia a varovania</h3>
-                <p>Moderované hlásenia a verejné zdroje</p>
+                <p>Komunitné hlásenia a záznamy z verejných máp</p>
               </div>
               <span class="activity-count" id="sightingsCount"><!-- SSR_WARNING_COUNT --></span>
             </div>
@@ -243,7 +249,7 @@
             <div class="activity-panel-heading">
               <div>
                 <h3 id="newsHead">Správy o medveďoch</h3>
-                <p>Slovenské médiá a ŠOP SR</p>
+                <p>Oficiálne upozornenia sú označené oddelene od médií</p>
               </div>
               <span class="activity-count" id="newsCount"><!-- SSR_NEWS_COUNT --></span>
             </div>
@@ -315,7 +321,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=20260731-map-controls2"></script>
+    <script src="/app.js?v=20260731-record-trust1"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

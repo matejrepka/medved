@@ -534,6 +534,87 @@ function relativeDate(iso) {
   return `pred ${months} ${months === 1 ? "mesiacom" : "mesiacmi"}`;
 }
 
+function recordFreshness(iso) {
+  const time = itemTime(iso);
+  if (time === null) return { key: "unknown", label: "Vek záznamu neznámy" };
+  const ageDays = Math.max(0, Date.now() - time) / 86400000;
+  if (ageDays < 1) return { key: "today", label: "Menej ako 24 hodín" };
+  if (ageDays < 7) return { key: "week", label: "Posledných 7 dní" };
+  if (ageDays < 30) return { key: "month", label: "Posledných 30 dní" };
+  return { key: "older", label: "Starší záznam" };
+}
+
+function warningRecordKind(item) {
+  if (item?.sourceType === "report" || item?.sourceKey === "report") {
+    return {
+      key: "community",
+      label: "Komunitné hlásenie",
+      explanation: "Skontrolované moderátorom, nie overené v teréne.",
+    };
+  }
+  return {
+    key: "sourced",
+    label: "Záznam z verejného zdroja",
+    explanation: "Prevzaté z prepojeného verejného zdroja; podrobnosti overte v pôvodnom zázname.",
+  };
+}
+
+function newsRecordKind(item) {
+  const sourceText = [item?.source, item?.articleUrl, item?.link, item?.googleNewsUrl]
+    .filter(Boolean)
+    .join(" ");
+  const isOfficial = [
+    /šop\s*sr/i,
+    /štátna ochrana prírody/i,
+    /pozor\s*medveď/i,
+    /pozormedved\.sk/i,
+    /zásahov[ýy]\s+tím/i,
+  ].some((pattern) => pattern.test(sourceText));
+  if (isOfficial) {
+    return {
+      key: "official",
+      label: "Oficiálne upozornenie",
+      explanation: "Zdrojom je ŠOP SR alebo jej verejný informačný kanál.",
+    };
+  }
+  if (item?.category === "warning") {
+    return {
+      key: "media-warning",
+      label: "Verejné varovanie v správe",
+      explanation: "Lokalitu a okolnosti overte v pôvodnom článku alebo ozname.",
+    };
+  }
+  return {
+    key: "news",
+    label: "Súvisiaca správa",
+    explanation: "Spravodajský kontext, nie potvrdenie aktuálnej polohy medveďa.",
+  };
+}
+
+function recordSignalsHtml(kind, iso) {
+  const freshness = recordFreshness(iso);
+  return `<div class="record-signals">
+    <span class="record-kind kind-${esc(kind.key)}">${esc(kind.label)}</span>
+    <span class="record-freshness freshness-${esc(freshness.key)}">${esc(freshness.label)}</span>
+  </div>`;
+}
+
+function correctionHref(item, recordType) {
+  const id = String(item?.id || "neuvedené");
+  const location = String(item?.location || item?.place || item?.title || "neuvedená");
+  const subject = `Oprava záznamu Kde je Medveď: ${id}`;
+  const body = [
+    `Typ: ${recordType}`,
+    `ID: ${id}`,
+    `Lokalita alebo názov: ${location}`,
+    "",
+    "Čo je podľa vás nepresné?",
+    "",
+    "Odkaz alebo podklad k oprave:",
+  ].join("\n");
+  return `mailto:kontakt@kdejemedved.sk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function esc(s) {
   const div = document.createElement("div");
   div.textContent = s ?? "";
@@ -962,7 +1043,10 @@ function renderSightings() {
     .map(
       (s, i) => {
         const sourceLabel = warningSourceLabel(s);
+        const kind = warningRecordKind(s);
         const sourceLinks = warningSourceLinksHtml(s, "card-link");
+        const withTime = s.datePrecision !== "date";
+        const correction = correctionHref(s, kind.label.toLocaleLowerCase("sk-SK"));
         const mapAction = s.hasCoords
           ? `<button class="card-map-action" type="button" data-map-item="${esc(s.id)}">
               <i class="ph ph-map-pin" aria-hidden="true"></i>
@@ -971,18 +1055,15 @@ function renderSightings() {
           : "";
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
+        ${recordSignalsHtml(kind, s.reportedAt)}
         <h4 class="card-title">${esc(s.location)}</h4>
+        <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${sourceLabel ? `<span class="meta-source">${esc(sourceLabel)}</span>` : ""}
-          <span class="meta-date">${esc(fmtDate(s.reportedAt, true))}</span>
-          ${
-            relativeDate(s.reportedAt)
-              ? `<span>${esc(relativeDate(s.reportedAt))}</span>`
-              : ""
-          }
+          ${sourceLabel ? `<span class="meta-source"><span class="meta-label">Zdroj</span>${esc(sourceLabel)}</span>` : ""}
+          <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené" : "Dátum záznamu"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        ${sourceLinks || mapAction ? `<div class="card-actions">${sourceLinks}${mapAction}</div>` : ""}
+        <div class="card-actions">${sourceLinks}${mapAction}<a class="card-correction" href="${esc(correction)}">Nahlásiť nepresnosť</a></div>
       </article>`;
       }
     )
@@ -1014,9 +1095,12 @@ function renderMarkers() {
     if (!s.hasCoords) continue;
     const marker = L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map);
     const sourceLabel = warningSourceLabel(s);
+    const kind = warningRecordKind(s);
+    const withTime = s.datePrecision !== "date";
     marker.bindPopup(`
+      ${recordSignalsHtml(kind, s.reportedAt)}
       <p class="popup-loc">${esc(s.location)}</p>
-      <p class="popup-meta">${esc(sourceLabel)}${sourceLabel ? " · " : ""}${esc(fmtDate(s.reportedAt, true))}</p>
+      <p class="popup-meta"><strong>${esc(sourceLabel || "Zdroj neuvedený")}</strong><br>${withTime ? "Hlásené" : "Dátum záznamu"}: ${esc(fmtDate(s.reportedAt, withTime))}</p>
       ${s.note ? `<p class="popup-note">${esc(s.note)}</p>` : ""}
       ${warningSourceLinksHtml(s, "popup-link")}
     `);
@@ -1032,8 +1116,10 @@ function renderMarkers() {
     const point = newsMapPoint(n);
     if (!point) continue;
     const href = newsUrl(n);
+    const kind = newsRecordKind(n);
     const marker = L.marker([point.lat, point.lng], { icon: newsPinIcon }).addTo(map);
     marker.bindPopup(`
+      ${recordSignalsHtml(kind, n.date)}
       <p class="popup-loc">${esc(newsPlaceLabel(n) || "Varovanie zo správ")}</p>
       <p class="popup-meta">${esc(n.source || "")}${n.source ? " · " : ""}${esc(fmtDate(n.date))}</p>
       <p class="popup-note">${esc(n.title)}</p>
@@ -1087,6 +1173,8 @@ function renderNews() {
         const isWarning = n.category === "warning";
         const place = isWarning ? newsPlaceLabel(n) : "";
         const href = newsUrl(n);
+        const kind = newsRecordKind(n);
+        const correction = correctionHref(n, kind.label.toLocaleLowerCase("sk-SK"));
         const articleLink =
           href && href !== "#"
             ? `<a class="card-link" href="${esc(href)}" target="_blank" rel="noopener">
@@ -1103,16 +1191,17 @@ function renderNews() {
       <article class="card news reveal${point ? " has-place" : ""}${
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}">
+        ${recordSignalsHtml(kind, n.date)}
         <h4 class="card-title">${esc(n.title)}</h4>
+        <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
+          ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj</span>${esc(n.source)}</span>` : ""}
           ${
             place
               ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i>${esc(place)}</span>`
               : ""
           }
-          <span class="meta-date">${esc(fmtDate(n.date))}</span>
-          ${relativeDate(n.date) ? `<span>${esc(relativeDate(n.date))}</span>` : ""}
+          <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované</span>${esc(fmtDate(n.date))}</time>
         </div>
         ${
           n.snippet
@@ -1121,7 +1210,7 @@ function renderNews() {
               }</p>`
             : ""
         }
-        ${articleLink || mapAction ? `<div class="card-actions">${articleLink}${mapAction}</div>` : ""}
+        <div class="card-actions">${articleLink}${mapAction}<a class="card-correction" href="${esc(correction)}">Nahlásiť nepresnosť</a></div>
       </article>`
       }
     )
