@@ -32,8 +32,8 @@ export function warningRecordKind(item) {
 
   return {
     key: "sourced",
-    label: "Záznam z verejného zdroja",
-    explanation: "Prevzaté z prepojeného verejného zdroja; podrobnosti overte v pôvodnom zázname.",
+    label: "Verejný záznam",
+    explanation: "Prevzaté z verejného zdroja. Detail overte v pôvodnom zázname.",
   };
 }
 
@@ -42,15 +42,15 @@ export function newsRecordKind(item) {
     return {
       key: "official",
       label: "Oficiálne upozornenie",
-      explanation: "Zdrojom je ŠOP SR alebo jej verejný informačný kanál.",
+      explanation: "Zdrojom je ŠOP SR alebo jej informačný kanál.",
     };
   }
 
   if (item?.category === "warning") {
     return {
       key: "media-warning",
-      label: "Verejné varovanie v správe",
-      explanation: "Lokalitu a okolnosti overte v pôvodnom článku alebo ozname.",
+      label: "Varovanie zo správy",
+      explanation: "Lokalitu a okolnosti overte v pôvodnom zdroji.",
     };
   }
 

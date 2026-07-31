@@ -583,11 +583,11 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
         ).join("")}</div>`
       : "";
     return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
-      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}">${escapeHtml(freshness.label)}</span></div>
-      <h3 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h3>
+      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
+      <h4 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h4>
       <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené" : "Dátum záznamu"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}<div class="card-actions">${links}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
+      ${note}<div class="card-actions"><div class="card-main-actions">${links}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
     </article>`;
   }).join("\n");
 }
@@ -636,12 +636,12 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
       : "";
     const locations = renderSsrNewsLocations(item);
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
-      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}">${escapeHtml(freshness.label)}</span></div>
-      <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
+      <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
+      <h4 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h4>
       <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}${item.place ? `<span class="meta-place">${escapeHtml(item.place)}</span>` : ""}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
-      ${locations}<div class="card-actions">${link}<a class="card-correction" href="${escapeHtml(correction)}">Nahlásiť nepresnosť</a></div>${coverage}
+      ${locations}<div class="card-actions"><div class="card-main-actions">${link}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
     </article>`;
   }).join("\n");
 }

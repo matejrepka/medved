@@ -554,8 +554,8 @@ function warningRecordKind(item) {
   }
   return {
     key: "sourced",
-    label: "Záznam z verejného zdroja",
-    explanation: "Prevzaté z prepojeného verejného zdroja; podrobnosti overte v pôvodnom zázname.",
+    label: "Verejný záznam",
+    explanation: "Prevzaté z verejného zdroja. Detail overte v pôvodnom zázname.",
   };
 }
 
@@ -574,14 +574,14 @@ function newsRecordKind(item) {
     return {
       key: "official",
       label: "Oficiálne upozornenie",
-      explanation: "Zdrojom je ŠOP SR alebo jej verejný informačný kanál.",
+      explanation: "Zdrojom je ŠOP SR alebo jej informačný kanál.",
     };
   }
   if (item?.category === "warning") {
     return {
       key: "media-warning",
-      label: "Verejné varovanie v správe",
-      explanation: "Lokalitu a okolnosti overte v pôvodnom článku alebo ozname.",
+      label: "Varovanie zo správy",
+      explanation: "Lokalitu a okolnosti overte v pôvodnom zdroji.",
     };
   }
   return {
@@ -595,7 +595,7 @@ function recordSignalsHtml(kind, iso) {
   const freshness = recordFreshness(iso);
   return `<div class="record-signals">
     <span class="record-kind kind-${esc(kind.key)}">${esc(kind.label)}</span>
-    <span class="record-freshness freshness-${esc(freshness.key)}">${esc(freshness.label)}</span>
+    <span class="record-freshness freshness-${esc(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${esc(freshness.label)}</span>
   </div>`;
 }
 
@@ -1125,11 +1125,14 @@ function renderSightings() {
         <h4 class="card-title">${esc(s.location)}</h4>
         <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${sourceLabel ? `<span class="meta-source"><span class="meta-label">Zdroj</span>${esc(sourceLabel)}</span>` : ""}
-          <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené" : "Dátum záznamu"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
+          ${sourceLabel ? `<span class="meta-source"><span class="meta-label">Zdroj:</span>${esc(sourceLabel)}</span>` : ""}
+          <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        <div class="card-actions">${sourceLinks}${mapAction}<a class="card-correction" href="${esc(correction)}">Nahlásiť nepresnosť</a></div>
+        <div class="card-actions">
+          <div class="card-main-actions">${mapAction}${sourceLinks}</div>
+          <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
+        </div>
       </article>`;
       }
     )
@@ -1253,6 +1256,7 @@ function renderNews() {
       (n, i) => {
         const point = newsMapPoint(n);
         const isWarning = n.category === "warning";
+        const place = n.isIncident || isWarning ? newsPlaceLabel(n) : "";
         const locationLinks = n.isIncident || isWarning ? newsLocationLinksHtml(n) : "";
         const href = newsUrl(n);
         const kind = newsRecordKind(n);
@@ -1285,11 +1289,15 @@ function renderNews() {
         <h4 class="card-title">${esc(n.title)}</h4>
         <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj</span>${esc(n.source)}</span>` : ""}
-          ${n.sourceTypeLabel ? `<span>${esc(n.sourceTypeLabel)}</span>` : ""}
+          ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj:</span>${esc(n.source)}</span>` : ""}
           ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
           ${n.verificationStatus === "official_notice" ? '<span class="meta-official">Obsahuje úradné oznámenie</span>' : ""}
-          <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované</span>${esc(fmtDate(n.date))}</time>
+          ${
+            place
+              ? `<span class="meta-place"><i class="ph ph-map-pin" aria-hidden="true"></i>${esc(place)}</span>`
+              : ""
+          }
+          <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované:</span>${esc(fmtDate(n.date))}</time>
         </div>
         ${
           n.snippet
@@ -1299,7 +1307,10 @@ function renderNews() {
             : ""
         }
         ${locationLinks}
-        <div class="card-actions">${articleLink}${mapAction}<a class="card-correction" href="${esc(correction)}">Nahlásiť nepresnosť</a></div>
+        <div class="card-actions">
+          <div class="card-main-actions">${articleLink}${mapAction}</div>
+          <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
+        </div>
         ${coverage}
       </article>`
       }
