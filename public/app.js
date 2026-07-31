@@ -1304,12 +1304,12 @@ function renderNews() {
         const summary = n.summary || n.snippet || "";
         const articleLink =
           href && href !== "#"
-            ? `<a class="card-link" href="${esc(href)}" target="_blank" rel="noopener">
-                Prečítať zdroj <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+            ? `<a class="card-link card-source-link" href="${esc(href)}" target="_blank" rel="noopener">
+                Otvoriť pôvodný článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
               </a>`
             : "";
         const sourceRow = articleLink
-          ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Pôvodný článok</span>${articleLink}</div>`
+          ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Zdroj</span>${articleLink}</div>`
           : "";
         const coverage = n.isIncident && Array.isArray(n.coverage) && n.coverage.length > 1
           ? `<details class="coverage-details" id="coverage-${esc(n.incidentId)}">
@@ -1349,10 +1349,12 @@ function renderNews() {
             : ""
         }
         ${locationLinks}
-        <div class="card-actions">
-          <div class="card-primary-actions"><a class="card-detail-action" href="${esc(detailUrl)}"><i class="ph ph-article" aria-hidden="true"></i>Detail správy</a></div>
-          <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
+        <div class="news-card-cta">
+          <a class="card-detail-action news-card-detail-action" href="${esc(detailUrl)}"><span>Pozrieť súhrn a podrobnosti</span><i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="card-actions card-actions-news">
           ${sourceRow}
+          <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
         </div>
         ${coverage}
       </article>`

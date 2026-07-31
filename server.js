@@ -719,7 +719,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
   return items.slice(0, limit).map((item) => {
     const href = safeHttpUrl(item.articleUrl || item.link || item.googleNewsUrl || "");
     const link = href
-      ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať zdroj <span aria-hidden="true">→</span></a>`
+      ? `<a class="card-link card-source-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Otvoriť pôvodný článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>`
       : "";
     const kind = newsRecordKind(item);
     const freshness = recordFreshness(item.date);
@@ -746,7 +746,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
       <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.title || "Správa o medveďovi")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(item.source || "verejný zdroj", href ? [{ label: item.source || "Zdroj", url: href }] : [])}${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.summary || item.snippet ? `<p class="card-note">${escapeHtml(String(item.summary || item.snippet).slice(0, 320))}</p>` : ""}
-      ${locations}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail správy</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a>${link ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Pôvodný článok</span>${link}</div>` : ""}</div>${coverage}
+      ${locations}<div class="news-card-cta"><a class="card-detail-action news-card-detail-action" href="${escapeHtml(detail)}"><span>Pozrieť súhrn a podrobnosti</span><i class="ph ph-arrow-right" aria-hidden="true"></i></a></div><div class="card-actions card-actions-news">${link ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Zdroj</span>${link}</div>` : ""}<a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
     </article>`;
   }).join("\n");
 }

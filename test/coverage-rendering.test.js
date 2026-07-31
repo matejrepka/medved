@@ -31,3 +31,21 @@ test("listings omit explanatory one-liners and expose mobile source links", asyn
   assert.match(client, /meta-source-links-mobile/);
   assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.mobile-source-duplicate\s*\{\s*display:\s*none;/);
 });
+
+test("news listings prioritize the internal summary over the original article", async () => {
+  const [server, client, styles] = await Promise.all([
+    readFile(new URL("../server.js", import.meta.url), "utf8"),
+    readFile(new URL("../public/app.js", import.meta.url), "utf8"),
+    readFile(new URL("../public/styles.css", import.meta.url), "utf8"),
+  ]);
+
+  for (const renderer of [server, client]) {
+    assert.match(renderer, /news-card-detail-action/);
+    assert.match(renderer, /Pozrieť súhrn a podrobnosti/);
+    assert.match(renderer, /Otvoriť pôvodný článok/);
+    assert.match(renderer, /news-card-cta[\s\S]*?card-actions card-actions-news/);
+  }
+
+  assert.match(styles, /\.news-card-detail-action\s*\{[\s\S]*?background:\s*var\(--accent\);/);
+  assert.match(styles, /\.card-actions-news \.card-source-link\s*\{[\s\S]*?color:\s*var\(--ink-3\);/);
+});
