@@ -9,6 +9,7 @@
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check src/incidents.js && node --check src/news-locations.js && node --check src/db/repository.js && node --check src/ai/news-classifier.js && node --check src/ai/report-spam-classifier.js && node --check src/geo/search.js && node --check src/telegram/api.js && node --check src/telegram/cards.js && node --check src/telegram/config.js && node --check src/telegram/service.js && node --check src/db/telegram-outbox.js && node --check public/app.js && node --check public/page.js && node --check public/home.js && node --check public/stats.js && node scripts/check-inline-scripts.mjs && node scripts/check-seo.mjs",
     "test": "node --test",
+    "backfill:news-incidents": "node scripts/backfill-news-incidents.mjs",
     "build:geo": "node src/geo/build-gazetteer.mjs",
     "build:images": "node scripts/optimize-images.mjs"
   },

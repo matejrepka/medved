@@ -561,6 +561,20 @@ function safeHttpUrl(value) {
   }
 }
 
+function renderListingSourceMeta(label, links = []) {
+  const sourceLabel = String(label || "").trim();
+  if (!sourceLabel) return "";
+  const safeLinks = links
+    .map((link) => ({ label: String(link?.label || "").trim(), url: safeHttpUrl(link?.url) }))
+    .filter((link) => link.label && link.url);
+  const mobileLinks = safeLinks.length
+    ? `<span class="meta-source-links-mobile">${safeLinks.map((link) =>
+        `<a class="meta-source-link" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} <span aria-hidden="true">↗</span></a>`
+      ).join("")}</span>`
+    : "";
+  return `<span class="meta-source${safeLinks.length ? " has-mobile-source-links" : ""}"><span class="meta-label">Zdroj:</span><span class="meta-source-text">${escapeHtml(sourceLabel)}</span>${mobileLinks}</span>`;
+}
+
 function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…", limit = 15) {
   if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
   return items.slice(0, limit).map((item) => {
@@ -585,9 +599,8 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
     return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h4>
-      <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}<div class="card-actions"><div class="card-main-actions">${links}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
+      <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
+      ${note}<div class="card-actions"><div class="card-main-actions mobile-source-duplicate">${links}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a></div>
     </article>`;
   }).join("\n");
 }
@@ -619,7 +632,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     const kind = newsRecordKind(item);
     const freshness = recordFreshness(item.date);
     const correction = correctionMailto(item, kind.label.toLocaleLowerCase("sk-SK"));
-    const coverage = item.isIncident && Array.isArray(item.coverage)
+    const coverage = item.isIncident && Array.isArray(item.coverage) && item.coverage.length > 1
       ? `<details class="coverage-details" id="coverage-${escapeHtml(item.incidentId)}">
           <summary>Všetky zdroje (${item.coverage.length})</summary>
           <ul class="coverage-list">${item.coverage.map((article) => {
@@ -638,10 +651,9 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h4>
-      <p class="record-explanation">${escapeHtml(kind.explanation)}</p>
-      <div class="card-meta"><span class="meta-source"><span class="meta-label">Zdroj:</span>${escapeHtml(item.source || "verejný zdroj")}</span>${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
+      <div class="card-meta">${renderListingSourceMeta(item.source || "verejný zdroj", href ? [{ label: item.source || "Zdroj", url: href }] : [])}${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.snippet ? `<p class="card-note">${escapeHtml(String(item.snippet).slice(0, 240))}</p>` : ""}
-      ${locations}<div class="card-actions"><div class="card-main-actions">${link}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
+      ${locations}<div class="card-actions"><div class="card-main-actions mobile-source-duplicate">${link}</div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
     </article>`;
   }).join("\n");
 }

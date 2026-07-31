@@ -1247,12 +1247,6 @@ main {
   font-weight: 600;
 }
 
-.record-explanation {
-  margin: 0 0 10px;
-  color: var(--ink-3);
-  font-size: 0.75rem;
-  line-height: 1.45;
-}
 .card-title a {
   color: inherit;
 }
@@ -1292,6 +1286,10 @@ main {
 .meta-source {
   color: var(--ink-2);
   font-weight: 600;
+}
+
+.meta-source-links-mobile {
+  display: none;
 }
 
 .card-correction {
@@ -4616,12 +4614,6 @@ html.dialog-open body {
   line-height: 1.27;
 }
 
-.map-first-page .record-explanation {
-  margin-bottom: 6px;
-  font-size: 0.72rem;
-  line-height: 1.35;
-}
-
 .map-first-page .card-meta {
   gap: 2px 12px;
   font-size: 0.72rem;
@@ -5606,8 +5598,7 @@ html.dialog-open body {
 
   .card-actions-sighting {
     grid-template-areas:
-      "map correction"
-      "sources sources";
+      "map correction";
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
   }
@@ -5616,8 +5607,8 @@ html.dialog-open body {
     grid-area: map;
   }
 
-  .card-actions-sighting > .card-main-actions {
-    grid-area: sources;
+  .mobile-source-duplicate {
+    display: none;
   }
 
   .card-actions-sighting > .card-correction {
@@ -5632,6 +5623,45 @@ html.dialog-open body {
 
   .card-map-action {
     min-height: 34px;
+  }
+
+  .meta-source.has-mobile-source-links .meta-source-text {
+    display: none;
+  }
+
+  .meta-source-links-mobile {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+  }
+
+  .meta-source-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 34px;
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+    touch-action: manipulation;
+  }
+
+  .meta-source-link::before {
+    position: absolute;
+    inset: -5px -4px;
+    content: "";
+  }
+
+  .meta-source-link:hover,
+  .meta-source-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .meta-source-link i {
+    font-size: 13px;
   }
 
   .home-page .home-main {

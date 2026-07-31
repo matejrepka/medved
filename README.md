@@ -91,8 +91,11 @@ V SQL Editore spustite celý obsah migrácie 006 bez označeného čiastkového 
 Editor pri označenom texte vykoná iba výber; telo PL/pgSQL funkcie by tak mohlo zostať
 bez koncového oddeľovača. Migráciu možno po takomto prerušení bezpečne spustiť znova.
 
-Migrácia 006 zámerne nerobí historický backfill ani spätne nespája staré správy.
-Existujúce správy ostanú schválené a nezoskupené. Budúce spoľahlivé priradenia sa po schválení vyberú automaticky a ukladajú transakčne
+Migrácia 006 zámerne sama nerobí historický backfill ani spätne nespája staré správy.
+Po jej nasadení možno najprv skontrolovať plán príkazom `npm run backfill:news-incidents`
+a potom ho vykonať cez `npm run backfill:news-incidents -- --apply`. Skript je
+obnoviteľný: spracúva iba schválené varovania, ktoré ešte nemajú incidentový odkaz.
+Budúce spoľahlivé priradenia sa po schválení vyberú automaticky a ukladajú transakčne
 cez serverový service-role klient; funkcia RPC nemá oprávnenie pre `anon` ani
 `authenticated` rolu. Tá istá migrácia pridáva usporiadané lokality varovaní;
 prvá lokalita zostáva zrkadlená v pôvodných stĺpcoch kvôli spätnej kompatibilite.

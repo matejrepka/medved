@@ -814,6 +814,7 @@ function sightingCoordKey(value) {
 }
 
 function mapCoord(value) {
+  if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -1092,6 +1093,22 @@ function warningSourceLinksHtml(s, className) {
     </a>`).join("")}</div>`;
 }
 
+function listingSourceMetaHtml(label, links = []) {
+  if (!label) return "";
+  const safeLinks = links.filter((link) => link?.label && link?.url);
+  const mobileLinks = safeLinks.length
+    ? `<span class="meta-source-links-mobile">${safeLinks.map((link) => `
+        <a class="meta-source-link" href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">
+          ${esc(link.label)} <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+        </a>`).join("")}</span>`
+    : "";
+  return `<span class="meta-source${safeLinks.length ? " has-mobile-source-links" : ""}">
+    <span class="meta-label">Zdroj:</span>
+    <span class="meta-source-text">${esc(label)}</span>
+    ${mobileLinks}
+  </span>`;
+}
+
 function renderSightings() {
   const items = filteredSightings();
   setText("sightingsCount", formatNum(items.length));
@@ -1108,6 +1125,7 @@ function renderSightings() {
   elSightings.innerHTML = visibleItems
     .map(
       (s, i) => {
+        const sourceEntries = warningSourceLinks(s);
         const sourceLabel = warningSourceLabel(s);
         const kind = warningRecordKind(s);
         const sourceLinks = warningSourceLinksHtml(s, "card-link");
@@ -1123,15 +1141,14 @@ function renderSightings() {
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         ${recordSignalsHtml(kind, s.reportedAt)}
         <h4 class="card-title">${esc(s.location)}</h4>
-        <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${sourceLabel ? `<span class="meta-source"><span class="meta-label">Zdroj:</span>${esc(sourceLabel)}</span>` : ""}
+          ${listingSourceMetaHtml(sourceLabel, sourceEntries)}
           <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
         <div class="card-actions card-actions-sighting">
           ${mapAction}
-          <div class="card-main-actions">${sourceLinks}</div>
+          <div class="card-main-actions mobile-source-duplicate">${sourceLinks}</div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
         </div>
       </article>`;
@@ -1267,7 +1284,7 @@ function renderNews() {
                 Prečítať zdroj <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
               </a>`
             : "";
-        const coverage = n.isIncident && Array.isArray(n.coverage)
+        const coverage = n.isIncident && Array.isArray(n.coverage) && n.coverage.length > 1
           ? `<details class="coverage-details" id="coverage-${esc(n.incidentId)}">
               <summary>Všetky zdroje (${n.coverage.length})</summary>
               <ul class="coverage-list">
@@ -1281,15 +1298,18 @@ function renderNews() {
               </ul>
             </details>`
           : "";
+        const sourceMeta = listingSourceMetaHtml(
+          n.source || "",
+          href && href !== "#" ? [{ label: n.source || "Zdroj", url: href }] : []
+        );
         return `
       <article class="card news reveal${point ? " has-place" : ""}${
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}"${n.incidentId ? ` id="incident-${esc(n.incidentId)}"` : ""}>
         ${recordSignalsHtml(kind, n.date)}
         <h4 class="card-title">${esc(n.title)}</h4>
-        <p class="record-explanation">${esc(kind.explanation)}</p>
         <div class="card-meta">
-          ${n.source ? `<span class="meta-source"><span class="meta-label">Zdroj:</span>${esc(n.source)}</span>` : ""}
+          ${sourceMeta}
           ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
           ${n.verificationStatus === "official_notice" ? '<span class="meta-official">Obsahuje úradné oznámenie</span>' : ""}
           <time class="meta-date" datetime="${esc(n.date || "")}"><span class="meta-label">Publikované:</span>${esc(fmtDate(n.date))}</time>
@@ -1303,7 +1323,7 @@ function renderNews() {
         }
         ${locationLinks}
         <div class="card-actions">
-          <div class="card-main-actions">${articleLink}</div>
+          <div class="card-main-actions mobile-source-duplicate">${articleLink}</div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v správe ${esc(n.title)}">Nahlásiť chybu</a>
         </div>
         ${coverage}
