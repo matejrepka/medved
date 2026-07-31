@@ -55,6 +55,31 @@ for (const route of ["/robots.txt", "/sitemap.xml", "/llms.txt", "/feed.xml"]) {
 }
 if (!server.includes("LOCATION_ROUTE_PREFIX")) errors.push("server.js: chýbajú lokalitné SEO stránky");
 if (!server.includes("notifyIndexNow")) errors.push("server.js: chýba IndexNow aktualizácia");
+if (!server.includes('const CANONICAL_SITE_ORIGIN = "https://kdejemedved.sk"')) {
+  errors.push("server.js: kanonický origin musí byť https://kdejemedved.sk");
+}
+if (!/if \(pathname === "\/domov"\) \{\s*graph\.push\(\{\s*"@type": "FAQPage"/m.test(server)) {
+  errors.push("server.js: FAQ schema musí byť naviazaná na viditeľné FAQ na /domov");
+}
+
+const searchableFiles = await Promise.all([
+  ...pages.map((file) => readFile(path.join(root, "public", file), "utf8")),
+  readFile(path.join(root, "server.js"), "utf8"),
+]);
+if (searchableFiles.some((content) => /game\.medved\.sk/i.test(content))) {
+  errors.push("verejné SEO súbory obsahujú neaktuálnu doménu game.medved.sk");
+}
+
+const home = await readFile(path.join(root, "public", "domov.html"), "utf8");
+for (const target of ["/#sightingsHead", "/#newsHead"]) {
+  if (!home.includes(`class="home-listing-cta" href="${target}"`)) {
+    errors.push(`domov.html: chýba mobilný odkaz na plný zoznam ${target}`);
+  }
+}
+const styles = await readFile(path.join(root, "public", "styles.css"), "utf8");
+if (!styles.includes(".home-landing-page .columns .list > .ssr-list-item:nth-of-type(n + 4)")) {
+  errors.push("styles.css: mobilný domov musí zobrazovať iba tri najnovšie položky v každom zozname");
+}
 
 if (errors.length) {
   console.error(`SEO kontrola zlyhala (${errors.length}):\n- ${errors.join("\n- ")}`);

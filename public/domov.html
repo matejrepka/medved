@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Kde je Medveď | Hlásenia, mapa a bezpečnostné informácie</title>
+    <title>Kde je Medveď | Slovenská mapa hlásení a varovaní</title>
     <meta
       name="description"
-      content="Spoznajte projekt Kde je Medveď. Nájdete tu aktuálne hlásenia, bezpečnostné odporúčania, štatistiky a možnosť nahlásiť pozorovanie."
+      content="Kde je Medveď centralizuje hlásenia, verejné varovania a slovenské správy na jednej priebežne aktualizovanej mape s uvedením zdroja a dátumu."
     />
     <!-- SEO_HEAD -->
 
@@ -63,7 +63,7 @@
     <link rel="stylesheet" href="/styles.css?v=20260731-production-home1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
-  <body>
+  <body class="home-landing-page">
     <header class="site-header">
       <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
@@ -90,11 +90,11 @@
     <main>
       <section class="masthead mascot-masthead">
         <div class="masthead-copy">
-          <h1>Kde je medveď? Aktuálna mapa medveďov na Slovensku</h1>
+          <h1>Kde je Medveď? Slovenská mapa hlásení a varovaní</h1>
           <p class="lede">
-            Centralizujeme moderované hlásenia, verejné mapy a varovania, upozornenia ŠOP SR
-            a aktuálne slovenské správy. Na jednom mieste si overíte, kde a kedy bol medveď
-            hlásený a z akého zdroja informácia pochádza.
+            Na jednej priebežne aktualizovanej mape Slovenska spájame moderované hlásenia,
+            verejné varovania, upozornenia ŠOP SR a relevantné správy. Pri každej položke
+            si overíte miesto, dátum a pôvod informácie.
           </p>
 
           <div class="home-insights" id="stats" aria-label="Aktuálny štatistický prehľad">
@@ -150,6 +150,10 @@
           <div id="sightingsList" class="list" aria-live="polite">
             <!-- SSR_WARNINGS -->
           </div>
+          <a class="home-listing-cta" href="/#sightingsHead">
+            Zobraziť všetky varovania
+            <i class="ph ph-arrow-right" aria-hidden="true"></i>
+          </a>
         </section>
 
         <section class="panel" aria-labelledby="newsHead">
@@ -160,6 +164,10 @@
           <div id="newsList" class="list" aria-live="polite">
             <!-- SSR_NEWS -->
           </div>
+          <a class="home-listing-cta" href="/#newsHead">
+            Zobraziť všetky správy
+            <i class="ph ph-arrow-right" aria-hidden="true"></i>
+          </a>
         </section>
       </div>
 
