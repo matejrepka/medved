@@ -11,7 +11,14 @@ const state = {
   sightingsUpdatedAt: null,
   newsUpdatedAt: null,
   updatedAt: null,
+  dataLoading: false,
+  dataFailures: [],
+  tileError: false,
   markers: new Map(), // id -> Leaflet marker
+  loaded: {
+    sightings: false,
+    news: false,
+  },
   filters: {
     startDate: "",
     endDate: "",
@@ -23,25 +30,31 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const elSightings = $("sightingsList");
 const elNews = $("newsList");
-const MOBILE_LIST_PAGE_SIZE = 2;
-const mobileListMedia = window.matchMedia("(max-width: 620px)");
-const mobileListVisible = {
-  sightings: MOBILE_LIST_PAGE_SIZE,
-  news: MOBILE_LIST_PAGE_SIZE,
+const phoneListMedia = window.matchMedia("(max-width: 760px)");
+const tabletListMedia = window.matchMedia("(max-width: 1023px)");
+const listVisible = {
+  sightings: listPageSize(),
+  news: listPageSize(),
 };
 
-function resetMobileListLimits() {
-  mobileListVisible.sightings = MOBILE_LIST_PAGE_SIZE;
-  mobileListVisible.news = MOBILE_LIST_PAGE_SIZE;
+function listPageSize() {
+  if (phoneListMedia.matches) return 3;
+  if (tabletListMedia.matches) return 4;
+  return 6;
+}
+
+function resetListLimits() {
+  const pageSize = listPageSize();
+  listVisible.sightings = pageSize;
+  listVisible.news = pageSize;
 }
 
 function visibleListItems(items, listName) {
-  if (!mobileListMedia.matches) return items;
-  return items.slice(0, mobileListVisible[listName]);
+  return items.slice(0, listVisible[listName]);
 }
 
 function loadMoreButtonHtml(listName, shownCount, totalCount) {
-  if (!mobileListMedia.matches || shownCount >= totalCount) return "";
+  if (shownCount >= totalCount) return "";
   const listId = listName === "sightings" ? "sightingsList" : "newsList";
   const listLabel = listName === "sightings" ? "medvedie varovania" : "správy o medveďoch";
   return `
@@ -59,10 +72,11 @@ function loadMoreButtonHtml(listName, shownCount, totalCount) {
 }
 
 // --- Mapa ---
-const map = L.map("map", { scrollWheelZoom: true, zoomControl: true }).setView(
+const map = L.map("map", { scrollWheelZoom: false, zoomControl: false }).setView(
   SK_CENTER,
   7
 );
+L.control.zoom({ position: "topright" }).addTo(map);
 let mapFitFrame = null;
 
 function mapMarkerPoints() {
@@ -80,7 +94,7 @@ function fitMapToPoints(points, { animate = false } = {}) {
 
   const fit = () => {
     mapFitFrame = null;
-    const isMobile = mobileListMedia.matches;
+    const isMobile = phoneListMedia.matches;
     map.options.zoomSnap = isMobile ? 0.25 : 1;
     map.invalidateSize({ pan: false });
     const options = {
@@ -157,11 +171,17 @@ function setTiles(layerId) {
 
   if (tileLayer) map.removeLayer(tileLayer);
   tileLayer = L.tileLayer(url, layer.options).addTo(map);
+  state.tileError = false;
+  tileLayer.once("tileerror", () => {
+    state.tileError = true;
+    syncLoadStatus();
+  });
   state.mapLayer = id;
   try {
     localStorage.setItem("mapLayer", id);
   } catch (e) {}
   syncMapLayerControls();
+  syncLoadStatus();
 }
 
 // Čisté značky namiesto emoji. Kruhová = medvedie varovanie (moderované hlásenie),
@@ -201,7 +221,7 @@ function locationErrorMessage(error) {
 
 function addLocationControl() {
   const LocationControl = L.Control.extend({
-    options: { position: "topleft" },
+    options: { position: "topright" },
     onAdd() {
       const container = L.DomUtil.create("div", "map-location-control");
       const button = L.DomUtil.create("button", "map-location-button", container);
@@ -300,7 +320,7 @@ function centerMapOnVisibleMarkers() {
 
 function addCenterMapControl() {
   const CenterMapControl = L.Control.extend({
-    options: { position: "topleft" },
+    options: { position: "topright" },
     onAdd() {
       const container = L.DomUtil.create("div", "map-center-control");
       const button = L.DomUtil.create("button", "map-center-button", container);
@@ -321,37 +341,13 @@ function addCenterMapControl() {
   new CenterMapControl().addTo(map);
 }
 
-// --- Téma (svetlá / tmavá) ---
-const themeBtn = $("themeBtn");
-
 function currentTheme() {
   return document.documentElement.getAttribute("data-theme") === "dark"
     ? "dark"
     : "light";
 }
 
-function syncThemeButton(theme) {
-  themeBtn.innerHTML = `<i class="ph ph-${
-    theme === "dark" ? "sun" : "moon"
-  }" aria-hidden="true"></i>`;
-  themeBtn.setAttribute(
-    "aria-label",
-    theme === "dark" ? "Prepnúť svetlý režim" : "Prepnúť tmavý režim"
-  );
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  try {
-    localStorage.setItem("theme", theme);
-  } catch (e) {}
-  syncThemeButton(theme);
-  setTiles(state.mapLayer);
-}
-
-themeBtn.addEventListener("click", () => {
-  applyTheme(currentTheme() === "dark" ? "light" : "dark");
-});
+window.addEventListener("site:themechange", () => setTiles(state.mapLayer));
 
 // --- Pomocné funkcie ---
 function fmtDate(iso, withTime = false) {
@@ -577,9 +573,14 @@ function newsPlaceLabel(n) {
 function focusMapMarker(id, lat, lng) {
   const marker = state.markers.get(id);
   if (!marker) return;
-  map.flyTo([lat, lng], 12, { duration: 0.6 });
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById("mapViewport").scrollIntoView({
+    behavior: reduceMotion ? "auto" : "smooth",
+    block: "start",
+  });
+  if (reduceMotion) map.setView([lat, lng], 12);
+  else map.flyTo([lat, lng], 12, { duration: 0.45 });
   marker.openPopup();
-  document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function readStoredMapLayer() {
@@ -591,10 +592,6 @@ function readStoredMapLayer() {
   }
 }
 
-function skeletons(n) {
-  return Array.from({ length: n }, () => '<div class="skeleton"></div>').join("");
-}
-
 function revealStyle(i) {
   return `--i:${Math.min(i, 14)}`;
 }
@@ -602,9 +599,18 @@ function revealStyle(i) {
 // --- Filtre mapy ---
 const filterStart = $("filterStart");
 const filterEnd = $("filterEnd");
-const clearFiltersBtn = $("clearFiltersBtn");
 const contentSearch = $("contentSearch");
 const layerInputs = Array.from(document.querySelectorAll('input[name="mapLayer"]'));
+const filterDialog = $("filterDialog");
+const filterForm = $("mapFilterForm");
+const filterOpenBtn = $("filterOpenBtn");
+const filterCloseBtn = $("filterCloseBtn");
+const filterCancelBtn = $("filterCancelBtn");
+const resetFiltersBtn = $("resetFiltersBtn");
+const filterCount = $("filterCount");
+const legendDialog = $("legendDialog");
+const legendOpenBtn = $("legendOpenBtn");
+const legendCloseBtn = $("legendCloseBtn");
 
 function todayInputDate(offsetDays = 0) {
   const date = new Date();
@@ -770,26 +776,11 @@ function syncDateFilterLimits() {
   filterEnd.max = maxEnd;
 }
 
-function updateDateFilters(changedInput) {
-  if (filterStart.value && filterEnd.value && filterStart.value > filterEnd.value) {
-    if (changedInput === "start") {
-      filterEnd.value = filterStart.value;
-    } else {
-      filterStart.value = filterEnd.value;
-    }
-  }
-
-  state.filters.startDate = filterStart.value;
-  state.filters.endDate = filterEnd.value;
-  syncDateFilterLimits();
-  renderFilteredViews();
-}
-
 function renderFilteredViews() {
-  resetMobileListLimits();
+  resetListLimits();
   renderMarkers();
-  renderSightings();
-  renderNews();
+  if (state.loaded.sightings) renderSightings();
+  if (state.loaded.news) renderNews();
 }
 
 function syncMapLayerControls() {
@@ -798,19 +789,105 @@ function syncMapLayerControls() {
   }
 }
 
-filterStart.addEventListener("change", () => updateDateFilters("start"));
-filterEnd.addEventListener("change", () => updateDateFilters("end"));
-clearFiltersBtn.addEventListener("click", () => {
-  filterStart.value = "";
+function showModal(dialog) {
+  document.documentElement.classList.add("dialog-open");
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
+}
+
+function closeModal(dialog) {
+  if (dialog.open && typeof dialog.close === "function") dialog.close();
+  else {
+    dialog.removeAttribute("open");
+    document.documentElement.classList.remove("dialog-open");
+  }
+}
+
+function syncFilterButton() {
+  let count = 0;
+  if (
+    state.filters.startDate !== todayInputDate(-7) ||
+    state.filters.endDate !== todayInputDate()
+  ) {
+    count += 1;
+  }
+  if (state.mapLayer !== "standard") count += 1;
+
+  filterCount.textContent = String(count);
+  filterCount.hidden = count === 0;
+  filterOpenBtn.setAttribute(
+    "aria-label",
+    count ? `Otvoriť filtre, ${count} aktívne` : "Otvoriť filtre"
+  );
+}
+
+function syncFilterDraft() {
+  filterStart.value = state.filters.startDate;
+  filterEnd.value = state.filters.endDate;
+  syncMapLayerControls();
+  syncDateFilterLimits();
+}
+
+function closeFilterDialog() {
+  closeModal(filterDialog);
+}
+
+filterOpenBtn.addEventListener("click", () => {
+  syncFilterDraft();
+  showModal(filterDialog);
+  requestAnimationFrame(() => filterStart.focus());
+});
+filterCloseBtn.addEventListener("click", closeFilterDialog);
+filterCancelBtn.addEventListener("click", closeFilterDialog);
+resetFiltersBtn.addEventListener("click", () => {
+  filterStart.value = todayInputDate(-7);
   filterEnd.value = todayInputDate();
-  updateDateFilters();
+  const standardLayer = layerInputs.find((input) => input.value === "standard");
+  if (standardLayer) standardLayer.checked = true;
+});
+filterForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (filterStart.value && filterEnd.value && filterStart.value > filterEnd.value) {
+    filterEnd.value = filterStart.value;
+  }
+
+  state.filters.startDate = filterStart.value;
+  state.filters.endDate = filterEnd.value;
+  const selectedLayer = layerInputs.find((input) => input.checked)?.value || "standard";
+  setTiles(selectedLayer);
+  syncDateFilterLimits();
+  syncFilterButton();
+  closeFilterDialog();
+  renderFilteredViews();
+});
+filterDialog.addEventListener("close", () => {
+  document.documentElement.classList.remove("dialog-open");
+  filterOpenBtn.focus();
+});
+filterDialog.addEventListener("click", (event) => {
+  if (event.target === filterDialog) closeFilterDialog();
 });
 
-for (const input of layerInputs) {
-  input.addEventListener("change", () => {
-    if (input.checked) setTiles(input.value);
+legendOpenBtn.addEventListener("click", () => {
+  showModal(legendDialog);
+  requestAnimationFrame(() => legendCloseBtn.focus());
+});
+legendCloseBtn.addEventListener("click", () => closeModal(legendDialog));
+legendDialog.addEventListener("close", () => {
+  document.documentElement.classList.remove("dialog-open");
+  legendOpenBtn.focus();
+});
+legendDialog.addEventListener("click", (event) => {
+  if (event.target === legendDialog) closeModal(legendDialog);
+});
+
+for (const dialog of [filterDialog, legendDialog]) {
+  dialog.addEventListener("cancel", () => {
+    document.documentElement.classList.remove("dialog-open");
   });
 }
+
+syncFilterButton();
 
 // --- Vykreslenie varovaní ---
 function warningSourceLinks(s) {
@@ -870,6 +947,7 @@ function warningSourceLinksHtml(s, className) {
 
 function renderSightings() {
   const items = filteredSightings();
+  setText("sightingsCount", formatNum(items.length));
   if (items.length === 0) {
     elSightings.innerHTML = `<div class="empty"><i class="ph ph-binoculars"></i>${
       hasSearchFilter() || hasDateFilter()
@@ -885,9 +963,15 @@ function renderSightings() {
       (s, i) => {
         const sourceLabel = warningSourceLabel(s);
         const sourceLinks = warningSourceLinksHtml(s, "card-link");
+        const mapAction = s.hasCoords
+          ? `<button class="card-map-action" type="button" data-map-item="${esc(s.id)}">
+              <i class="ph ph-map-pin" aria-hidden="true"></i>
+              Zobraziť na mape
+            </button>`
+          : "";
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
-        <p class="card-title">${esc(s.location)}</p>
+        <h4 class="card-title">${esc(s.location)}</h4>
         <div class="card-meta">
           ${sourceLabel ? `<span class="meta-source">${esc(sourceLabel)}</span>` : ""}
           <span class="meta-date">${esc(fmtDate(s.reportedAt, true))}</span>
@@ -898,24 +982,23 @@ function renderSightings() {
           }
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
-        ${sourceLinks}
+        ${sourceLinks || mapAction ? `<div class="card-actions">${sourceLinks}${mapAction}</div>` : ""}
       </article>`;
       }
     )
     .join("") + loadMoreButtonHtml("sightings", visibleItems.length, items.length);
 
-  elSightings.querySelectorAll(".card.sighting").forEach((card) => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;
-      const s = state.sightings.find((x) => x.id === card.dataset.id);
-      if (s && s.hasCoords) focusMapMarker(s.id, s.lat, s.lng);
+  elSightings.querySelectorAll("[data-map-item]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const s = state.sightings.find((item) => item.id === button.dataset.mapItem);
+      if (s?.hasCoords) focusMapMarker(s.id, s.lat, s.lng);
     });
   });
 
   const loadMoreButton = elSightings.querySelector('[data-load-more="sightings"]');
   if (loadMoreButton) {
     loadMoreButton.addEventListener("click", () => {
-      mobileListVisible.sightings += MOBILE_LIST_PAGE_SIZE;
+      listVisible.sightings += listPageSize();
       renderSightings();
     });
   }
@@ -964,9 +1047,15 @@ function renderMarkers() {
   const mapMeta = $("mapMeta");
   if (mapMeta) {
     const sightOnMap = bounds.length - warningsOnMap;
-    mapMeta.textContent = `${sightOnMap} varovaní · ${warningsOnMap} zo správ${
+    const sightingLabel = countPhrase(sightOnMap, ["hlásenie", "hlásenia", "hlásení"]);
+    const newsLabel = countPhrase(warningsOnMap, ["správa", "správy", "správ"]);
+    const fullLabel = `${sightingLabel} · ${newsLabel}${
       hasDateFilter() || hasSearchFilter() ? " podľa filtrov" : " na mape"
     }`;
+    const compactLabel = `${sightingLabel} · ${newsLabel}`;
+    setText("mapMetaLive", fullLabel);
+    setText("mapMetaLong", fullLabel);
+    setText("mapMetaCompact", compactLabel);
   }
 
   if (bounds.length > 0) {
@@ -981,6 +1070,7 @@ function renderMarkers() {
 // Bežné články sa na mapu neviažu.
 function renderNews() {
   const items = filteredNews();
+  setText("newsCount", formatNum(items.length));
   if (items.length === 0) {
     elNews.innerHTML = `<div class="empty"><i class="ph ph-newspaper"></i>${
       hasDateFilter() || hasSearchFilter()
@@ -1003,11 +1093,17 @@ function renderNews() {
                 Link na článok <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
               </a>`
             : "";
+        const mapAction = point
+          ? `<button class="card-map-action" type="button" data-map-item="${esc(n.id)}">
+              <i class="ph ph-map-pin" aria-hidden="true"></i>
+              Zobraziť na mape
+            </button>`
+          : "";
         return `
       <article class="card news reveal${point ? " has-place" : ""}${
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}">
-        <p class="card-title">${esc(n.title)}</p>
+        <h4 class="card-title">${esc(n.title)}</h4>
         <div class="card-meta">
           ${n.source ? `<span class="meta-source">${esc(n.source)}</span>` : ""}
           ${
@@ -1025,16 +1121,15 @@ function renderNews() {
               }</p>`
             : ""
         }
-        ${articleLink}
+        ${articleLink || mapAction ? `<div class="card-actions">${articleLink}${mapAction}</div>` : ""}
       </article>`
       }
     )
     .join("") + loadMoreButtonHtml("news", visibleItems.length, items.length);
 
-  elNews.querySelectorAll(".card.news.has-place").forEach((card) => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;
-      const n = state.news.find((x) => x.id === card.dataset.id);
+  elNews.querySelectorAll("[data-map-item]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const n = state.news.find((item) => item.id === button.dataset.mapItem);
       const point = newsMapPoint(n);
       if (n && point) focusMapMarker(n.id, point.lat, point.lng);
     });
@@ -1043,7 +1138,7 @@ function renderNews() {
   const loadMoreButton = elNews.querySelector('[data-load-more="news"]');
   if (loadMoreButton) {
     loadMoreButton.addEventListener("click", () => {
-      mobileListVisible.news += MOBILE_LIST_PAGE_SIZE;
+      listVisible.news += listPageSize();
       renderNews();
     });
   }
@@ -1106,11 +1201,56 @@ function renderStats() {
 }
 
 function setUpdated(iso) {
-  $("updated").textContent = iso ? "Aktualizované " + updatedText(iso) : "";
+  const updated = $("updated");
+  if (updated) updated.textContent = iso ? "Aktualizované " + updatedText(iso) : "";
 }
 
 // --- Načítanie dát ---
+const mapLoadStatus = $("mapLoadStatus");
+
+function showLoadStatus(message, { error = false, retryAction = null } = {}) {
+  mapLoadStatus.hidden = false;
+  mapLoadStatus.classList.toggle("is-error", error);
+  mapLoadStatus.title = message;
+  mapLoadStatus.innerHTML = `<span class="map-load-copy">${esc(message)}</span>${
+    retryAction
+      ? '<button type="button" data-retry-load aria-label="Skúsiť načítať dáta znova"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i><span>Skúsiť znova</span></button>'
+      : ""
+  }`;
+  mapLoadStatus.querySelector("[data-retry-load]")?.addEventListener("click", retryAction);
+}
+
+function hideLoadStatus() {
+  mapLoadStatus.hidden = true;
+  mapLoadStatus.classList.remove("is-error");
+  mapLoadStatus.removeAttribute("title");
+}
+
+function syncLoadStatus() {
+  if (state.dataLoading) {
+    showLoadStatus("Načítavam aktuálne dáta...");
+    return;
+  }
+  if (state.tileError) {
+    showLoadStatus("Mapové podklady sa nepodarilo načítať. Zoznamy zostávajú dostupné.", {
+      error: true,
+      retryAction: () => setTiles(state.mapLayer),
+    });
+    return;
+  }
+  if (state.dataFailures.length) {
+    showLoadStatus(
+      `Nepodarilo sa obnoviť: ${state.dataFailures.join(" a ")}. Zobrazený zoznam zostal zachovaný.`,
+      { error: true, retryAction: loadData }
+    );
+    return;
+  }
+  hideLoadStatus();
+}
+
 async function loadData() {
+  state.dataLoading = true;
+  syncLoadStatus();
   // News načítavame bez cache, aby sa moderácia kategórie/lokality hneď
   // prejavila aj na mape.
   const [sRes, nRes] = await Promise.allSettled([
@@ -1118,46 +1258,59 @@ async function loadData() {
     fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" }).then((r) => r.json()),
   ]);
 
-  if (sRes.status === "fulfilled" && sRes.value.items) {
+  const failures = [];
+
+  if (sRes.status === "fulfilled" && Array.isArray(sRes.value.items)) {
     state.sightings = dedupeSightings(sRes.value.items);
     state.sightingsUpdatedAt = sRes.value.updatedAt;
-    renderMarkers();
+    state.loaded.sightings = true;
     renderSightings();
   } else {
-    elSightings.innerHTML = `<div class="error-box">Nepodarilo sa načítať varovania. Skúste to znova.</div>`;
+    failures.push("hlásenia");
   }
 
-  if (nRes.status === "fulfilled" && nRes.value.items) {
+  if (nRes.status === "fulfilled" && Array.isArray(nRes.value.items)) {
     state.news = nRes.value.items;
     state.newsUpdatedAt = nRes.value.updatedAt;
+    state.loaded.news = true;
     renderNews();
-    renderMarkers(); // správy môžu mať súradnice -> značky na mape
   } else {
-    elNews.innerHTML = `<div class="error-box">Nepodarilo sa načítať správy. Skúste to znova.</div>`;
+    failures.push("správy");
   }
 
+  renderMarkers();
   state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
   setUpdated(state.updatedAt);
   syncDateFilterLimits();
-  renderStats();
+  syncFilterButton();
+
+  state.dataFailures = failures;
+  state.dataLoading = false;
+  syncLoadStatus();
 }
 
-contentSearch.addEventListener("input", (e) => {
-  state.filters.query = e.target.value;
-  renderFilteredViews();
+let searchDebounce = null;
+contentSearch.addEventListener("input", (event) => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    state.filters.query = event.target.value;
+    renderFilteredViews();
+  }, 220);
 });
 
-function handleMobileListModeChange() {
-  resetMobileListLimits();
-  if (state.sightings.length) renderSightings();
-  if (state.news.length) renderNews();
+function handleListModeChange() {
+  resetListLimits();
+  if (state.loaded.sightings) renderSightings();
+  if (state.loaded.news) renderNews();
   refitMapOnVisibleMarkers();
 }
 
-if (typeof mobileListMedia.addEventListener === "function") {
-  mobileListMedia.addEventListener("change", handleMobileListModeChange);
-} else {
-  mobileListMedia.addListener(handleMobileListModeChange);
+for (const media of [phoneListMedia, tabletListMedia]) {
+  if (typeof media.addEventListener === "function") {
+    media.addEventListener("change", handleListModeChange);
+  } else {
+    media.addListener(handleListModeChange);
+  }
 }
 
 let lastMapContainerWidth = map.getContainer().clientWidth;
@@ -1165,7 +1318,7 @@ function handleMapContainerResize() {
   const nextWidth = map.getContainer().clientWidth;
   if (nextWidth === lastMapContainerWidth) return;
   lastMapContainerWidth = nextWidth;
-  if (mobileListMedia.matches) refitMapOnVisibleMarkers();
+  if (phoneListMedia.matches) refitMapOnVisibleMarkers();
 }
 
 if ("ResizeObserver" in window) {
@@ -1174,87 +1327,10 @@ if ("ResizeObserver" in window) {
 }
 window.addEventListener("resize", handleMapContainerResize);
 
-// --- Upozorni ma (email subscription) ---
-(function () {
-  const form = document.getElementById("notifyForm");
-  if (!form) return;
-
-  const typeRadios = form.querySelectorAll('input[name="notifyType"]');
-  const areaWrap = document.getElementById("notifyAreaWrap");
-  const areaInput = document.getElementById("notifyArea");
-  const msg = document.getElementById("notifyMessage");
-  const btn = document.getElementById("notifyBtn");
-
-  typeRadios.forEach((r) =>
-    r.addEventListener("change", () => {
-      const isArea = form.notifyType.value === "area";
-      areaWrap.hidden = !isArea;
-      if (isArea) areaInput.focus();
-    })
-  );
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    msg.className = "form-message";
-    msg.textContent = "";
-
-    const email = form.email.value.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      msg.textContent = "Zadajte platnú emailovú adresu.";
-      msg.className = "form-message error";
-      form.email.focus();
-      return;
-    }
-
-    const notifyType = form.notifyType.value;
-    const areaName = notifyType === "area" ? areaInput.value.trim() : null;
-
-    if (notifyType === "area" && !areaName) {
-      msg.textContent = "Zadajte názov oblasti.";
-      msg.className = "form-message error";
-      areaInput.focus();
-      return;
-    }
-
-    btn.disabled = true;
-    btn.querySelector("span").textContent = "Odosielam...";
-
-    try {
-      const res = await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, notifyType, areaName }),
-      });
-      const data = await res.json();
-
-      if (res.ok && data.ok) {
-        msg.textContent =
-          "Ďakujeme, váš email sme uložili. Emailové upozornenia spustíme už čoskoro.";
-        msg.className = "form-message success";
-        form.reset();
-        areaWrap.hidden = true;
-      } else {
-        msg.textContent = data.error || "Nepodarilo sa zaregistrovať odber.";
-        msg.className = "form-message error";
-      }
-    } catch (err) {
-      msg.textContent = "Chyba siete: " + err.message;
-      msg.className = "form-message error";
-    } finally {
-      btn.disabled = false;
-      btn.querySelector("span").textContent = "Prihlásiť sa na odber";
-    }
-  });
-})();
-
 // --- Štart ---
-syncThemeButton(currentTheme());
 setTiles(state.mapLayer);
 addLocationControl();
 addCenterMapControl();
-const initialSkeletonCount = mobileListMedia.matches ? MOBILE_LIST_PAGE_SIZE : 5;
-elSightings.innerHTML = skeletons(initialSkeletonCount);
-elNews.innerHTML = skeletons(initialSkeletonCount);
 loadData();
 // Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).
 setInterval(loadData, 15 * 60 * 1000);

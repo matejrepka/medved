@@ -34,6 +34,12 @@ themeBtn.addEventListener("click", () => {
   applyTheme(currentTheme() === "dark" ? "light" : "dark");
 });
 
+window.addEventListener("site:themechange", (event) => {
+  const theme = event.detail?.theme === "dark" ? "dark" : "light";
+  syncThemeButton(theme);
+  updateChartTheme();
+});
+
 // Chart instances
 let timelineChart;
 let topLocationsChart;

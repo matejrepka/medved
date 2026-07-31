@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pages = [
   "index.html",
+  "domov.html",
   "stats.html",
   "nahlas.html",
   "bezpecnost.html",

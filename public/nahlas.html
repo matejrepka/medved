@@ -40,12 +40,12 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=20260718-mobile-spacing1" />
+    <link rel="stylesheet" href="/styles.css?v=20260731-map-controls1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Kde je Medveď, domov">
+      <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
           <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
         </span>
@@ -54,6 +54,7 @@
 
       <nav class="main-nav" aria-label="Hlavné menu">
         <a href="/">Mapa</a>
+        <a href="/domov">Domov</a>
         <a href="/stats">Štatistiky</a>
         <a href="/nahlas" class="active">Nahlásiť</a>
       </nav>
@@ -233,6 +234,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script src="/page.js?v=20260731-map-first1"></script>
     <script>
       const themeBtn = document.getElementById('themeBtn');
 
@@ -428,6 +430,11 @@
       if (document.documentElement.getAttribute('data-theme') === 'dark') {
         themeBtn.querySelector('i').className = 'ph ph-sun';
       }
+      window.addEventListener('site:themechange', (event) => {
+        const next = event.detail && event.detail.theme === 'dark' ? 'dark' : 'light';
+        if (tileLayer) pickMap.removeLayer(tileLayer);
+        tileLayer = L.tileLayer(next === 'dark' ? TILE_URLS.dark : TILE_URLS.light, TILE_OPTS).addTo(pickMap);
+      });
 
       const form = document.getElementById('reportForm');
       const submitBtn = document.getElementById('submitBtn');

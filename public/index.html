@@ -10,7 +10,6 @@
     />
     <!-- SEO_HEAD -->
 
-    <!-- Nastav tému ešte pred vykreslením, aby neblikla (FOUC) -->
     <script>
       (function () {
         try {
@@ -31,56 +30,22 @@
       href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
       rel="stylesheet"
     />
-
-    <!-- Hero obrázok je nad ohybom (LCP) — prednačítaj ho čo najskôr -->
-    <link
-      rel="preload"
-      as="image"
-      href="/assets/mascot/bear-hero-roaring.avif"
-      type="image/avif"
-      imagesrcset="/assets/mascot/bear-hero-roaring-640.avif 640w, /assets/mascot/bear-hero-roaring.avif 960w"
-      imagesizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
-      media="(min-width: 721px)"
-      fetchpriority="high"
-    />
-
-    <!-- Phosphor ikony — načítané asynchrónne, neblokujú prvé vykreslenie -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
-      media="print"
-      onload="this.media='all'"
     />
-
-    <!-- Leaflet (mapa) — mapa je pod ohybom, CSS nemusí blokovať vykreslenie -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
-      media="print"
-      onload="this.media='all'"
     />
-
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
-      />
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin=""
-      />
-    </noscript>
-
-    <link rel="stylesheet" href="/styles.css?v=20260718-mobile-spacing1" />
+    <link rel="stylesheet" href="/styles.css?v=20260731-map-controls2" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
-  <body>
+  <body class="map-first-page">
     <header class="site-header">
-      <a class="brand" href="/" aria-label="Kde je Medveď, domov">
+      <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
           <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
         </span>
@@ -88,7 +53,8 @@
       </a>
 
       <nav class="main-nav" aria-label="Hlavné menu">
-        <a href="/" class="active">Mapa</a>
+        <a href="/" class="active" aria-current="page">Mapa</a>
+        <a href="/domov">Domov</a>
         <a href="/stats">Štatistiky</a>
         <a href="/nahlas">Nahlásiť</a>
       </nav>
@@ -101,426 +67,190 @@
       </div>
     </header>
 
-    <main>
-      <section class="masthead mascot-masthead">
-        <div class="masthead-copy">
-          <h1>Kde je medveď? Aktuálna mapa medveďov na Slovensku</h1>
-          <p class="lede">
-            Centralizujeme moderované hlásenia, verejné mapy a varovania, upozornenia ŠOP SR
-            a aktuálne slovenské správy. Na jednom mieste si overíte, kde a kedy bol medveď
-            hlásený a z akého zdroja informácia pochádza.
-          </p>
-
-          <div class="home-insights" id="stats" aria-label="Aktuálny štatistický prehľad">
-            <div class="stats">
-              <div class="stat">
-                <span class="stat-num" id="statSightings">-</span>
-                <span class="stat-label" id="statSightingsLabel">hlásení dnes</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num" id="statWeekSightings">-</span>
-                <span class="stat-label" id="statWeekSightingsLabel">hlásení za 7 dní</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num" id="statNews">-</span>
-                <span class="stat-label" id="statNewsLabel">správ dnes</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="hero-actions" aria-label="Hlavné akcie">
-            <a class="btn" href="/nahlas">
-              <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
-              Nahlásiť výskyt
-            </a>
-            <a class="hero-secondary-btn" href="/stats">
-              <i class="ph ph-chart-bar" aria-hidden="true"></i>
-              Pozrieť štatistiky
-            </a>
-          </div>
-        </div>
-        <div class="mascot-hero mascot-hero-cutout mascot-hero-roaring" aria-hidden="true">
-          <picture>
-            <source
-              srcset="/assets/mascot/bear-hero-roaring-640.avif 640w, /assets/mascot/bear-hero-roaring.avif 960w"
-              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
-              type="image/avif"
-            />
-            <source
-              srcset="/assets/mascot/bear-hero-roaring-640.webp 640w, /assets/mascot/bear-hero-roaring.webp 960w"
-              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
-              type="image/webp"
-            />
-            <img
-              src="/assets/mascot/bear-hero-roaring.png"
-              srcset="/assets/mascot/bear-hero-roaring-640.png 640w, /assets/mascot/bear-hero-roaring.png 960w"
-              sizes="(max-width: 940px) 510px, (max-width: 1166px) 560px, (max-width: 1333px) 48vw, 640px"
-              alt="Ilustrovaná hlava revúceho medveďa hnedého"
-              width="960"
-              height="1200"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </picture>
-        </div>
-      </section>
-
-      <section class="map-section" aria-labelledby="mapHeading">
-        <div class="section-head">
-          <h2 id="mapHeading"><i class="ph ph-map-pin" aria-hidden="true"></i> Aktuálna mapa hláseného výskytu medveďov</h2>
-          <span class="muted" id="mapMeta"></span>
-        </div>
-        <p class="map-context" id="mapExplanation">
-          Body označujú miesto hláseného pozorovania alebo verejného varovania v uvedenom
-          čase. Nejde o GPS sledovanie medveďov ani potvrdenie, že sa na mieste stále nachádzajú.
+    <main class="map-page-shell" id="mainContent">
+      <section class="map-viewport" id="mapViewport" aria-labelledby="mapPageTitle">
+        <h1 class="sr-only" id="mapPageTitle">Aktuálna mapa hláseného výskytu medveďov na Slovensku</h1>
+        <p class="sr-only" id="mapExplanation">
+          Body označujú miesto a čas hláseného pozorovania alebo verejného varovania.
+          Nejde o GPS sledovanie ani potvrdenie aktuálnej polohy zvieraťa.
         </p>
-        <div class="map-tools" aria-label="Filtre a nastavenia mapy">
-          <div class="date-filters" aria-label="Filtrovať podľa dátumu">
-            <label class="date-control" for="filterStart">
-              <span><i class="ph ph-calendar-blank" aria-hidden="true"></i> Od</span>
-              <input id="filterStart" type="date" />
-            </label>
-            <label class="date-control" for="filterEnd">
-              <span><i class="ph ph-calendar-check" aria-hidden="true"></i> Do</span>
-              <input id="filterEnd" type="date" />
-            </label>
-            <button class="ghost-btn" id="clearFiltersBtn" type="button">
-              <i class="ph ph-x" aria-hidden="true"></i>
-              <span>Vymazať</span>
-            </button>
-          </div>
 
-          <fieldset class="layer-picker">
-            <legend>Vrstva</legend>
-            <label>
-              <input class="sr-only" type="radio" name="mapLayer" value="standard" checked />
-              <span><i class="ph ph-map-trifold" aria-hidden="true"></i> Štandardná</span>
-            </label>
-            <label>
-              <input class="sr-only" type="radio" name="mapLayer" value="classic" />
-              <span><i class="ph ph-tree-evergreen" aria-hidden="true"></i> Klasická</span>
-            </label>
-            <label>
-              <input class="sr-only" type="radio" name="mapLayer" value="tourist" />
-              <span><i class="ph ph-mountains" aria-hidden="true"></i> Turistická</span>
-            </label>
-            <label>
-              <input class="sr-only" type="radio" name="mapLayer" value="satellite" />
-              <span><i class="ph ph-globe-hemisphere-west" aria-hidden="true"></i> Satelitná</span>
-            </label>
-          </fieldset>
-        </div>
         <div
           id="map"
           role="region"
           aria-label="Interaktívna mapa hláseného výskytu medveďov na Slovensku"
           aria-describedby="mapExplanation"
         ></div>
-        <div class="map-legend" aria-hidden="true">
-          <span class="lg"><span class="lg-dot"></span> Medvedie varovanie</span>
-          <span class="lg"><span class="lg-dot news"></span> Varovanie zo správ</span>
-        </div>
-      </section>
 
-      <div class="content-search">
-        <div class="search-wrap">
-          <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
-          <input
-            type="search"
-            id="contentSearch"
-            placeholder="Hľadať lokalitu, poznámku alebo článok…"
-            autocomplete="off"
-            aria-label="Hľadať v hláseniach a správach"
-          />
-        </div>
-      </div>
-
-      <div class="columns">
-        <section class="panel" aria-labelledby="sightingsHead">
-          <div class="section-head">
-            <h2 id="sightingsHead">Aktuálne hlásenia a medvedie varovania</h2>
-            <span class="src">viac verejných zdrojov</span>
-          </div>
-
-          <div id="sightingsList" class="list" aria-live="polite">
-            <!-- SSR_WARNINGS -->
-          </div>
-        </section>
-
-        <section class="panel" aria-labelledby="newsHead">
-          <div class="section-head">
-            <h2 id="newsHead">Aktuálne správy o medveďoch</h2>
-            <span class="src">slovenské médiá a ŠOP SR</span>
-          </div>
-          <div id="newsList" class="list" aria-live="polite">
-            <!-- SSR_NEWS -->
-          </div>
-        </section>
-      </div>
-
-      <section class="seo-content" aria-labelledby="aboutMapHeading">
-        <div class="seo-content-intro">
-          <p class="section-kicker">Ako používať mapu</p>
-          <h2 id="aboutMapHeading">Čo mapa výskytu medveďov skutočne zobrazuje?</h2>
-          <p class="answer-lead">
-            Mapa zobrazuje <strong>hlásené pozorovania a verejné varovania</strong> s miestom
-            a dátumom. Nezobrazuje počet medveďov na Slovensku ani ich pohyb v reálnom čase.
-            Pri plánovaní trasy preto sledujte dátum bodu, pôvod informácie a miestne pokyny.
-          </p>
-        </div>
-
-        <div class="explain-grid">
-          <article>
-            <i class="ph ph-clock-countdown" aria-hidden="true"></i>
-            <h3>Pravidelná aktualizácia</h3>
-            <p>
-              Nové verejné dáta kontrolujeme automaticky. Na mapu sa dostanú až po kontrole
-              relevantnosti a dostupnej lokality.
-            </p>
-          </article>
-          <article>
-            <i class="ph ph-stack" aria-hidden="true"></i>
-            <h3>Viac zdrojov na jednom mieste</h3>
-            <p>
-              Spájame vlastné hlásenia s verejnými záznamami z TuMedved.sk,
-              MapaMedvedov.sk a SprejNaMedveda.sk, upozorneniami ŠOP SR z PozorMedved.sk
-              a relevantnými slovenskými správami. Pri položke uvádzame zdroj aj čas.
-            </p>
-          </article>
-          <article>
-            <i class="ph ph-shield-check" aria-hidden="true"></i>
-            <h3>Jasné obmedzenia údajov</h3>
-            <p>
-              Moderovanie neznamená terénne potvrdenie zvieraťa. Medveď sa môže presunúť
-              a vyskytnúť aj tam, kde na mape nie je žiadny bod.
-            </p>
-          </article>
-        </div>
-
-        <div class="map-reading-grid">
-          <div>
-            <p class="section-kicker">Správna interpretácia</p>
-            <h2>Ako čítať aktuálne hlásenia</h2>
-            <ol class="reading-steps">
-              <li><strong>Skontrolujte dátum a čas.</strong> Novšie hlásenie je pre aktuálnu situáciu užitočnejšie než historický bod.</li>
-              <li><strong>Pozrite si zdroj.</strong> Detail pôvodného zdroja môže obsahovať presnejší opis okolností.</li>
-              <li><strong>Nespoliehajte sa iba na mapu.</strong> Sledujte oznamy obce, správcu územia a Zásahového tímu ŠOP SR.</li>
-            </ol>
-            <a class="text-link" href="/o-mape">Prečítať zdroje a metodiku mapy <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
-          </div>
-          <aside class="safety-callout" aria-labelledby="safetyHeading">
-            <div class="safety-official-source">
-              <span class="safety-source-icon" aria-hidden="true">
-                <i class="ph ph-shield-check"></i>
-              </span>
-              <span>
-                <span class="safety-source-label">Oficiálny zdroj</span>
-                <span class="safety-source-name">Zásahový tím pre medveďa hnedého ŠOP SR</span>
-              </span>
-            </div>
-            <p class="section-kicker">Bezpečnosť</p>
-            <h2 id="safetyHeading">Odporúčania pre pohyb v území s medveďom</h2>
-            <p class="safety-description">
-              Ako predísť stretu, ako reagovať pri blízkom stretnutí a ktoré tiesňové
-              a pohotovostné kontakty použiť nájdete priamo na stránke Zásahového tímu.
-            </p>
-            <div class="safety-actions">
-              <a
-                class="btn safety-btn"
-                href="https://zasahovytim.sopsr.sk/bezpecnost/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Otvoriť odporúčania ŠOP SR
-                <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
-              </a>
-              <a class="safety-summary-link" href="/bezpecnost">
-                Stručný prehľad na Kde je Medveď
-                <i class="ph ph-arrow-right" aria-hidden="true"></i>
-              </a>
-            </div>
-          </aside>
-        </div>
-
-        <div class="location-directory" id="lokality">
-          <p class="section-kicker">Lokalitné prehľady</p>
-          <h2>Výskyt medveďa podľa lokality</h2>
-          <p>
-            Otvorte súhrn hlásení, varovaní a správ pre najčastejšie spomínané lokality
-            v aktuálnych dátach. Prehľady sa priebežne menia spolu so zdrojovými záznamami.
-          </p>
-          <div class="api-links location-links">
-            <!-- SSR_TOP_LOCATIONS -->
-          </div>
-        </div>
-
-        <div class="faq" id="caste-otazky">
-          <p class="section-kicker">Rýchle odpovede</p>
-          <h2>Často kladené otázky o mape medveďov</h2>
-          <div class="faq-list">
-            <details open>
-              <summary>Kde je medveď na Slovensku?</summary>
-              <p>
-                Najnovšie hlásené pozorovania a verejné varovania nájdete na aktuálnej mape
-                Kde je Medveď. Každý bod uvádza lokalitu, čas a dostupný pôvod informácie;
-                nejde však o živé GPS sledovanie zvieraťa.
-              </p>
-            </details>
-            <details>
-              <summary>Čo je Kde je Medveď?</summary>
-              <p>
-                Kde je Medveď je nezávislý slovenský agregátor. Na jednom mieste spája
-                moderované hlásenia, verejné mapy a varovania, relevantné správy, štatistiky
-                a bezpečnostné odporúčania.
-              </p>
-            </details>
-            <details>
-              <summary>Z akých zdrojov pochádzajú informácie o medveďoch?</summary>
-              <p>
-                Prehľad spája používateľské hlásenia, verejne dostupné záznamy zo slovenských
-                máp výskytu, upozornenia ŠOP SR a relevantné slovenské správy. Pri každej
-                položke zachováva názov a odkaz na pôvodný zdroj.
-              </p>
-            </details>
-            <details>
-              <summary>Je mapa výskytu medveďov aktuálna?</summary>
-              <p>
-                Dáta sa automaticky kontrolujú. Na mape sa zobrazia až položky, ktoré prešli
-                moderovaním; čas poslednej aktualizácie je uvedený priamo na stránke.
-              </p>
-            </details>
-            <details>
-              <summary>Znamená bod na mape, že medveď je stále na danom mieste?</summary>
-              <p>
-                Nie. Bod označuje miesto a čas nahláseného pozorovania alebo varovania. Medvede
-                sa pohybujú a môžu sa vyskytnúť aj mimo vyznačených miest.
-              </p>
-            </details>
-            <details>
-              <summary>Sú hlásenia na mape overené?</summary>
-              <p>
-                Hlásenia sú kontrolované iba z hľadiska spamu. Jednotlivé pozorovania a
-                varovania pochádzajú od používateľov, z iných webových stránok a zo správ;
-                nejde o profesionálne ani terénne overené informácie.
-              </p>
-            </details>
-            <details>
-              <summary>Ako nahlásiť výskyt medveďa?</summary>
-              <p>
-                <a
-                  href="https://zasahovytim.sopsr.sk/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >Kontaktovať Zásahový tím pre medveďa hnedého ŠOP SR</a>
-              </p>
-              <p>
-                Ak chcete nahlásiť výskyt do tejto mapy, použite
-                <a href="/nahlas">formulár na nahlásenie výskytu</a>.
-              </p>
-            </details>
-            <details>
-              <summary>Čo robiť, keď stretnem medveďa?</summary>
-              <p>
-                <a
-                  href="https://zasahovytim.sopsr.sk/bezpecnost/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >Bezpečnosť – Zásahový tím pre medveďa hnedého ŠOP SR</a>
-              </p>
-            </details>
-            <details>
-              <summary>Ako môžem kontaktovať prevádzkovateľa?</summary>
-              <p>
-                Otázky, pripomienky a žiadosti o opravu nám pošlite na
-                <a href="mailto:kontakt@kdejemedved.sk">kontakt@kdejemedved.sk</a>.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
-      <section class="report-cta">
-        <div class="report-cta-inner">
-          <div class="report-cta-content">
-            <div class="report-cta-text">
-              <h2><i class="ph ph-warning-circle" aria-hidden="true"></i> Videli ste medveda?</h2>
-              <p>
-                Pomôžte nám mapovať výskyt medveďov na Slovensku. Nahláste stretnutie a po kontrole
-                sa zobrazí na mape.
-              </p>
-            </div>
-            <a href="/nahlas" class="btn">
-              <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
-              <span>Nahlásiť výskyt</span>
-            </a>
-          </div>
-          <picture>
-            <source srcset="/assets/mascot/bear-helper.webp" type="image/webp" />
-            <img
-              class="mascot-cta-image"
-              src="/assets/mascot/bear-helper.png"
-              alt="Medveď s ďalekohľadom"
-              width="460"
-              height="460"
-              loading="lazy"
-              decoding="async"
+        <div class="map-overlay-top" aria-label="Vyhľadávanie a filtre mapy">
+          <label class="map-search-control" for="contentSearch">
+            <span class="sr-only">Hľadať v hláseniach a správach</span>
+            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+            <input
+              type="search"
+              id="contentSearch"
+              placeholder="Hľadať lokalitu alebo správu"
+              autocomplete="off"
+              enterkeyhint="search"
             />
-          </picture>
+          </label>
+          <button
+            class="map-filter-button"
+            id="filterOpenBtn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="filterDialog"
+          >
+            <i class="ph ph-funnel" aria-hidden="true"></i>
+            <span class="map-filter-label">Filtre</span>
+            <span class="map-filter-count" id="filterCount" hidden>0</span>
+          </button>
         </div>
+
+        <div class="map-bottom-bar" aria-label="Stav mapy a rýchle akcie">
+          <div class="map-result-status" id="mapMeta" role="status" aria-live="polite">
+            <span class="sr-only" id="mapMetaLive">Načítavam body mapy</span>
+            <span class="map-result-long" id="mapMetaLong" aria-hidden="true">Načítavam body mapy</span>
+            <span class="map-result-compact" id="mapMetaCompact" aria-hidden="true">Načítavam</span>
+          </div>
+          <button
+            class="map-legend-button"
+            id="legendOpenBtn"
+            type="button"
+            aria-label="Otvoriť legendu mapy"
+            aria-haspopup="dialog"
+            aria-controls="legendDialog"
+          >
+            <i class="ph ph-info" aria-hidden="true"></i>
+            <span class="map-legend-label">Legenda</span>
+          </button>
+          <a class="map-listings-jump" href="#aktuality" aria-label="Zobraziť zoznam hlásení a správ">
+            <i class="ph ph-list-bullets" aria-hidden="true"></i>
+            <span class="map-listings-label-full">Hlásenia a správy</span>
+            <span class="map-listings-label-short">Záznamy</span>
+          </a>
+        </div>
+
+        <div class="map-load-status" id="mapLoadStatus" role="status" aria-live="polite">
+          Načítavam aktuálne dáta...
+        </div>
+
+        <noscript>
+          <p class="map-noscript">Interaktívna mapa vyžaduje JavaScript. Aktuálne záznamy nájdete pod mapou.</p>
+        </noscript>
+
+        <dialog class="map-filter-dialog" id="filterDialog" aria-labelledby="filterTitle">
+          <form id="mapFilterForm">
+            <div class="dialog-heading">
+              <div>
+                <h2 id="filterTitle">Filtre a vrstva mapy</h2>
+                <p>Zmeny sa prejavia až po použití filtrov.</p>
+              </div>
+              <button class="dialog-close" id="filterCloseBtn" type="button" aria-label="Zavrieť filtre">
+                <i class="ph ph-x" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <fieldset class="filter-date-group">
+              <legend>Dátum záznamu</legend>
+              <div class="filter-date-grid">
+                <label class="date-control" for="filterStart">
+                  <span>Od</span>
+                  <input id="filterStart" type="date" />
+                </label>
+                <label class="date-control" for="filterEnd">
+                  <span>Do</span>
+                  <input id="filterEnd" type="date" />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="layer-picker">
+              <legend>Vrstva mapy</legend>
+              <label>
+                <input class="sr-only" type="radio" name="mapLayer" value="standard" checked />
+                <span><i class="ph ph-map-trifold" aria-hidden="true"></i> Štandardná</span>
+              </label>
+              <label>
+                <input class="sr-only" type="radio" name="mapLayer" value="classic" />
+                <span><i class="ph ph-tree-evergreen" aria-hidden="true"></i> Klasická</span>
+              </label>
+              <label>
+                <input class="sr-only" type="radio" name="mapLayer" value="tourist" />
+                <span><i class="ph ph-mountains" aria-hidden="true"></i> Turistická</span>
+              </label>
+              <label>
+                <input class="sr-only" type="radio" name="mapLayer" value="satellite" />
+                <span><i class="ph ph-globe-hemisphere-west" aria-hidden="true"></i> Satelitná</span>
+              </label>
+            </fieldset>
+
+            <div class="dialog-actions">
+              <button class="ghost-btn" id="resetFiltersBtn" type="button">Obnoviť</button>
+              <button class="ghost-btn" id="filterCancelBtn" type="button">Zrušiť</button>
+              <button class="btn" type="submit">Použiť filtre</button>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog class="map-legend-dialog" id="legendDialog" aria-labelledby="legendTitle">
+          <div class="dialog-heading">
+            <div>
+              <h2 id="legendTitle">Legenda mapy</h2>
+              <p>Mapa rozlišuje moderované hlásenia a verejné varovania zo správ.</p>
+            </div>
+            <button class="dialog-close" id="legendCloseBtn" type="button" aria-label="Zavrieť legendu">
+              <i class="ph ph-x" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="map-legend-list">
+            <p><span class="lg-dot" aria-hidden="true"></span> Medvedie varovanie</p>
+            <p><span class="lg-dot news" aria-hidden="true"></span> Varovanie zo správ</p>
+          </div>
+          <p class="map-legend-note">
+            Bod označuje miesto a čas záznamu. Medveď sa mohol presunúť a môže sa vyskytnúť aj mimo označených miest.
+          </p>
+        </dialog>
       </section>
 
-      <section class="notify-section">
-        <div class="notify-inner">
-          <div class="notify-text">
-            <h2><i class="ph ph-bell-ringing" aria-hidden="true"></i> Upozorni ma</h2>
-            <p>
-              Chcete dostávať upozornenia o výskyte medveďov? Zadajte svoj email a vyberte,
-              či chcete sledovať všetky hlásenia alebo konkrétnu oblasť.
-            </p>
+      <section class="activity-section" id="aktuality" aria-labelledby="activityTitle">
+        <div class="activity-heading">
+          <div>
+            <h2 id="activityTitle">Aktuálne hlásenia a správy</h2>
+            <p>Výsledky zodpovedajú vyhľadávaniu a použitým dátumovým filtrom.</p>
           </div>
-          <form class="notify-form" id="notifyForm" novalidate>
-            <div class="notify-field">
-              <label class="sr-only" for="notifyEmail">Emailová adresa</label>
-              <input
-                type="email"
-                id="notifyEmail"
-                name="email"
-                placeholder="vas@email.sk"
-                required
-                autocomplete="email"
-                aria-describedby="notifyMessage"
-              />
+          <a class="activity-map-link" href="#mapViewport">
+            <i class="ph ph-map-trifold" aria-hidden="true"></i>
+            Späť na mapu
+          </a>
+        </div>
+
+        <div class="activity-grid">
+          <section class="activity-panel" aria-labelledby="sightingsHead">
+            <div class="activity-panel-heading">
+              <div>
+                <h3 id="sightingsHead">Hlásenia a varovania</h3>
+                <p>Moderované hlásenia a verejné zdroje</p>
+              </div>
+              <span class="activity-count" id="sightingsCount"><!-- SSR_WARNING_COUNT --></span>
             </div>
-            <div class="notify-type">
-              <label class="notify-radio">
-                <input type="radio" name="notifyType" value="all" checked />
-                <span>Všetky hlásenia</span>
-              </label>
-              <label class="notify-radio">
-                <input type="radio" name="notifyType" value="area" />
-                <span>Konkrétna oblasť</span>
-              </label>
+            <div id="sightingsList" class="list" aria-live="polite">
+              <!-- SSR_WARNINGS -->
             </div>
-            <div class="notify-area" id="notifyAreaWrap" hidden>
-              <label class="sr-only" for="notifyArea">Oblasť upozornení</label>
-              <input
-                type="text"
-                id="notifyArea"
-                name="areaName"
-                placeholder="napr. Liptovský Mikuláš, Banská Bystrica..."
-                autocomplete="off"
-              />
+          </section>
+
+          <section class="activity-panel" aria-labelledby="newsHead">
+            <div class="activity-panel-heading">
+              <div>
+                <h3 id="newsHead">Správy o medveďoch</h3>
+                <p>Slovenské médiá a ŠOP SR</p>
+              </div>
+              <span class="activity-count" id="newsCount"><!-- SSR_NEWS_COUNT --></span>
             </div>
-            <button type="submit" class="btn notify-btn" id="notifyBtn">
-              <i class="ph ph-bell" aria-hidden="true"></i>
-              <span>Prihlásiť sa na odber</span>
-            </button>
-            <p class="notify-privacy">
-              Prihlásením súhlasíte so spracovaním e-mailu na evidenciu odberu.
-              Súhlas môžete kedykoľvek odvolať.
-              <a href="/privacy">Ako chránime vaše údaje</a>
-            </p>
-            <div id="notifyMessage" class="form-message" role="alert"></div>
-          </form>
+            <div id="newsList" class="list" aria-live="polite">
+              <!-- SSR_NEWS -->
+            </div>
+          </section>
         </div>
       </section>
     </main>
@@ -529,7 +259,7 @@
       <div class="footer-inner">
         <div class="footer-main">
           <div class="footer-brand">
-            <a class="footer-identity" href="/" aria-label="Kde je Medveď, domov">
+            <a class="footer-identity" href="/domov" aria-label="Kde je Medveď, domov">
               <span class="footer-brand-mark">
                 <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Logo Kde je Medveď" />
               </span>
@@ -539,9 +269,7 @@
               </span>
             </a>
             <p class="footer-description">
-              Mapa zobrazuje moderované hlásenia a verejné varovania. Slúži ako pomocná
-              orientácia, nie ako potvrdenie aktuálnej polohy zvieraťa. Medvede sa môžu
-              vyskytnúť aj mimo zaznačených miest.
+              Nezávislý prehľad moderovaných hlásení, verejných varovaní a správ o medveďoch na Slovensku.
             </p>
             <a class="footer-report-link" href="/nahlas">
               <i class="ph ph-map-pin-plus" aria-hidden="true"></i>
@@ -555,6 +283,7 @@
               <h2>Preskúmajte</h2>
               <nav class="footer-links" aria-label="Hlavné odkazy v pätičke">
                 <a href="/">Aktuálna mapa</a>
+                <a href="/domov">Domov</a>
                 <a href="/stats">Štatistiky</a>
                 <a href="/bezpecnost">Bezpečnosť</a>
                 <a href="/nahlas">Nahlásiť výskyt</a>
@@ -580,12 +309,13 @@
       </div>
     </footer>
 
+    <script src="/page.js?v=20260731-map-first1"></script>
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=mobile-map-fit3"></script>
+    <script src="/app.js?v=20260731-map-controls2"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

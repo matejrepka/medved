@@ -84,6 +84,16 @@ const PUBLIC_PAGES = {
     dynamicLastmod: true,
     priority: "1.0",
   },
+  "/domov": {
+    file: "domov.html",
+    title: "Kde je Medveď | Hlásenia, mapa a bezpečnostné informácie",
+    description:
+      "Spoznajte projekt Kde je Medveď. Nájdete tu aktuálnu mapu hlásení, bezpečnostné odporúčania, štatistiky a možnosť nahlásiť pozorovanie.",
+    schemaType: "WebPage",
+    dynamicLastmod: true,
+    changefreq: "daily",
+    priority: "0.9",
+  },
   "/stats": {
     file: "stats.html",
     title: "Štatistiky výskytu medveďov na Slovensku | Kde je Medveď",
@@ -548,9 +558,9 @@ function safeHttpUrl(value) {
   }
 }
 
-function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…") {
+function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…", limit = 15) {
   if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
-  return items.slice(0, 15).map((item) => {
+  return items.slice(0, limit).map((item) => {
     const sourceLinks = sightingSourceLinks(item)
       .map((entry) => ({ ...entry, url: safeHttpUrl(entry.url) }))
       .filter((entry) => entry.url);
@@ -565,7 +575,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
           `<a class="card-link" href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.label)} <span aria-hidden="true">→</span></a>`
         ).join("")}</div>`
       : "";
-    return `<article class="card sighting" data-id="${escapeHtml(item.id)}">
+    return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
       <h3 class="card-title">${escapeHtml(item.location || "Lokalita neuvedená")}</h3>
       <div class="card-meta"><span class="meta-source">${escapeHtml(source)}</span><time datetime="${escapeHtml(item.reportedAt || "")}">${escapeHtml(formatSlovakDate(item.reportedAt, true))}</time></div>
       ${note}${links}
@@ -573,14 +583,14 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
   }).join("\n");
 }
 
-function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…") {
+function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limit = 12) {
   if (!items.length) return `<p class="empty">${escapeHtml(emptyMessage)}</p>`;
-  return items.slice(0, 12).map((item) => {
+  return items.slice(0, limit).map((item) => {
     const href = item.articleUrl || item.link || item.googleNewsUrl || "";
     const link = href
       ? `<a class="card-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Prečítať správu <span aria-hidden="true">→</span></a>`
       : "";
-    return `<article class="card news" data-id="${escapeHtml(item.id)}">
+    return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}">
       <h3 class="card-title">${escapeHtml(item.title || "Správa o medveďovi")}</h3>
       <div class="card-meta"><span class="meta-source">${escapeHtml(item.source || "verejný zdroj")}</span><time datetime="${escapeHtml(item.date || "")}">${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${link}
@@ -686,6 +696,32 @@ function renderLocationLinks(locations, currentSlug = "") {
 function renderSsrUpdated(value) {
   if (!value) return "";
   return `Aktualizované <time datetime="${escapeHtml(value)}">${escapeHtml(formatSlovakDate(value, true))}</time>`;
+}
+
+function renderHomeStats(overview) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const weekStart = todayStart - 6 * 86400000;
+  const sightings = Array.isArray(overview?.warnings) ? overview.warnings : [];
+  const news = Array.isArray(overview?.news) ? overview.news : [];
+  const countSince = (items, field, since) => items.filter((item) => {
+    const time = new Date(item?.[field] || 0).getTime();
+    return Number.isFinite(time) && time >= since;
+  }).length;
+  const stats = [
+    [countSince(sightings, "reportedAt", todayStart), "hlásení dnes"],
+    [countSince(sightings, "reportedAt", weekStart), "hlásení za 7 dní"],
+    [countSince(news, "date", todayStart), "správ dnes"],
+  ];
+
+  return stats
+    .map(
+      ([value, label]) => `<div class="stat">
+        <span class="stat-num">${escapeHtml(value.toLocaleString("sk-SK"))}</span>
+        <span class="stat-label">${escapeHtml(label)}</span>
+      </div>`
+    )
+    .join("\n");
 }
 
 function slovakCount(value, one, few, many) {
@@ -1055,19 +1091,33 @@ async function renderPublicPage(req, res, pathname, page) {
     let html = await getPageTemplate(page.file);
     html = html.replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, page, origin));
 
-    // Domovská stránka dostane aj serverom vykreslené najnovšie dáta. Interaktívny
-    // klient ich po načítaní prevezme, no crawlery a návštevníci bez JS už nevidia
-    // prázdny app shell.
-    if (pathname === "/") {
+    // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
+    if (pathname === "/" || pathname === "/domov") {
       const overview = await loadLocationOverview().catch((err) => {
-        console.error("[seo] homepage SSR failed:", err.message);
-        return { warnings: [], news: [], locations: [], topLocations: [] };
+        console.error("[seo] public overview SSR failed:", err.message);
+        return {
+          warnings: [],
+          news: [],
+          locations: [],
+          topLocations: [],
+          report: { totals: {} },
+        };
       });
-      html = html
-        .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings))
-        .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news))
-        .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
-        .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+      if (pathname === "/") {
+        html = html
+          .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
+          .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
+          .replace("<!-- SSR_WARNING_COUNT -->", escapeHtml(overview.warnings.length))
+          .replace("<!-- SSR_NEWS_COUNT -->", escapeHtml(overview.news.length))
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+      } else {
+        html = html
+          .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(overview))
+          .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings))
+          .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news))
+          .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+      }
     }
 
     const canonical = absoluteUrl(origin, pathname);
@@ -1239,6 +1289,7 @@ app.get("/llms.txt", async (req, res) => {
 
 ## Najdôležitejšie stránky
 - [Aktuálna mapa](${absoluteUrl(origin, "/")})
+- [Domov projektu](${absoluteUrl(origin, "/domov")})
 - [Štatistiky hlásení](${absoluteUrl(origin, "/stats")})
 - [Bezpečnosť pri stretnutí s medveďom](${absoluteUrl(origin, "/bezpecnost")})
 - [Zdroje, metodika a obmedzenia](${absoluteUrl(origin, "/o-mape")})
