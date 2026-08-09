@@ -6,6 +6,7 @@ import {
   deriveIncidentDateFacts,
   groupNewsByIncidents,
   inferIncidentSourceType,
+  isSubstantiveIncidentSummary,
   rankIncidentSuggestions,
   scoreIncidentMatch,
   selectAutomaticIncidentMatch,
@@ -139,7 +140,7 @@ test("automatic matching uses victim details to distinguish nearby weekend attac
   assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match?.id, "valca-cyclist");
 });
 
-test("automatic matching uses a clear distance advantage for neighboring locality names", () => {
+test("automatic matching does not merge neighboring attacks from distance alone", () => {
   const criteria = {
     eventDate: "2026-08-09",
     locality: "Sučany",
@@ -166,7 +167,7 @@ test("automatic matching uses a clear distance advantage for neighboring localit
     },
   ], criteria);
 
-  assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match?.id, "turany");
+  assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match, null);
 });
 
 test("missing AI event facts fall back to an approximate publication day", () => {
@@ -210,7 +211,7 @@ test("public grouping keeps all article coverage and promotes stronger source", 
   assert.equal(result[0].category, "warning");
 });
 
-test("public incident card keeps every warning location from associated coverage", () => {
+test("public incident card exposes only its canonical location, not contextual places", () => {
   const result = groupNewsByIncidents({
     articles: [{
       id: "multi",
@@ -233,8 +234,71 @@ test("public incident card keeps every warning location from associated coverage
     links: [{ incident_id: "incident-multi", news_id: "multi", source_type: "local_original" }],
   });
 
-  assert.deepEqual(result[0].locations.map((location) => location.place), ["Važec", "Východná"]);
+  assert.deepEqual(result[0].locations.map((location) => location.place), ["Važec"]);
   assert.deepEqual(result[0].coverage[0].locations.map((location) => location.place), ["Važec", "Východná"]);
+});
+
+test("public incident card prefers a substantive focused AI summary over a headline", () => {
+  const result = groupNewsByIncidents({
+    articles: [{
+      id: "focused",
+      source: "Miestne noviny",
+      title: "Medveď napadol cyklistu pri Martine",
+      summary: "V sobotu večer napadol medveď vo Valčianskej doline 55-ročného cyklistu. Zraneného muža previezli do nemocnice v Martine a oblasť monitoruje zásahový tím.",
+      summaryGeneratedByAi: true,
+      date: "2026-08-09",
+      category: "warning",
+      locations: [{ place: "Valčianska dolina", lat: 49.019, lng: 18.791 }],
+    }],
+    incidents: [{
+      id: "summary-incident",
+      event_date: "2026-08-08",
+      locality: "Valčianska dolina",
+      title: "Medveď napadol cyklistu pri Martine",
+      summary: "Medveď napadol cyklistu pri Martine",
+      primary_news_id: "focused",
+    }],
+    links: [{ incident_id: "summary-incident", news_id: "focused", source_type: "local_original" }],
+  });
+
+  assert.match(result[0].summary, /55-ročného cyklistu/);
+  assert.equal(result[0].summaryGeneratedByAi, true);
+});
+
+test("headline-sized editorial text is not treated as an incident summary", () => {
+  assert.equal(
+    isSubstantiveIncidentSummary(
+      "Medveď sa pohybuje pri turistickom chodníku, obec vydala varovanie pred jeho výskytom v tejto lokalite.",
+      "Medveď sa pohybuje pri turistickom chodníku"
+    ),
+    false
+  );
+});
+
+test("a substantive canonical summary beats article context about other incidents", () => {
+  const canonical = "V nedeľu našli pri zjazde z diaľnice D1 na Turany zraneného 42-ročného muža. Záchranári ho previezli do nemocnice v Martine a polícia preveruje možný útok medveďa.";
+  const result = groupNewsByIncidents({
+    articles: [{
+      id: "contextual",
+      title: "Druhý útok medveďa počas víkendu",
+      summary: "V Sučanoch mal medveď napadnúť muža, vo Valčianskej doline zaútočil na cyklistu a v Banskej Bystrici zaznamenali jeho výskyt. Všetky tri udalosti sa odohrali počas jedného víkendu.",
+      summaryGeneratedByAi: true,
+      locations: [{ place: "Sučany", lat: 49.099, lng: 18.994 }],
+      date: "2026-08-09",
+      category: "warning",
+    }],
+    incidents: [{
+      id: "turany-summary",
+      event_date: "2026-08-09",
+      locality: "Turany",
+      title: "Druhý incident s medveďom vo Veľkej Fatre",
+      summary: canonical,
+      primary_news_id: "contextual",
+    }],
+    links: [{ incident_id: "turany-summary", news_id: "contextual", source_type: "local_original" }],
+  });
+
+  assert.equal(result[0].summary, canonical);
 });
 
 test("source inference describes type, not universal authority", () => {

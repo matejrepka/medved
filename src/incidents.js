@@ -1,4 +1,4 @@
-import { mergeNewsLocations, normalizeNewsLocations } from "./news-locations.js";
+import { normalizeNewsLocations } from "./news-locations.js";
 
 const SOURCE_TYPE_PRIORITY = Object.freeze({
   official_notice: 10,
@@ -327,14 +327,16 @@ function automaticMatchTier(incident, criteria = {}) {
     (locality.includes(candidateLocality) || candidateLocality.includes(locality))
   );
   const samePoint = match.distanceKm !== null && match.distanceKm <= 2;
-  const nearby = match.distanceKm !== null && match.distanceKm <= 30;
-  const closePoint = match.distanceKm !== null && match.distanceKm <= 10;
+  const nearby = match.distanceKm !== null && match.distanceKm <= 20;
   const days = match.dateDistanceDays;
   const noConflicts = !match.markerConflicts?.length;
-  const contentAgreement =
-    (match.markerOverlap?.length || 0) > 0 ||
-    ((match.eventTypeOverlap?.length || 0) > 0 && match.similarity >= 0.08) ||
-    match.similarity >= 0.2;
+  const markerOverlap = match.markerOverlap || [];
+  const identityMarkers = markerOverlap.filter((marker) => !marker.startsWith("event:"));
+  const strongContentAgreement =
+    match.similarity >= 0.32 ||
+    (identityMarkers.length >= 1 && match.similarity >= 0.1) ||
+    (markerOverlap.length >= 2 && match.similarity >= 0.1);
+  const samePlaceContentAgreement = strongContentAgreement || match.similarity >= 0.18;
   const hasCriteriaContent = Boolean(
     normalizeIncidentText([criteria.title, criteria.summary, criteria.query].filter(Boolean).join(" "))
   );
@@ -342,17 +344,18 @@ function automaticMatchTier(incident, criteria = {}) {
   if (
     noConflicts && match.score >= 85 && days === 0 &&
     (sameLocality || relatedLocality || samePoint) &&
-    (!hasCriteriaContent || contentAgreement)
+    (!hasCriteriaContent || strongContentAgreement)
   ) return 3;
 
   if (
-    noConflicts && days !== null && days <= 3 && contentAgreement && match.score >= 76 &&
-    (sameLocality || relatedLocality || closePoint)
+    noConflicts && days !== null && days <= 1 && samePlaceContentAgreement && match.score >= 76 &&
+    (sameLocality || relatedLocality || samePoint)
   ) return 2;
 
   if (
-    noConflicts && days !== null && days <= 3 && nearby &&
-    (match.markerOverlap?.length || 0) > 0 && match.similarity >= 0.08 && match.score >= 42
+    noConflicts && days !== null && days <= 1 && nearby &&
+    identityMarkers.length >= 1 && markerOverlap.length >= 2 &&
+    match.similarity >= 0.16 && match.score >= 50
   ) return 1;
 
   return 0;
@@ -419,6 +422,87 @@ function publicCoverageArticle(article, link = {}) {
   };
 }
 
+function comparableSummaryText(value) {
+  return normalizeIncidentText(value).replace(/\b(?:tasr|novy cas|topky|zoznam)\b/g, "").trim();
+}
+
+export function isSubstantiveIncidentSummary(value, title = "") {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  // A headline-sized sentence is not a summary. New AI summaries are asked to
+  // land between 180 and 420 characters; the lower guard still leaves room
+  // for concise factual notices while rejecting empty editorial paraphrases.
+  if (text.length < 140 || text.split(" ").length < 20) return false;
+  if (/^(?:sprava|clanok)\s+(?:informuje|sa venuje)|podrobnosti su dostupne/i.test(normalizeIncidentText(text))) {
+    return false;
+  }
+  const normalized = comparableSummaryText(text);
+  const normalizedTitle = comparableSummaryText(title);
+  if (normalizedTitle && (
+    normalized === normalizedTitle ||
+    (normalized.startsWith(normalizedTitle) && normalized.split(" ").length - normalizedTitle.split(" ").length <= 4)
+  )) return false;
+  return true;
+}
+
+function summaryCandidateScore({ text, title, generatedByAi, official, locationCount, canonical, incidentScoped }) {
+  if (!isSubstantiveIncidentSummary(text, title)) return -Infinity;
+  let score = Math.min(String(text).length, 520) / 5;
+  if (generatedByAi) score += 35;
+  if (official) score += 12;
+  if (canonical) score += 10;
+  // A substantive incident summary has already been scoped to the event.
+  // Article summaries may mention other incidents as weekend context even
+  // when they come from the canonical source article.
+  if (incidentScoped) score += 45;
+  if (locationCount > 1) score -= 45;
+  if (/\d/.test(text)) score += 8;
+  if (/[.!?]\s+\S/.test(text)) score += 8;
+  if (/…|\.\.\.$/.test(String(text).trim())) score -= 35;
+  return score;
+}
+
+export function selectIncidentSummary({ incident = {}, entries = [], primary = {} } = {}) {
+  const candidates = [];
+  candidates.push({
+    text: incident.summary,
+    title: incident.title,
+    generatedByAi: false,
+    official: incident.verification_status === "official_notice",
+    locationCount: 1,
+    canonical: true,
+    incidentScoped: true,
+  });
+
+  for (const { article, link } of entries) {
+    candidates.push({
+      text: article.summary,
+      title: article.title,
+      generatedByAi: Boolean(article.summaryGeneratedByAi),
+      official: link?.source_type === "official_notice",
+      locationCount: normalizeNewsLocations(article.locations).length || 1,
+      canonical: String(article.id) === String(incident.primary_news_id),
+      incidentScoped: false,
+    });
+  }
+
+  const selected = candidates
+    .map((candidate) => ({
+      ...candidate,
+      score: summaryCandidateScore(candidate),
+    }))
+    .sort((a, b) => b.score - a.score)[0];
+
+  if (selected && Number.isFinite(selected.score)) {
+    return {
+      text: String(selected.text).replace(/\s+/g, " ").trim().slice(0, 520),
+      generatedByAi: selected.generatedByAi,
+    };
+  }
+
+  const fallback = primary.summary || primary.snippet || incident.summary || incident.title || "";
+  return { text: String(fallback).replace(/\s+/g, " ").trim().slice(0, 520), generatedByAi: false };
+}
+
 export function groupNewsByIncidents({ articles = [], incidents = [], links = [] } = {}) {
   const incidentById = new Map(incidents.map((incident) => [String(incident.id), incident]));
   const linkByNewsId = new Map(links.map((link) => [String(link.news_id), link]));
@@ -452,20 +536,22 @@ export function groupNewsByIncidents({ articles = [], incidents = [], links = []
       .filter(Boolean)
       .sort()
       .pop() || null;
-    const articleLocations = mergeNewsLocations(entries.map(({ article }) => article));
-    const locations = articleLocations.length
-      ? articleLocations
-      : normalizeNewsLocations({ place: incident.locality, lat: incident.lat, lng: incident.lng });
+    const locations = normalizeNewsLocations({
+      place: incident.locality || primary.place,
+      lat: incident.lat ?? primary.lat,
+      lng: incident.lng ?? primary.lng,
+    });
     const primaryLocation = locations[0] || null;
+    const selectedSummary = selectIncidentSummary({ incident, entries, primary });
 
     grouped.push({
       id: `incident-${incidentId}`,
       incidentId,
       isIncident: true,
       title: incident.title,
-      snippet: incident.summary || primary.summary || primary.snippet || "",
-      summary: incident.summary || primary.summary || primary.snippet || "",
-      summaryGeneratedByAi: Boolean(primary.summaryGeneratedByAi && !incident.summary),
+      snippet: selectedSummary.text,
+      summary: selectedSummary.text,
+      summaryGeneratedByAi: selectedSummary.generatedByAi,
       date: incident.event_date,
       eventDate: incident.event_date,
       place: primaryLocation?.place || incident.locality,

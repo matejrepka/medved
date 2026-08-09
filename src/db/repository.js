@@ -8,6 +8,7 @@ import {
   deriveIncidentDateFacts,
   groupNewsByIncidents,
   inferIncidentSourceType,
+  isSubstantiveIncidentSummary,
   rankIncidentSuggestions,
 } from "../incidents.js";
 import { newsLocations, normalizeNewsLocations } from "../news-locations.js";
@@ -1147,6 +1148,12 @@ export async function reviewNewsWithAutomaticIncident(id, fields) {
   // provide context about other weekend incidents and must not veto a correct
   // match for the article's main subject.
   const primary = locations[0];
+  const analysisPlaces = Array.isArray(analysis.places) ? analysis.places : [];
+  const focusedAiSummary = analysisPlaces.length <= 1 &&
+    isSubstantiveIncidentSummary(payload.aiSummary, row.title)
+    ? payload.aiSummary
+    : null;
+  const matchingSummary = focusedAiSummary || row.snippet;
   const criteria = {
     eventDate: facts.eventDate,
     datePrecision: facts.precision,
@@ -1154,7 +1161,7 @@ export async function reviewNewsWithAutomaticIncident(id, fields) {
     lat: primary.lat,
     lng: primary.lng,
     title: row.title,
-    summary: row.snippet,
+    summary: matchingSummary,
   };
   const suggestions = await loadIncidentSuggestions(criteria);
   const decision = decideAutomaticIncidentMatch(suggestions, criteria);
@@ -1182,7 +1189,7 @@ export async function reviewNewsWithAutomaticIncident(id, fields) {
     incidentLat: primary.lat,
     incidentLng: primary.lng,
     incidentTitle: row.title,
-    incidentSummary: row.snippet,
+    incidentSummary: matchingSummary,
     incidentStatus: "active",
   });
   return {
@@ -1215,44 +1222,19 @@ export async function loadIncidentSuggestions(criteria = {}) {
   if (error && isMissingRelation(error)) return [];
   if (error) throw error;
 
-  const preliminary = rankIncidentSuggestions(data || [], criteria, 24);
-  if (!preliminary.length) return [];
+  const ranked = rankIncidentSuggestions(data || [], criteria, 8);
+  if (!ranked.length) return [];
 
   const { data: links, error: linksError } = await supabase
     .from("incident_news_links")
-    .select("incident_id,news_id")
-    .in("incident_id", preliminary.map((incident) => incident.id));
+    .select("incident_id")
+    .in("incident_id", ranked.map((incident) => incident.id));
   if (linksError) throw linksError;
 
   const counts = new Map();
   for (const link of links || []) {
     counts.set(link.incident_id, (counts.get(link.incident_id) || 0) + 1);
   }
-
-  const linkedNewsIds = [...new Set((links || []).map((link) => link.news_id).filter(Boolean))];
-  const coverageRows = linkedNewsIds.length
-    ? await loadApprovedNewsRowsByIds(linkedNewsIds, "id,title,snippet")
-    : [];
-
-  const newsTextById = new Map(coverageRows.map((row) => [
-    row.id,
-    // AI summaries may legitimately mention secondary incidents as context.
-    // Only source-owned title/snippet may influence a bucket match.
-    [row.title, row.snippet].filter(Boolean).join(" "),
-  ]));
-  const coverageByIncident = new Map();
-  for (const link of links || []) {
-    const text = newsTextById.get(link.news_id);
-    if (!text) continue;
-    if (!coverageByIncident.has(link.incident_id)) coverageByIncident.set(link.incident_id, []);
-    coverageByIncident.get(link.incident_id).push(text);
-  }
-
-  const enriched = preliminary.map((incident) => ({
-    ...incident,
-    coverage_text: (coverageByIncident.get(incident.id) || []).join(" "),
-  }));
-  const ranked = rankIncidentSuggestions(enriched, criteria, 8);
 
   return ranked.map((incident) => ({
     ...incident,
