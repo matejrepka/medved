@@ -41,7 +41,7 @@ export function inferIncidentSourceType(article = {}) {
 
   if (
     /\b(sop sr|statna ochrana prirody|zasahovy tim|policia|policajny zbor|mestska policia|obec|mesto|mestsky urad|obecny urad)\b/.test(combined) ||
-    /\b(sopsr sk|minv sk|policia sk)\b/.test(combined)
+    /\b(sopsr sk|minv sk|policia sk|pozormedved sk)\b/.test(combined)
   ) {
     return "official_notice";
   }
@@ -69,13 +69,157 @@ function textTokens(value) {
   return new Set(normalizeIncidentText(value).split(" ").filter((token) => token.length >= 4));
 }
 
+function isoDay(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+}
+
+/**
+ * Prefer an AI-extracted event day only when its own confidence is strong.
+ * Otherwise keep the article groupable with a clearly labelled approximate
+ * publication/first-seen date instead of leaving it permanently unbucketed.
+ */
+export function deriveIncidentDateFacts({
+  analysis = {},
+  category = "warning",
+  publishedAt = null,
+  scrapedAt = null,
+} = {}) {
+  analysis = analysis && typeof analysis === "object" ? analysis : {};
+  const eventDate = /^\d{4}-\d{2}-\d{2}$/.test(String(analysis.eventDate || ""))
+    ? isoDay(analysis.eventDate)
+    : null;
+  const confidence = Number(analysis.eventDateConfidence);
+  if (
+    category === "warning" &&
+    eventDate &&
+    analysis.eventDatePrecision === "day" &&
+    Number.isFinite(confidence) && confidence >= 0.8
+  ) {
+    return { eventDate, precision: "day", source: "ai" };
+  }
+
+  const publicationDay = isoDay(publishedAt);
+  if (publicationDay) {
+    return { eventDate: publicationDay, precision: "approximate", source: "publication" };
+  }
+
+  const firstSeenDay = isoDay(scrapedAt);
+  return firstSeenDay
+    ? { eventDate: firstSeenDay, precision: "approximate", source: "scrape" }
+    : null;
+}
+
+const GENERIC_INCIDENT_TOKENS = new Set([
+  "aktualne", "dalsi", "dalsia", "dalsie", "hnedy", "medved", "medvedi",
+  "mimoriadne", "slovensko", "slovensku", "sprava", "tento", "tuto",
+  "varovanie", "velky", "vyskyt",
+]);
+
+const SEMANTIC_ROOTS = Object.freeze([
+  [/^cyklist/, "cyklista"],
+  [/^turist/, "turista"],
+  [/^polovn/, "polovnik"],
+  [/^diet|^chlapc|^dievcat/, "dieta"],
+  [/^utoc|^utok/, "utok"],
+  [/^napad/, "napadnutie"],
+  [/^(?:do|po)hryz/, "pohryzenie"],
+  [/^strh/, "strhnutie"],
+  [/^zran/, "zranenie"],
+  [/^polytraum/, "polytrauma"],
+  [/^nemocnic/, "nemocnica"],
+  [/^dialnic/, "dialnica"],
+  [/^zjazd/, "zjazd"],
+  [/^zraz/, "zrazka"],
+  [/^vozidl/, "vozidlo"],
+  [/^autom?$/, "auto"],
+  [/^mlad/, "mlada"],
+  [/^nahan/, "nahananie"],
+  [/^pohyb/, "pohyb"],
+  [/^spozor|^pozorovan|^zaznamen|^objavil|^videl/, "pozorovanie"],
+  [/^usmrt|^zastrel|^zabil/, "usmrtenie"],
+  [/^vrtulnik/, "vrtulnik"],
+  [/^zasahov/, "zasahovy"],
+  [/^monitor/, "monitorovanie"],
+]);
+
+function semanticToken(token) {
+  if (/^\d+$/.test(token)) return token;
+  for (const [pattern, root] of SEMANTIC_ROOTS) {
+    if (pattern.test(token)) return root;
+  }
+  if (GENERIC_INCIDENT_TOKENS.has(token)) return null;
+  return token.length >= 8 ? token.slice(0, 7) : token;
+}
+
+function semanticTokens(value) {
+  return new Set(
+    [...textTokens(value)]
+      .map(semanticToken)
+      .filter(Boolean)
+  );
+}
+
 function tokenSimilarity(a, b) {
-  const first = textTokens(a);
-  const second = textTokens(b);
+  const first = semanticTokens(a);
+  const second = semanticTokens(b);
   if (!first.size || !second.size) return 0;
   let overlap = 0;
   for (const token of first) if (second.has(token)) overlap += 1;
-  return overlap / Math.max(first.size, second.size);
+  if (!overlap) return 0;
+  const cosine = overlap / Math.sqrt(first.size * second.size);
+  const containment = overlap / Math.min(first.size, second.size);
+  return cosine * 0.65 + containment * 0.35;
+}
+
+function eventMarkers(value) {
+  const text = normalizeIncidentText(value);
+  const markers = new Set();
+  const add = (marker, pattern) => {
+    if (pattern.test(text)) markers.add(marker);
+  };
+
+  add("victim:cyclist", /\bcyklist/);
+  add("victim:hunter", /\bpolovn/);
+  add("victim:tourist", /\bturist/);
+  add("victim:child", /\b(?:diet|chlapc|dievcat)/);
+  add("place:highway", /\b(?:dialnic|zjazd|d1)\b/);
+  add("event:collision", /\b(?:zrazk|zraz)\b.{0,45}\b(?:auto|vozidl|medved)|\b(?:auto|vozidl)\b.{0,45}\b(?:zrazk|zraz)\b/);
+  add("event:attack", /\b(?:utoc|utok|napad|dohryz|pohryz|strh|polytraum|zran|poranen|nemocnic|hospital)/);
+  add("event:chase", /\bnahan/);
+  add("event:sighting", /\b(?:vyskyt|pohyb|spozor|pozorovan|zaznamen|objavil|videl|potul)/);
+  add("animal:cubs", /\b(?:mlada|mladat|mladatami)\b/);
+  add("outcome:killed", /\b(?:usmrt|zastrel|zabil)/);
+  add("response:helicopter", /\bvrtulnik/);
+
+  for (const match of text.matchAll(/\b(\d{1,2})\s*(?:roc|rocn)/g)) {
+    const age = Number(match[1]);
+    if (age >= 3 && age <= 99) markers.add(`age:${age}`);
+  }
+  return markers;
+}
+
+function markerCategory(marker) {
+  return String(marker).split(":", 1)[0];
+}
+
+function compareEventMarkers(a, b) {
+  const first = eventMarkers(a);
+  const second = eventMarkers(b);
+  const overlap = [...first].filter((marker) => second.has(marker));
+  const conflicts = [];
+  for (const category of ["age"]) {
+    const left = [...first].filter((marker) => markerCategory(marker) === category);
+    const right = [...second].filter((marker) => markerCategory(marker) === category);
+    if (left.length && right.length && !left.some((marker) => right.includes(marker))) {
+      conflicts.push(category);
+    }
+  }
+  const firstTypes = [...first].filter((marker) => marker.startsWith("event:"));
+  const secondTypes = [...second].filter((marker) => marker.startsWith("event:"));
+  const eventTypeOverlap = firstTypes.filter((marker) => secondTypes.includes(marker));
+  return { overlap, conflicts, eventTypeOverlap };
 }
 
 function coordinateDistanceKm(latA, lngA, latB, lngB) {
@@ -122,16 +266,40 @@ export function scoreIncidentMatch(incident, criteria = {}) {
     if (days <= 30) reasons.push(days === 0 ? "rovnaký dátum" : `rozdiel ${days} dní`);
   }
 
-  const similarity = tokenSimilarity(
-    [criteria.title, criteria.summary, criteria.query].filter(Boolean).join(" "),
-    [incident.title, incident.summary].filter(Boolean).join(" ")
-  );
-  if (similarity >= 0.15) {
-    score += Math.round(Math.min(similarity, 1) * 15);
+  const criteriaText = [criteria.title, criteria.summary, criteria.query].filter(Boolean).join(" ");
+  const incidentText = [incident.title, incident.summary, incident.coverage_text, incident.coverageText]
+    .filter(Boolean)
+    .join(" ");
+  const similarity = tokenSimilarity(criteriaText, incidentText);
+  const markerComparison = compareEventMarkers(criteriaText, incidentText);
+  if (similarity >= 0.08) {
+    score += Math.round(Math.min(similarity, 1) * 25);
     reasons.push("podobný obsah");
   }
 
-  return { score, reasons, dateDistanceDays: days, distanceKm };
+  if (markerComparison.eventTypeOverlap.length) {
+    score += 8;
+    reasons.push("rovnaký typ udalosti");
+  }
+  if (markerComparison.overlap.length) {
+    score += Math.min(24, markerComparison.overlap.length * 8);
+    reasons.push("zhodné charakteristické údaje");
+  }
+  if (markerComparison.conflicts.length) {
+    score -= markerComparison.conflicts.length * 25;
+    reasons.push("rozporné charakteristické údaje");
+  }
+
+  return {
+    score,
+    reasons,
+    dateDistanceDays: days,
+    distanceKm,
+    similarity,
+    markerOverlap: markerComparison.overlap,
+    markerConflicts: markerComparison.conflicts,
+    eventTypeOverlap: markerComparison.eventTypeOverlap,
+  };
 }
 
 export function rankIncidentSuggestions(incidents, criteria = {}, limit = 6) {
@@ -149,28 +317,89 @@ export function rankIncidentSuggestions(incidents, criteria = {}, limit = 6) {
     .slice(0, limit);
 }
 
-/**
- * Automatic attachment is intentionally stricter than the suggestion list.
- * A match needs the same calendar day plus either the same normalized locality
- * or coordinates within 2 km. A close runner-up makes the result ambiguous.
- */
-export function selectAutomaticIncidentMatch(suggestions = [], criteria = {}) {
+function automaticMatchTier(incident, criteria = {}) {
   const locality = normalizeIncidentText(criteria.locality || criteria.place);
-  const eligible = (suggestions || []).filter((incident) => {
-    const match = incident.match || scoreIncidentMatch(incident, criteria);
-    const sameLocality = locality && normalizeIncidentText(incident.locality) === locality;
-    const samePoint = match.distanceKm !== null && match.distanceKm <= 2;
-    return match.score >= 85 && match.dateDistanceDays === 0 && (sameLocality || samePoint);
-  });
-
-  if (!eligible.length) return null;
-  const sorted = [...eligible].sort((a, b) =>
-    (b.match?.score || 0) - (a.match?.score || 0)
+  const candidateLocality = normalizeIncidentText(incident.locality);
+  const match = incident.match || scoreIncidentMatch(incident, criteria);
+  const sameLocality = Boolean(locality && candidateLocality && locality === candidateLocality);
+  const relatedLocality = Boolean(
+    locality && candidateLocality &&
+    (locality.includes(candidateLocality) || candidateLocality.includes(locality))
   );
-  const first = sorted[0];
-  const second = sorted[1];
-  if (second && (first.match?.score || 0) - (second.match?.score || 0) < 15) return null;
-  return first;
+  const samePoint = match.distanceKm !== null && match.distanceKm <= 2;
+  const nearby = match.distanceKm !== null && match.distanceKm <= 30;
+  const closePoint = match.distanceKm !== null && match.distanceKm <= 10;
+  const days = match.dateDistanceDays;
+  const noConflicts = !match.markerConflicts?.length;
+  const contentAgreement =
+    (match.markerOverlap?.length || 0) > 0 ||
+    ((match.eventTypeOverlap?.length || 0) > 0 && match.similarity >= 0.08) ||
+    match.similarity >= 0.2;
+  const hasCriteriaContent = Boolean(
+    normalizeIncidentText([criteria.title, criteria.summary, criteria.query].filter(Boolean).join(" "))
+  );
+
+  if (
+    noConflicts && match.score >= 85 && days === 0 &&
+    (sameLocality || relatedLocality || samePoint) &&
+    (!hasCriteriaContent || contentAgreement)
+  ) return 3;
+
+  if (
+    noConflicts && days !== null && days <= 3 && contentAgreement && match.score >= 76 &&
+    (sameLocality || relatedLocality || closePoint)
+  ) return 2;
+
+  if (
+    noConflicts && days !== null && days <= 3 && nearby &&
+    (match.markerOverlap?.length || 0) > 0 && match.similarity >= 0.08 && match.score >= 42
+  ) return 1;
+
+  return 0;
+}
+
+/**
+ * Return the unique incident that best explains an article. Exact date/place
+ * still wins, but a publication-date fallback and nearby locality are accepted
+ * when the event type and distinctive facts agree. This handles common media
+ * variants such as Turany/Sučany without merging a cyclist attack with a
+ * different victim on the same weekend.
+ */
+export function decideAutomaticIncidentMatch(suggestions = [], criteria = {}) {
+  const eligible = (suggestions || [])
+    .map((incident) => ({
+      ...incident,
+      match: incident.match || scoreIncidentMatch(incident, criteria),
+    }))
+    .map((incident) => ({ ...incident, automaticTier: automaticMatchTier(incident, criteria) }))
+    .filter((incident) => incident.automaticTier > 0)
+    .sort((a, b) =>
+      b.automaticTier - a.automaticTier ||
+      b.match.score - a.match.score ||
+      String(b.event_date).localeCompare(String(a.event_date))
+    );
+
+  if (!eligible.length) return { match: null, ambiguous: false, candidates: [] };
+  const first = eligible[0];
+  const second = eligible[1];
+  const scoreGap = second ? first.match.score - second.match.score : Infinity;
+  const firstMarkers = first.match.markerOverlap?.length || 0;
+  const secondMarkers = second?.match?.markerOverlap?.length || 0;
+  const markerAdvantage = firstMarkers > secondMarkers;
+  const firstDistance = first.match.distanceKm;
+  const secondDistance = second?.match?.distanceKm;
+  const distanceAdvantage =
+    firstDistance !== null && secondDistance !== null &&
+    firstDistance <= 10 && secondDistance - firstDistance >= 8;
+  const ambiguous = Boolean(
+    second && first.automaticTier === second.automaticTier &&
+    scoreGap < 12 && !markerAdvantage && !distanceAdvantage
+  );
+  return { match: ambiguous ? null : first, ambiguous, candidates: eligible };
+}
+
+export function selectAutomaticIncidentMatch(suggestions = [], criteria = {}) {
+  return decideAutomaticIncidentMatch(suggestions, criteria).match;
 }
 
 function articlePublicUrl(article) {

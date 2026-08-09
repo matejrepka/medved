@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  decideAutomaticIncidentMatch,
+  deriveIncidentDateFacts,
   groupNewsByIncidents,
   inferIncidentSourceType,
   rankIncidentSuggestions,
@@ -86,6 +88,100 @@ test("automatic matching refuses two equally strong incident candidates", () => 
   assert.equal(selectAutomaticIncidentMatch(suggestions, criteria), null);
 });
 
+test("automatic matching joins a publication-day Turany article to the previous-day incident", () => {
+  const criteria = {
+    eventDate: "2026-08-09",
+    datePrecision: "approximate",
+    locality: "Turany",
+    lat: 49.1164,
+    lng: 19.03915,
+    title: "Medveď opäť útočil: 42-ročného muža previezli z Turian do nemocnice s polytraumou",
+  };
+  const suggestions = rankIncidentSuggestions([{
+    id: "turany-attack",
+    event_date: "2026-08-08",
+    locality: "Turany",
+    lat: 49.1164,
+    lng: 19.03915,
+    title: "Pri zjazde z diaľnice D1 našli zraneného muža po útoku medveďa",
+  }], criteria);
+
+  assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match?.id, "turany-attack");
+});
+
+test("automatic matching uses victim details to distinguish nearby weekend attacks", () => {
+  const criteria = {
+    eventDate: "2026-08-09",
+    locality: "Sučany",
+    lat: 49.1,
+    lng: 18.99,
+    title: "Po strete s medveďom neďaleko Martina skončil cyklista v nemocnici",
+  };
+  const suggestions = rankIncidentSuggestions([
+    {
+      id: "turany-man",
+      event_date: "2026-08-08",
+      locality: "Turany",
+      lat: 49.1164,
+      lng: 19.03915,
+      title: "Pri diaľnici našli zraneného 42-ročného muža",
+    },
+    {
+      id: "valca-cyclist",
+      event_date: "2026-08-08",
+      locality: "Valčianska dolina",
+      lat: 49.01,
+      lng: 18.83,
+      title: "Medveď napadol cyklistu pri Martine a strhol ho z bicykla",
+    },
+  ], criteria);
+
+  assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match?.id, "valca-cyclist");
+});
+
+test("automatic matching uses a clear distance advantage for neighboring locality names", () => {
+  const criteria = {
+    eventDate: "2026-08-09",
+    locality: "Sučany",
+    lat: 49.1,
+    lng: 18.99,
+    title: "V Sučanoch dohrýzol medveď muža, utrpel úraz hlavy a hrudníka",
+  };
+  const suggestions = rankIncidentSuggestions([
+    {
+      id: "turany",
+      event_date: "2026-08-08",
+      locality: "Turany",
+      lat: 49.1164,
+      lng: 19.03915,
+      title: "Pri zjazde z diaľnice našli zraneného muža po útoku medveďa",
+    },
+    {
+      id: "valca",
+      event_date: "2026-08-08",
+      locality: "Valčianska dolina",
+      lat: 49.01,
+      lng: 18.83,
+      title: "Medveď napadol cyklistu a strhol ho z bicykla",
+    },
+  ], criteria);
+
+  assert.equal(decideAutomaticIncidentMatch(suggestions, criteria).match?.id, "turany");
+});
+
+test("missing AI event facts fall back to an approximate publication day", () => {
+  assert.deepEqual(deriveIncidentDateFacts({
+    analysis: {},
+    category: "warning",
+    publishedAt: "2026-08-09T18:08:46Z",
+    scrapedAt: "2026-08-10T02:00:00Z",
+  }), {
+    eventDate: "2026-08-09",
+    precision: "approximate",
+    source: "publication",
+  });
+});
+
 test("public grouping keeps all article coverage and promotes stronger source", () => {
   const articles = [
     { id: "national", source: "Celoštátne médium", title: "Správa", date: "2026-07-03", articleUrl: "https://news.test/national", category: "article" },
@@ -143,6 +239,7 @@ test("public incident card keeps every warning location from associated coverage
 
 test("source inference describes type, not universal authority", () => {
   assert.equal(inferIncidentSourceType({ source: "ŠOP SR" }), "official_notice");
+  assert.equal(inferIncidentSourceType({ source: "pozormedved.sk" }), "official_notice");
   assert.equal(inferIncidentSourceType({ source: "TASR" }), "syndication");
   assert.equal(inferIncidentSourceType({ source: "Regionálne noviny" }), "local_original");
 });

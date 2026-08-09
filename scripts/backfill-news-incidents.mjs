@@ -10,6 +10,8 @@ import {
   reviewNewsWithIncident,
 } from "../src/db/repository.js";
 import {
+  decideAutomaticIncidentMatch,
+  deriveIncidentDateFacts,
   inferIncidentSourceType,
   normalizeIncidentText,
   scoreIncidentMatch,
@@ -21,66 +23,24 @@ const FETCH_CONCURRENCY = 5;
 const FETCH_TIMEOUT_MS = 12_000;
 const PAGE_SIZE = 1000;
 
-function isoDay(value) {
-  if (!value) return null;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toISOString().slice(0, 10);
-}
-
 export function historicalEventFacts(row, analysis = {}, fetchedPublishedAt = null) {
-  analysis = analysis && typeof analysis === "object" ? analysis : {};
-  const exactDate = /^\d{4}-\d{2}-\d{2}$/.test(String(analysis.eventDate || ""))
-    ? analysis.eventDate
-    : null;
-  const confidence = Number(analysis.eventDateConfidence);
-
-  if (
-    analysis.category === "warning" &&
-    exactDate &&
-    analysis.eventDatePrecision === "day" &&
-    Number.isFinite(confidence) &&
-    confidence >= 0.8
-  ) {
-    return { eventDate: exactDate, precision: "day", source: "ai" };
-  }
-
-  const publicationDay = isoDay(row.published_at || fetchedPublishedAt);
-  if (publicationDay) {
-    return { eventDate: publicationDay, precision: "approximate", source: "publication" };
-  }
-
-  const firstSeenDay = isoDay(row.scraped_at);
-  return firstSeenDay
-    ? { eventDate: firstSeenDay, precision: "approximate", source: "scrape" }
-    : null;
+  return deriveIncidentDateFacts({
+    analysis,
+    category: "warning",
+    publishedAt: row.published_at || fetchedPublishedAt,
+    scrapedAt: row.scraped_at,
+  });
 }
 
+// Kept as small public helpers for older dry-run tooling. New reconciliation
+// uses the richer automatic decision above, including approximate dates.
 export function selectApproximateHistoricalMatch(suggestions = [], criteria = {}) {
-  const locality = normalizeIncidentText(criteria.locality || criteria.place);
-  if (!locality || !criteria.eventDate) return null;
-
-  const eligible = suggestions
-    .map((incident) => ({
-      ...incident,
-      match: incident.match || scoreIncidentMatch(incident, criteria),
-    }))
-    .filter((incident) =>
-      incident.event_date === criteria.eventDate &&
-      normalizeIncidentText(incident.locality) === locality &&
-      incident.match.score >= 90
-    )
-    .sort((a, b) => b.match.score - a.match.score);
-
-  if (!eligible.length) return null;
-  if (eligible[1] && eligible[0].match.score - eligible[1].match.score < 15) return null;
-  return eligible[0];
+  return decideAutomaticIncidentMatch(suggestions, criteria).match;
 }
 
 export function selectUndatedHistoricalMatch(suggestions = [], criteria = {}) {
   const locality = normalizeIncidentText(criteria.locality || criteria.place);
   if (!locality) return null;
-
   const eligible = suggestions
     .map((incident) => ({
       ...incident,
@@ -90,13 +50,11 @@ export function selectUndatedHistoricalMatch(suggestions = [], criteria = {}) {
       normalizeIncidentText(incident.locality) === locality && incident.match.score >= 70
     )
     .sort((a, b) => b.match.score - a.match.score);
-
   if (!eligible.length) return null;
   if (eligible.length === 1) return eligible[0];
-  if (eligible[0].match.score < 73 || eligible[0].match.score - eligible[1].match.score < 5) {
-    return null;
-  }
-  return eligible[0];
+  return eligible[0].match.score >= 73 && eligible[0].match.score - eligible[1].match.score >= 5
+    ? eligible[0]
+    : null;
 }
 
 async function mapConcurrent(items, concurrency, worker) {
@@ -241,17 +199,15 @@ async function clusterApproximate(row, facts) {
   const primary = row.locations[0];
   const criteria = {
     eventDate: facts.eventDate,
+    datePrecision: facts.precision,
     locality: primary.place,
     lat: primary.lat,
     lng: primary.lng,
     title: row.title,
     summary: row.snippet,
   };
-  const matchCriteria = facts.source === "scrape" ? { ...criteria, eventDate: null } : criteria;
-  const suggestions = await loadIncidentSuggestions(matchCriteria);
-  const match = facts.source === "scrape"
-    ? selectUndatedHistoricalMatch(suggestions, matchCriteria)
-    : selectApproximateHistoricalMatch(suggestions, criteria);
+  const suggestions = await loadIncidentSuggestions(criteria);
+  const decision = decideAutomaticIncidentMatch(suggestions, criteria);
   const common = {
     status: "approved",
     category: "warning",
@@ -260,12 +216,16 @@ async function clusterApproximate(row, facts) {
     actor: "backfill:approximate-date",
   };
 
-  if (match) {
+  if (decision.match) {
     return reviewNewsWithIncident(row.id, {
       ...common,
       incidentAction: "attach",
-      incidentId: match.id,
+      incidentId: decision.match.id,
     });
+  }
+
+  if (decision.ambiguous) {
+    return { status: "approved", incidentId: null, reason: "ambiguous_match" };
   }
 
   return reviewNewsWithIncident(row.id, {

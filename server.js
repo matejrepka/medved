@@ -871,16 +871,26 @@ const locationOverviewCache = {
   inFlight: null,
 };
 
-async function loadLocationOverview() {
+function invalidateLocationOverviewCache() {
+  locationOverviewCache.value = null;
+  locationOverviewCache.version = null;
+  locationOverviewCache.expiresAt = 0;
+}
+
+async function loadLocationOverview({ force = false } = {}) {
   const version = latestContentDate();
   if (
+    !force &&
     locationOverviewCache.value &&
     locationOverviewCache.version === version &&
     locationOverviewCache.expiresAt > Date.now()
   ) {
     return locationOverviewCache.value;
   }
-  if (locationOverviewCache.inFlight) return locationOverviewCache.inFlight;
+  if (locationOverviewCache.inFlight) {
+    const overview = await locationOverviewCache.inFlight;
+    if (!force) return overview;
+  }
 
   locationOverviewCache.inFlight = (async () => {
     const [warnings, news, gz] = await Promise.all([
@@ -1700,6 +1710,27 @@ function findRecordToken(slug) {
   return String(slug || "").match(/-([a-f0-9]{10})$/i)?.[1]?.toLowerCase() || "";
 }
 
+function findOverviewRecord(overview, token, requestedKind) {
+  if (!token) return { record: null, recordType: requestedKind };
+
+  if (requestedKind === "news") {
+    return {
+      record: overview.news.find((item) => recordToken(item.id) === token) || null,
+      recordType: "news",
+    };
+  }
+
+  const warning = overview.warnings.find((item) => recordToken(item.id) === token) || null;
+  if (warning) return { record: warning, recordType: "warning" };
+
+  return {
+    record: overview.news.find((item) =>
+      item.category === "warning" && recordToken(item.id) === token
+    ) || null,
+    recordType: "news",
+  };
+}
+
 function recordLocations(record, recordType) {
   if (recordType === "warning") {
     return normalizeNewsLocations(record.location ? [record.location] : []);
@@ -1753,24 +1784,21 @@ function renderDetailSources(source) {
 
 async function renderRecordPage(req, res, requestedKind) {
   try {
-    const overview = await loadLocationOverview();
+    let overview = await loadLocationOverview();
     const token = findRecordToken(req.params.slug);
-    let record = null;
-    let recordType = requestedKind;
+    let { record, recordType } = findOverviewRecord(overview, token, requestedKind);
 
-    if (token) {
-      if (requestedKind === "news") {
-        record = overview.news.find((item) => recordToken(item.id) === token) || null;
-        if (record?.category === "warning") return res.redirect(301, newsPath(record));
-      } else {
-        record = overview.warnings.find((item) => recordToken(item.id) === token) || null;
-        if (!record) {
-          record = overview.news.find((item) =>
-            item.category === "warning" && recordToken(item.id) === token
-          ) || null;
-          if (record) recordType = "news";
-        }
-      }
+    // /api/warnings reads approved community reports directly from the database,
+    // while the SEO overview is cached. A newly approved report can therefore be
+    // visible in a card a few minutes before its detail exists in that cache.
+    // Refresh once before returning a false 404.
+    if (!record && token) {
+      overview = await loadLocationOverview({ force: true });
+      ({ record, recordType } = findOverviewRecord(overview, token, requestedKind));
+    }
+
+    if (requestedKind === "news" && record?.category === "warning") {
+      return res.redirect(301, newsPath(record));
     }
 
     if (!record) {
@@ -2159,6 +2187,7 @@ app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   }
   try {
     await updateBearReportStatus(Number(req.params.id), status);
+    invalidateLocationOverviewCache();
     if (status === "approved") await flushEmailNotifications("report approval");
     res.json({ ok: true });
   } catch (err) {
@@ -2178,6 +2207,7 @@ app.post("/api/admin/sightings/:id/status", adminAuth, async (req, res) => {
     await sightingsStore.loadFromDatabase().catch((err) => {
       console.error("[sighting status] reload failed:", err.message);
     });
+    invalidateLocationOverviewCache();
     if (status === "approved") await flushEmailNotifications("sighting approval");
     res.json({ ok: true });
   } catch (err) {
@@ -2199,6 +2229,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news status] reload failed:", err.message);
     });
+    invalidateLocationOverviewCache();
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -2238,6 +2269,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
     });
+    invalidateLocationOverviewCache();
 
     res.json({
       ok: true,
@@ -2288,6 +2320,7 @@ app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news edit] reload failed:", err.message);
     });
+    invalidateLocationOverviewCache();
     res.json({ ok: true });
   } catch (err) {
     console.error("[news edit] failed:", err.message);
@@ -2306,6 +2339,7 @@ app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
         console.error("[sighting edit] reload failed:", err.message);
       });
     }
+    invalidateLocationOverviewCache();
     res.json({ ok: true });
   } catch (err) {
     console.error("[sighting edit] failed:", err.message);
@@ -2402,6 +2436,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       }
     }
 
+    invalidateLocationOverviewCache();
     res.json({ ok: true });
 
     // DB triggre už vytvorili trvácne outbox položky. Workerov zobudíme
