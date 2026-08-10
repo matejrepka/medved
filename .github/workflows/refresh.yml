@@ -3,7 +3,7 @@ name: Refresh bear data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */4 * * *"
+    - cron: "17 */3 * * *"
 
 permissions:
   contents: read
@@ -22,6 +22,7 @@ jobs:
       SITE_URL: "https://www.kdejemedved.sk"
 
       DISABLE_STARTUP_REFRESH: "true"
+      DISABLE_WEBSITE_LOGS: "true"
       TUMEDVED_BROWSER_HEADLESS: "true"
       TUMEDVED_BROWSER_ATTEMPTS: "1"
 
@@ -40,7 +41,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
 
       - name: Validate required secrets
@@ -82,7 +83,6 @@ jobs:
           }
 
           trap cleanup EXIT
-
           ready=0
 
           for attempt in {1..30}; do
