@@ -1,0 +1,76 @@
+name: Refresh bear data
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every four hours. GitHub cron uses UTC.
+    - cron: "17 */4 * * *"
+
+concurrency:
+  group: bear-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      PORT: "3000"
+      SITE_URL: "https://www.kdejemedved.sk"
+      DISABLE_STARTUP_REFRESH: "true"
+      TUMEDVED_BROWSER_ATTEMPTS: "1"
+      NEWS_AI_MAX_ITEMS_PER_RUN: "12"
+
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CRON_REFRESH_SECRET: ${{ secrets.CRON_REFRESH_SECRET }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run refresh locally
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm start > server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=0
+          for attempt in {1..30}; do
+            if curl --fail --silent \
+              http://127.0.0.1:3000/api/status > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            cat server.log
+            exit 1
+          fi
+
+          curl \
+            --fail \
+            --show-error \
+            --max-time 900 \
+            --get \
+            --data-urlencode "secret=$CRON_REFRESH_SECRET" \
+            http://127.0.0.1:3000/api/cron/refresh
