@@ -34,7 +34,8 @@ export function readTelegramConfig(env = process.env) {
     webhookSecret,
     siteOrigin,
     allowedChatIds,
-    pollIntervalMs: positiveInteger(env.TELEGRAM_POLL_INTERVAL_MS, 30_000),
+    pollIntervalMs: positiveInteger(env.TELEGRAM_POLL_INTERVAL_MS, 5_000),
+    apiTimeoutMs: Math.min(30_000, positiveInteger(env.TELEGRAM_API_TIMEOUT_MS, 5_000)),
     batchSize: Math.min(50, positiveInteger(env.TELEGRAM_OUTBOX_BATCH_SIZE, 10)),
   };
 }

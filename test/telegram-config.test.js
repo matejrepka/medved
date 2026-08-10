@@ -17,7 +17,10 @@ test("Telegram remains disabled until every required setting is valid", () => {
   assert.equal(readTelegramConfig({ ...configuredEnv, TELEGRAM_CHAT_ID: "-100" }).enabled, false);
   assert.equal(readTelegramConfig({ ...configuredEnv, SITE_URL: "http://example.test" }).enabled, false);
   assert.equal(readTelegramConfig({ ...configuredEnv, TELEGRAM_WEBHOOK_SECRET: "short" }).enabled, false);
-  assert.equal(readTelegramConfig(configuredEnv).enabled, true);
+  const configured = readTelegramConfig(configuredEnv);
+  assert.equal(configured.enabled, true);
+  assert.equal(configured.pollIntervalMs, 5_000);
+  assert.equal(configured.apiTimeoutMs, 5_000);
 });
 
 test("moderation accepts only explicitly allowed private chats", () => {

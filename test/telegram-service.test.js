@@ -99,6 +99,30 @@ test("bounded drain processes multiple batches for an ephemeral request", async 
   assert.equal(claims, 2);
 });
 
+test("website request can claim and deliver its exact aggregate immediately", async () => {
+  const calls = [];
+  const service = new TelegramService({
+    config,
+    claim: async () => assert.fail("general queue must not be claimed"),
+    claimForAggregate: async (...args) => {
+      calls.push(args);
+      return [{
+        id: 21,
+        event_type: "pending_public_report",
+        aggregate_type: "bear_report",
+        attempts: 1,
+        payload: { location: "Detva", created_at: "2026-07-31T10:00:00Z" },
+      }];
+    },
+    api: async () => ({ message_id: 88 }),
+    markSent: async (id, messageId) => calls.push([id, messageId]),
+    reschedule: async () => assert.fail("must not retry"),
+  });
+
+  assert.deepEqual(await service.runForAggregate("bear_report", 501), { processed: 1, sent: 1 });
+  assert.deepEqual(calls, [["bear_report", 501], [21, 88]]);
+});
+
 test("reject requires confirmation before transactional moderation", async () => {
   const methods = [];
   let moderationCalls = 0;

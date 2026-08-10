@@ -92,7 +92,8 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 ## Databázové migrácie
 
 Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom migrácie
-`docs/migration-006-news-incidents.sql` a `docs/migration-007-email-notifications.sql`
+`docs/migration-006-news-incidents.sql`, `docs/migration-007-email-notifications.sql`
+a `docs/migration-008-priority-telegram.sql`
 v Supabase SQL Editore. Pri existujúcej databáze ich po migráciách 001-005 spustite
 v tomto poradí.
 

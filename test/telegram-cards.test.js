@@ -5,7 +5,7 @@ import { buildTelegramCard } from "../src/telegram/cards.js";
 
 const config = { siteOrigin: "https://example.test" };
 
-test("AI warning news produces one moderation card with one action row", () => {
+test("warning news is clearly labelled, includes location and has one action row", () => {
   const card = buildTelegramCard({
     id: 7,
     event_type: "imported_news",
@@ -22,7 +22,8 @@ test("AI warning news produces one moderation card with one action row", () => {
     },
   }, config);
 
-  assert.match(card.text, /AI štítok:<\/b> medvedie varovanie/);
+  assert.match(card.text, /VAROVANIE · SPRAVODAJSKÝ ZDROJ/);
+  assert.match(card.text, /LOKALITA:<\/b> Liptov/);
   assert.match(card.text, /Medveď pri &lt;obci&gt;/);
   assert.match(card.text, /Publikované:/);
   assert.match(card.text, /Importované:/);
@@ -31,6 +32,38 @@ test("AI warning news produces one moderation card with one action row", () => {
     card.reply_markup.inline_keyboard[0].map((button) => button.callback_data),
     ["tm:a:7", "tm:r:7"]
   );
+  assert.equal(card.disable_notification, false);
+});
+
+test("ordinary news never shows location even when its payload contains one", () => {
+  const card = buildTelegramCard({
+    id: 12,
+    event_type: "imported_news",
+    aggregate_type: "news_log",
+    payload: {
+      category: "article",
+      title: "Všeobecný článok",
+      source: "Médium",
+      place: "Miesto, ktoré sa nemá zobraziť",
+      published_at: "2026-07-31T08:00:00Z",
+    },
+  }, config);
+
+  assert.match(card.text, /SPRÁVA · ČLÁNOK/);
+  assert.doesNotMatch(card.text, /LOKALITA|Miesto, ktoré sa nemá zobraziť/);
+});
+
+test("website warning is the strongest priority card and shows location", () => {
+  const card = buildTelegramCard({
+    id: 13,
+    event_type: "pending_public_report",
+    aggregate_type: "bear_report",
+    payload: { location: "Banská Bystrica", created_at: "2026-07-31T08:00:00Z" },
+  }, config);
+
+  assert.match(card.text, /PRIORITA 1 · VAROVANIE Z WEBU/);
+  assert.match(card.text, /IHNEĎ SKONTROLOVAŤ/);
+  assert.match(card.text, /LOKALITA:<\/b> Banská Bystrica/);
 });
 
 test("scraper warning card keeps merged source identities and timestamps", () => {
@@ -71,7 +104,7 @@ test("admin warning cards distinguish supported manual item types", () => {
     aggregate_type: "tumedved_log",
     payload: { location: "Detva", reported_at: "2026-07-31T10:00:00Z" },
   }, config);
-  assert.match(news.text, /varovanie zo správ/);
+  assert.match(news.text, /varovanie zo spravodajského zdroja/);
   assert.match(tumedved.text, /tumedved/);
 });
 

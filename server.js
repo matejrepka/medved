@@ -1049,6 +1049,19 @@ async function flushTelegramNotifications(context) {
   }
 }
 
+async function flushPriorityTelegramNotification(aggregateType, aggregateId, context) {
+  if (!telegramConfig.enabled || aggregateId == null) return { processed: 0, sent: 0 };
+  try {
+    return await telegramService.runForAggregate(aggregateType, aggregateId);
+  } catch (err) {
+    // Older deployments may briefly run before migration 008 is applied. Keep
+    // the durable general worker as a safe fallback instead of failing a report.
+    console.error(`[telegram] ${context} priority delivery failed:`, err.message);
+    telegramService.kick();
+    return { processed: 0, sent: 0 };
+  }
+}
+
 async function flushEmailNotifications(context) {
   if (!emailConfig.enabled) return;
   try {
@@ -1392,12 +1405,23 @@ app.post("/api/reports", async (req, res) => {
       ...report,
       status: "pending",
     });
-    res.json({ ok: true, id: result?.id, published: false, moderationStatus: "pending" });
+    // Hlásenie z verejného formulára má najvyššiu prioritu: po databázovej
+    // transakcii cielene vyzdvihneme práve jeho outbox riadok a odošleme ho
+    // ešte počas requestu. Trvácny outbox/retry ostáva poistkou pri výpadku.
+    const telegram = await flushPriorityTelegramNotification(
+      "bear_report",
+      result?.id,
+      "public report"
+    );
+    res.json({
+      ok: true,
+      id: result?.id,
+      published: false,
+      moderationStatus: "pending",
+      priorityNotificationSent: telegram.sent === 1,
+    });
 
-    // Uloženie je jediná práca, ktorú musí formulár dokončiť pred
-    // odpoveďou. AI kontrola nemení stav (hlásenie vždy čaká na
-    // moderovanie) a Telegram má trvácny outbox, preto ich spustíme na pozadí.
-    telegramService.kick();
+    // AI kontrola nemení stav; hlásenie vždy čaká na moderovanie.
     classifyReportSpam(report)
       .then((spamCheck) => {
         console.log(

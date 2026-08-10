@@ -16,7 +16,8 @@ database transaction.
 
 ## Setup
 
-1. Run `docs/migration-005-telegram-notifications.sql` in the Supabase SQL editor.
+1. Run `docs/migration-005-telegram-notifications.sql` and then
+   `docs/migration-008-priority-telegram.sql` in the Supabase SQL editor.
 2. Open Telegram's verified `@BotFather`, use `/newbot`, and store the issued token
    directly in the deployment secret store. Do not paste it into source files, task
    messages, screenshots, or committed shell commands.
@@ -32,6 +33,8 @@ database transaction.
    - `TELEGRAM_WEBHOOK_SECRET` — a random 16–256 character value using only
      letters, digits, `_`, and `-`;
    - `SITE_URL` — public HTTPS origin used for the admin link and webhook URL.
+   - `TELEGRAM_POLL_INTERVAL_MS` — optional fallback poll interval (default 5000 ms);
+   - `TELEGRAM_API_TIMEOUT_MS` — optional per-request timeout (default 5000 ms).
 5. Deploy the application at the public HTTPS `SITE_URL`. The webhook endpoint must
    be internet-reachable with a valid TLS certificate; a localhost or plain HTTP URL
    cannot receive Telegram webhooks. On Vercel, redeploy after adding or changing the
@@ -50,12 +53,15 @@ only from an explicitly allowed chat whose Telegram type is `private`.
 Database triggers insert the content row and its immutable notification snapshot in
 the same transaction. `dedupe_key` prevents repeat cards. A worker claims rows with
 `FOR UPDATE SKIP LOCKED`, sends through the native Telegram Bot API, and records the
-message ID. Failures use exponential retry (or Telegram's `retry_after`) and become
+message ID. Failures retry after 5 seconds with exponential backoff (or use
+Telegram's `retry_after`) and become
 `dead` after ten attempts. An abandoned `processing` claim is recoverable after five
-minutes. The server checks the queue every 30 seconds and also wakes it immediately
-after content refreshes or inserts. Cron refresh and insert requests also await a
-bounded best-effort drain, so delivery does not depend on timers continuing after a
-serverless response; the timer is only an optimization for persistent Node hosts.
+minutes. The server checks the queue every 5 seconds and also wakes it immediately
+after content refreshes or inserts. Website reports claim their exact outbox row and
+await that best-effort send before the form request completes, so they cannot sit
+behind an older news backlog. Cron refresh requests await a bounded drain; the timer
+is only an optimization for persistent Node hosts. The claim order is website reports,
+warning-classified news, other warnings, and finally ordinary news.
 
 The migration also widens the existing `scrape_runs.source` check to accept
 `sightings`, matching the aggregate sightings store that already records refreshes.

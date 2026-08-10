@@ -94,29 +94,32 @@ export function buildTelegramCard(outbox, config) {
   let replyMarkup;
 
   if (outbox.event_type === "pending_public_report") {
-    lines.push("📥 <b>Nové hlásenie čaká na moderáciu</b>");
-    lines.push("<b>Zdroj:</b> hlásenie používateľa");
-    lines.push(`<b>Kde:</b> ${text(payload.location)}`);
+    lines.push("🚨🚨 <b>PRIORITA 1 · VAROVANIE Z WEBU</b>");
+    lines.push("<b>IHNEĎ SKONTROLOVAŤ</b> · čaká na moderáciu");
+    lines.push(`📍 <b>LOKALITA:</b> ${text(payload.location || "neuvedená")}`);
     lines.push(`<b>Kedy:</b> ${date(payload.reported_date || payload.created_at)}`);
     if (payload.description) lines.push(`<b>Čo:</b> ${text(payload.description)}`);
     lines.push(`<b>Prijaté:</b> ${date(payload.created_at)}`);
+    lines.push("<b>Zdroj:</b> prioritný formulár na webe");
     replyMarkup = moderationKeyboard(outbox.id);
   } else if (outbox.event_type === "imported_news") {
     const warning = payload.category === "warning";
-    lines.push(`${warning ? "⚠️" : "📰"} <b>Nová správa čaká na moderáciu</b>`);
-    lines.push(`<b>${warning ? "AI štítok:" : "Typ:"}</b> ${warning ? "medvedie varovanie" : "správa / článok"}`);
+    lines.push(warning
+      ? "⚠️ <b>VAROVANIE · SPRAVODAJSKÝ ZDROJ</b>"
+      : "📰 <b>SPRÁVA · ČLÁNOK</b>");
+    lines.push("<b>Stav:</b> čaká na moderáciu");
     lines.push(`<b>Titulok:</b> ${text(payload.title)}`);
+    if (warning) lines.push(`📍 <b>LOKALITA:</b> ${text(payload.place || "neuvedená")}`);
     lines.push(`<b>Zdroj:</b> ${text(payload.source || "neuvedený", 160)}`);
     lines.push(`<b>Publikované:</b> ${date(payload.published_at)}`);
     lines.push(`<b>Importované:</b> ${date(payload.created_at || payload.scraped_at)}`);
-    if (payload.place) lines.push(`<b>Lokalita:</b> ${text(payload.place)}`);
     if (payload.snippet) lines.push(`<b>Obsah:</b> ${text(payload.snippet)}`);
     const article = link("Otvoriť článok", payload.article_url || payload.link || payload.google_news_url);
     if (article) lines.push(article);
     replyMarkup = moderationKeyboard(outbox.id);
   } else if (outbox.event_type === "scraper_warning") {
-    lines.push("🐻 <b>Nové varovanie zo scraperov</b>");
-    lines.push(`<b>Kde:</b> ${text(payload.location || "neuvedené")}`);
+    lines.push("🐻 <b>VAROVANIE · AUTOMATICKÝ IMPORT</b>");
+    lines.push(`📍 <b>LOKALITA:</b> ${text(payload.location || "neuvedená")}`);
     lines.push(`<b>Kedy:</b> ${date(payload.reported_at)}`);
     if (payload.note) lines.push(`<b>Čo:</b> ${text(payload.note)}`);
     lines.push(`<b>Zdroje:</b> ${sourceIdentities(payload)}`);
@@ -125,11 +128,11 @@ export function buildTelegramCard(outbox, config) {
     if (source) lines.push(source);
   } else if (outbox.event_type === "admin_warning") {
     const isNews = outbox.aggregate_type === "news_log";
-    lines.push("🛠️ <b>Admin pridal nové varovanie</b>");
+    lines.push("🛠️ <b>VAROVANIE · PRIDANÉ ADMINOM</b>");
     if (isNews) {
-      lines.push(`<b>Typ:</b> varovanie zo správ`);
+      lines.push(`<b>Typ:</b> varovanie zo spravodajského zdroja`);
       lines.push(`<b>Čo:</b> ${text(payload.title)}`);
-      lines.push(`<b>Kde:</b> ${text(payload.place || "neuvedené")}`);
+      lines.push(`📍 <b>LOKALITA:</b> ${text(payload.place || "neuvedená")}`);
       lines.push(`<b>Kedy:</b> ${date(payload.published_at || payload.created_at)}`);
       lines.push(`<b>Zdroj:</b> ${text(payload.source || "administrácia", 160)}`);
       const article = link("Zdrojový záznam", payload.article_url || payload.link);
@@ -137,7 +140,7 @@ export function buildTelegramCard(outbox, config) {
     } else {
       const isTumedved = outbox.aggregate_type === "tumedved_log";
       lines.push(`<b>Typ:</b> ${isTumedved ? "tumedved" : "všeobecné varovanie"}`);
-      lines.push(`<b>Kde:</b> ${text(payload.location || "neuvedené")}`);
+      lines.push(`📍 <b>LOKALITA:</b> ${text(payload.location || "neuvedená")}`);
       lines.push(`<b>Kedy:</b> ${date(payload.reported_at || payload.reported_date || payload.created_at)}`);
       const description = payload.note || payload.description;
       if (description) lines.push(`<b>Čo:</b> ${text(description)}`);
@@ -155,6 +158,7 @@ export function buildTelegramCard(outbox, config) {
     text: completeLines(lines),
     parse_mode: "HTML",
     disable_web_page_preview: true,
+    disable_notification: false,
     ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   };
 }

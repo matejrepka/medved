@@ -8,6 +8,7 @@ import {
 } from "./cards.js";
 import { isAllowedPrivateCallback } from "./config.js";
 import {
+  claimTelegramNotificationForAggregate,
   claimTelegramNotifications,
   markTelegramNotificationSent,
   moderateTelegramOutboxItem,
@@ -41,6 +42,7 @@ export class TelegramService {
     config,
     api = callTelegramApi,
     claim = claimTelegramNotifications,
+    claimForAggregate = claimTelegramNotificationForAggregate,
     markSent = markTelegramNotificationSent,
     reschedule = rescheduleTelegramNotification,
     moderate = moderateTelegramOutboxItem,
@@ -49,6 +51,7 @@ export class TelegramService {
     this.config = config;
     this.api = api;
     this.claim = claim;
+    this.claimForAggregate = claimForAggregate;
     this.markSent = markSent;
     this.reschedule = reschedule;
     this.moderate = moderate;
@@ -72,6 +75,12 @@ export class TelegramService {
     }
   }
 
+  async runForAggregate(aggregateType, aggregateId) {
+    if (!this.config.enabled) return { processed: 0, sent: 0, disabled: true };
+    const rows = await this.claimForAggregate(aggregateType, aggregateId);
+    return this.#deliver(rows);
+  }
+
   async #drainBatches(maxBatches) {
     const boundedBatches = Math.max(1, Math.min(10, Number(maxBatches) || 1));
     const total = { processed: 0, sent: 0 };
@@ -86,6 +95,10 @@ export class TelegramService {
 
   async #drain() {
     const rows = await this.claim(this.config.batchSize);
+    return this.#deliver(rows);
+  }
+
+  async #deliver(rows) {
     let sent = 0;
     for (const row of rows) {
       try {

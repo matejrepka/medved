@@ -10,6 +10,17 @@ export async function claimTelegramNotifications(limit) {
   return data || [];
 }
 
+export async function claimTelegramNotificationForAggregate(aggregateType, aggregateId) {
+  const supabase = getSupabase();
+  if (!supabase || !aggregateType || aggregateId == null) return [];
+  const { data, error } = await supabase.rpc("claim_telegram_notification_for_aggregate", {
+    p_aggregate_type: String(aggregateType),
+    p_aggregate_id: String(aggregateId),
+  });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function markTelegramNotificationSent(id, messageId) {
   const supabase = getSupabase();
   if (!supabase) return;
@@ -32,7 +43,7 @@ export async function rescheduleTelegramNotification(row, error, retryAfter) {
   const supabase = getSupabase();
   if (!supabase) return;
   const exhausted = row.attempts >= 10;
-  const seconds = retryAfter || Math.min(3600, 15 * (2 ** Math.max(0, row.attempts - 1)));
+  const seconds = retryAfter || Math.min(3600, 5 * (2 ** Math.max(0, row.attempts - 1)));
   const availableAt = new Date(Date.now() + seconds * 1000).toISOString();
   const { error: updateError } = await supabase
     .from("telegram_notification_outbox")
@@ -61,4 +72,3 @@ export async function moderateTelegramOutboxItem({ outboxId, action, chatId, act
   if (error) throw error;
   return data;
 }
-
