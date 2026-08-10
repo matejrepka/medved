@@ -5,12 +5,17 @@
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
 const API_VERSION = "news-map-v9";
 const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
+const renderedUpdatedAt = document
+  .querySelector("#updated time[datetime]")
+  ?.getAttribute("datetime") || null;
 const state = {
   sightings: [],
   news: [],
   sightingsUpdatedAt: null,
   newsUpdatedAt: null,
-  updatedAt: null,
+  // SSR už môže obsahovať novší čas než odpoveď z inej, ešte
+  // neobnovenej serverovej inštancie. Klient ho preto zachová a iba posúva vpred.
+  updatedAt: renderedUpdatedAt,
   dataLoading: false,
   dataFailures: [],
   tileError: false,
@@ -1435,7 +1440,18 @@ function renderStats() {
 
 function setUpdated(iso) {
   const updated = $("updated");
-  if (updated) updated.textContent = iso ? "Aktualizované " + updatedText(iso) : "";
+  if (!updated) return;
+
+  const text = updatedText(iso);
+  if (!iso || !text) {
+    updated.replaceChildren();
+    return;
+  }
+
+  const time = document.createElement("time");
+  time.dateTime = iso;
+  time.textContent = text;
+  updated.replaceChildren(document.createTextNode("Aktualizované "), time);
 }
 
 // --- Načítanie dát ---
@@ -1526,7 +1542,11 @@ async function loadData() {
   if (sourceFailed.sightings) failures.push("hlásenia");
   if (sourceFailed.news) failures.push("správy");
 
-  state.updatedAt = latestIso(state.sightingsUpdatedAt, state.newsUpdatedAt);
+  state.updatedAt = latestIso(
+    state.updatedAt,
+    state.sightingsUpdatedAt,
+    state.newsUpdatedAt
+  );
   setUpdated(state.updatedAt);
   syncDateFilterLimits();
   syncFilterButton();
