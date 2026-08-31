@@ -1,0 +1,127 @@
+name: Refresh bear data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bear-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      PORT: "3000"
+      SITE_URL: "https://www.kdejemedved.sk"
+
+      DISABLE_STARTUP_REFRESH: "true"
+      DISABLE_WEBSITE_LOGS: "true"
+      TUMEDVED_BROWSER_HEADLESS: "true"
+      TUMEDVED_BROWSER_ATTEMPTS: "1"
+
+      NEWS_AI_MAX_ITEMS_PER_RUN: "12"
+      OPENROUTER_MODEL: "openrouter/free"
+
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CRON_REFRESH_SECRET: ${{ secrets.CRON_REFRESH_SECRET }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::SUPABASE_URL GitHub secret is missing"
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY GitHub secret is missing"
+            exit 1
+          fi
+
+          if [ -z "$CRON_REFRESH_SECRET" ]; then
+            echo "::error::CRON_REFRESH_SECRET GitHub secret is missing"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run scraper and refresh database
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm start > server.log 2>&1 &
+          server_pid=$!
+
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+          }
+
+          trap cleanup EXIT
+          ready=0
+
+          for attempt in {1..30}; do
+            if curl \
+              --fail \
+              --silent \
+              http://127.0.0.1:3000/api/status \
+              > /dev/null; then
+                ready=1
+                break
+            fi
+
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "::error::Server stopped before becoming ready"
+              cat server.log
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::Server did not become ready"
+            cat server.log
+            exit 1
+          fi
+
+          if ! curl \
+            --fail-with-body \
+            --show-error \
+            --max-time 900 \
+            --get \
+            --data-urlencode "secret=$CRON_REFRESH_SECRET" \
+            http://127.0.0.1:3000/api/cron/refresh; then
+              echo ""
+              echo "===== SERVER LOG ====="
+              cat server.log
+              exit 1
+          fi
+
+          echo ""
+          echo "Refresh completed successfully."
