@@ -73,6 +73,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
+const CARTO_BASEMAPS_API_KEY = process.env.CARTO_BASEMAPS_API_KEY;
 const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
 const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk";
@@ -1137,6 +1138,33 @@ app.use((req, res, next) => {
 });
 
 // --- API ---
+
+// CARTO raster tiles require an API key. Proxy them so the key remains server-side
+// and one configuration serves the public map, report picker, and admin mini-maps.
+const CARTO_RASTER_STYLES = new Set(["light_all", "dark_all"]);
+app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
+  const { style, z, x, y } = req.params;
+  if (!CARTO_RASTER_STYLES.has(style) || ![z, x, y].every((value) => /^\d+$/.test(value))) {
+    return res.status(400).send("Invalid map tile request");
+  }
+  if (!CARTO_BASEMAPS_API_KEY) {
+    return res.status(503).send("Map tiles are not configured");
+  }
+
+  try {
+    const tileUrl = new URL(`https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png`);
+    tileUrl.searchParams.set("key", CARTO_BASEMAPS_API_KEY);
+    const response = await fetch(tileUrl);
+    if (!response.ok) throw new Error(`CARTO returned HTTP ${response.status}`);
+
+    res.setHeader("Content-Type", response.headers.get("content-type") || "image/png");
+    res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+    res.send(Buffer.from(await response.arrayBuffer()));
+  } catch (err) {
+    console.error("[map-tiles] CARTO tile failed:", err.message);
+    res.status(502).send("Map tile unavailable");
+  }
+});
 
 app.get("/api/sightings", async (_req, res) => {
   try {
