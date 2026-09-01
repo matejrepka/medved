@@ -186,7 +186,7 @@ const PUBLIC_PAGES = {
     changefreq: "monthly",
     priority: "0.5",
   },
-  "/privacy": {
+  "/ochrana-sukromia": {
     file: "privacy.html",
     title: "Ochrana súkromia | Kde je Medveď",
     description:
@@ -196,7 +196,7 @@ const PUBLIC_PAGES = {
     changefreq: "yearly",
     priority: "0.2",
   },
-  "/terms": {
+  "/podmienky-pouzivania": {
     file: "terms.html",
     title: "Podmienky používania | Kde je Medveď",
     description:
@@ -1918,6 +1918,9 @@ async function renderRecordPage(req, res, requestedKind) {
 for (const [pathname, page] of Object.entries(PUBLIC_PAGES)) {
   app.get(pathname, (req, res) => renderPublicPage(req, res, pathname, page));
 }
+
+app.get("/privacy", (_req, res) => res.redirect(301, "/ochrana-sukromia"));
+app.get("/terms", (_req, res) => res.redirect(301, "/podmienky-pouzivania"));
 
 app.get(`${LOCATION_ROUTE_PREFIX}:slug`, renderLocationPage);
 app.get(`${NEWS_ROUTE_PREFIX}:slug`, (req, res) => renderRecordPage(req, res, "news"));

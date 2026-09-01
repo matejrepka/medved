@@ -58,7 +58,7 @@
           <p id="privacyBannerText">
             Nevyhnutné lokálne úložisko používame na zapamätanie vašich nastavení.
             S vaším súhlasom zapneme aj anonymnú návštevnostnú analytiku Vercel.
-            <a href="/privacy#cookies">Viac informácií</a>
+            <a href="/ochrana-sukromia#cookies">Viac informácií</a>
           </p>
         </div>
         <div class="privacy-banner__actions">

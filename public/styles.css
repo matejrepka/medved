@@ -98,29 +98,6 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: -12vh -10vw;
-  z-index: -1;
-  pointer-events: none;
-  background-image: var(--topographic-bg);
-  background-position: center top;
-  background-repeat: repeat-y;
-  background-size: max(1680px, 118vw) auto;
-  opacity: var(--topographic-opacity);
-  filter: var(--topographic-filter);
-}
-
-@media (max-width: 620px) {
-  body::before {
-    inset: 0;
-    background-position: center top;
-    background-repeat: no-repeat;
-    background-size: cover;
-  }
-}
-
 a {
   color: var(--accent);
   text-decoration: none;
@@ -572,6 +549,7 @@ main {
 .stats-page {
   max-width: var(--maxw);
   margin: 0 auto;
+  background: var(--bg);
 }
 
 .stats-page .masthead:not(.mascot-masthead) {
@@ -3596,6 +3574,14 @@ html,
 body {
   max-width: 100%;
   overflow-x: clip;
+}
+
+body {
+  background: var(--bg) !important;
+}
+
+body::before {
+  display: none !important;
 }
 
 img,

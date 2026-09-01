@@ -102,6 +102,7 @@
         ${navLink({ href: "/spravy", label: "Správy", icon: "newspaper-clipping" })}
         ${navLink({ href: "/varovania", label: "Varovania", icon: "warning" })}
         ${navLink({ href: "/bezpecnost", label: "Bezpečnosť", icon: "shield-check" })}
+        ${navLink({ href: "/o-mape#kontakt", label: "Kontakt", icon: "address-book" })}
         ${navLink({ href: "/o-mape", label: "O mape", icon: "info" })}
         ${navLink({ href: "/spomenuli-nas", label: "Spomenuli nás", icon: "newspaper" })}
       </nav>
@@ -116,8 +117,8 @@
 
       <nav class="drawer-nav drawer-nav-legal" aria-label="Právne informácie">
         <h3>Právne</h3>
-        ${navLink({ href: "/privacy", label: "Ochrana súkromia", icon: "lock-key" })}
-        ${navLink({ href: "/terms", label: "Podmienky používania", icon: "file-text" })}
+        ${navLink({ href: "/ochrana-sukromia", label: "Ochrana súkromia", icon: "lock-key" })}
+        ${navLink({ href: "/podmienky-pouzivania", label: "Podmienky používania", icon: "file-text" })}
       </nav>
     </div>`;
   body.append(drawer);
