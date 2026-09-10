@@ -1,14 +1,42 @@
 import nodemailer from "nodemailer";
 
 import { createEmailToken } from "./tokens.js";
-import { buildConfirmationEmail, buildWarningEmail } from "./templates.js";
+import { buildConfirmationEmail, buildDigestEmail } from "./templates.js";
 import {
-  cancelEmailNotification,
+  cancelEmailNotifications,
   claimEmailNotifications,
   loadEmailDeliverySubscription,
-  markEmailNotificationSent,
-  rescheduleEmailNotification,
+  markEmailNotificationsSent,
+  rescheduleEmailNotifications,
 } from "../db/email-outbox.js";
+
+function digestSlot(date, config) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: config.digestTimeZone || "Europe/Bratislava",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date).filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  const hour = Number(parts.hour);
+  const minute = Number(parts.minute);
+  const hours = config.digestHours || [6, 12, 18];
+  const windowMinutes = config.digestWindowMinutes || 60;
+  if (!hours.includes(hour) || minute >= windowMinutes) return null;
+  return `${parts.year}-${parts.month}-${parts.day}-${parts.hour}`;
+}
+
+function groupBySubscription(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    const key = String(row.subscription_id);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+  return [...groups.values()];
+}
 
 export class EmailService {
   constructor({
@@ -16,9 +44,9 @@ export class EmailService {
     transport = null,
     claim = claimEmailNotifications,
     loadSubscription = loadEmailDeliverySubscription,
-    markSent = markEmailNotificationSent,
-    cancel = cancelEmailNotification,
-    reschedule = rescheduleEmailNotification,
+    markSent = markEmailNotificationsSent,
+    cancel = cancelEmailNotifications,
+    reschedule = rescheduleEmailNotifications,
     logger = console,
   }) {
     this.config = config;
@@ -43,6 +71,7 @@ export class EmailService {
     this.logger = logger;
     this.inFlight = null;
     this.timer = null;
+    this.lastDigestSlot = null;
   }
 
   async sendConfirmation(subscription) {
@@ -68,6 +97,16 @@ export class EmailService {
     }
   }
 
+  async runScheduled(now = new Date(), maxBatches = 3) {
+    if (!this.config.enabled) return { processed: 0, sent: 0, disabled: true };
+    const slot = digestSlot(now, this.config);
+    if (!slot || slot === this.lastDigestSlot) {
+      return { processed: 0, sent: 0, scheduled: false };
+    }
+    this.lastDigestSlot = slot;
+    return this.runAvailable(maxBatches);
+  }
+
   async #drainBatches(maxBatches) {
     const boundedBatches = Math.max(1, Math.min(10, Number(maxBatches) || 1));
     const total = { processed: 0, sent: 0 };
@@ -75,7 +114,7 @@ export class EmailService {
       const result = await this.#drain();
       total.processed += result.processed;
       total.sent += result.sent;
-      if (result.processed < this.config.batchSize) break;
+      if (result.subscriptions < this.config.batchSize) break;
     }
     return total;
   }
@@ -83,11 +122,13 @@ export class EmailService {
   async #drain() {
     const rows = await this.claim(this.config.batchSize);
     let sent = 0;
-    for (const row of rows) {
+    const groups = groupBySubscription(rows);
+    for (const group of groups) {
+      const firstRow = group[0];
       try {
-        const subscription = await this.loadSubscription(row.subscription_id);
+        const subscription = await this.loadSubscription(firstRow.subscription_id);
         if (!subscription?.active || !subscription?.confirmed_at || !subscription.confirmation_nonce) {
-          await this.cancel(row.id);
+          await this.cancel(group);
           continue;
         }
         const unsubscribeToken = createEmailToken({
@@ -95,21 +136,21 @@ export class EmailService {
           purpose: "unsubscribe",
           secret: this.config.tokenSecret,
         });
-        const message = buildWarningEmail({ row, subscription, unsubscribeToken, config: this.config });
+        const message = buildDigestEmail({ rows: group, subscription, unsubscribeToken, config: this.config });
         const info = await this.#send(subscription.email, message, {
           "List-Unsubscribe": `<${message.unsubscribeUrl}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
           "Auto-Submitted": "auto-generated",
           Precedence: "bulk",
         });
-        await this.markSent(row.id, info.messageId);
+        await this.markSent(group, info.messageId);
         sent += 1;
       } catch (error) {
-        this.logger.error(`[email] notification ${row.id} failed: ${error.message}`);
-        await this.reschedule(row, error);
+        this.logger.error(`[email] digest for subscription ${firstRow.subscription_id} failed: ${error.message}`);
+        await this.reschedule(group, error);
       }
     }
-    return { processed: rows.length, sent };
+    return { processed: rows.length, sent, subscriptions: groups.length };
   }
 
   async #send(to, message, headers = undefined) {
@@ -131,9 +172,9 @@ export class EmailService {
 
   start() {
     if (!this.config.enabled || this.timer) return;
-    this.runAvailable().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
+    this.runScheduled().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
     this.timer = setInterval(() => {
-      this.runAvailable().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
+      this.runScheduled().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
     }, this.config.pollIntervalMs);
     this.timer.unref?.();
   }
@@ -141,7 +182,7 @@ export class EmailService {
   kick() {
     if (!this.config.enabled) return;
     queueMicrotask(() => {
-      this.runAvailable().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
+      this.runScheduled().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
     });
   }
 }

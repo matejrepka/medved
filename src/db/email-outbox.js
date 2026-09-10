@@ -22,9 +22,18 @@ export async function loadEmailDeliverySubscription(id) {
   return data || null;
 }
 
-export async function markEmailNotificationSent(id, messageId) {
+function rowIds(rowsOrIds) {
+  const values = Array.isArray(rowsOrIds) ? rowsOrIds : [rowsOrIds];
+  return values
+    .map((value) => (value && typeof value === "object" ? value.id : value))
+    .filter((value) => value !== null && value !== undefined);
+}
+
+export async function markEmailNotificationsSent(rowsOrIds, messageId) {
   const supabase = getSupabase();
   if (!supabase) return;
+  const ids = rowIds(rowsOrIds);
+  if (!ids.length) return;
   const { error } = await supabase
     .from("email_notification_outbox")
     .update({
@@ -35,14 +44,16 @@ export async function markEmailNotificationSent(id, messageId) {
       last_error: null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
+    .in("id", ids)
     .eq("status", "processing");
   if (error) throw error;
 }
 
-export async function cancelEmailNotification(id, reason = "Subscription is inactive") {
+export async function cancelEmailNotifications(rowsOrIds, reason = "Subscription is inactive") {
   const supabase = getSupabase();
   if (!supabase) return;
+  const ids = rowIds(rowsOrIds);
+  if (!ids.length) return;
   const { error } = await supabase
     .from("email_notification_outbox")
     .update({
@@ -51,16 +62,20 @@ export async function cancelEmailNotification(id, reason = "Subscription is inac
       last_error: reason.slice(0, 2000),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
+    .in("id", ids)
     .eq("status", "processing");
   if (error) throw error;
 }
 
-export async function rescheduleEmailNotification(row, error) {
+export async function rescheduleEmailNotifications(rowsOrRow, error) {
   const supabase = getSupabase();
   if (!supabase) return;
-  const exhausted = row.attempts >= 8;
-  const seconds = Math.min(6 * 3600, 30 * (2 ** Math.max(0, row.attempts - 1)));
+  const rows = Array.isArray(rowsOrRow) ? rowsOrRow : [rowsOrRow];
+  const ids = rowIds(rows);
+  if (!ids.length) return;
+  const attempts = Math.max(...rows.map((row) => Number(row?.attempts) || 0));
+  const exhausted = attempts >= 8;
+  const seconds = Math.min(6 * 3600, 30 * (2 ** Math.max(0, attempts - 1)));
   const availableAt = new Date(Date.now() + seconds * 1000).toISOString();
   const { error: updateError } = await supabase
     .from("email_notification_outbox")
@@ -71,7 +86,7 @@ export async function rescheduleEmailNotification(row, error) {
       last_error: String(error?.message || error || "Unknown email error").slice(0, 2000),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", row.id)
+    .in("id", ids)
     .eq("status", "processing");
   if (updateError) throw updateError;
 }

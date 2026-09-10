@@ -1066,7 +1066,7 @@ async function flushPriorityTelegramNotification(aggregateType, aggregateId, con
 async function flushEmailNotifications(context) {
   if (!emailConfig.enabled) return;
   try {
-    await emailService.runAvailable(3);
+    await emailService.runScheduled(new Date(), 3);
   } catch (err) {
     console.error(`[email] ${context} outbox flush failed:`, err.message);
   }
@@ -1341,8 +1341,8 @@ async function refreshAll(reason) {
     source.children ? Object.values(source.children) : [source]
   );
 
-  // DB triggre vytvorili outbox položky spolu s novým obsahom. Worker
-  // zobudíme hneď; interval ostáva poistkou pre retry a reštart procesu.
+  // DB triggre vytvorili outbox položky spolu s novým obsahom. Telegram
+  // doručujeme hneď, e-mailový worker odošle jeden súhrn v najbližšom okne.
   await flushTelegramNotifications(`${reason} refresh`);
   await flushEmailNotifications(`${reason} refresh`);
 
@@ -2494,8 +2494,8 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     invalidateLocationOverviewCache();
     res.json({ ok: true });
 
-    // DB triggre už vytvorili trvácne outbox položky. Workerov zobudíme
-    // bez blokovania odpovede formulára; retry a interval ostávajú nezmenené.
+    // DB triggre už vytvorili trvácne outbox položky. Telegram zobudíme
+    // hneď; e-mail ostane v rade do najbližšieho plánovaného súhrnu.
     telegramService.kick();
     emailService.kick();
   } catch (err) {

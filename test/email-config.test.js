@@ -26,3 +26,9 @@ test("SMTP security defaults match the common ports", () => {
   assert.equal(readEmailConfig(configuredEnv).requireTls, true);
   assert.equal(readEmailConfig({ ...configuredEnv, SMTP_SECURE: "true" }).secure, true);
 });
+
+test("email digests default to Bratislava 06:00, 12:00 and 18:00", () => {
+  const config = readEmailConfig(configuredEnv);
+  assert.deepEqual(config.digestHours, [6, 12, 18]);
+  assert.equal(config.digestTimeZone, "Europe/Bratislava");
+});

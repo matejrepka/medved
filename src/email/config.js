@@ -17,6 +17,14 @@ function booleanValue(value, fallback = false) {
   return String(value).trim().toLowerCase() === "true";
 }
 
+function digestHours(value) {
+  const parsed = String(value || "6,12,18")
+    .split(",")
+    .map((hour) => Number.parseInt(hour.trim(), 10))
+    .filter((hour) => Number.isInteger(hour) && hour >= 0 && hour <= 23);
+  return [...new Set(parsed)].sort((a, b) => a - b);
+}
+
 export function readEmailConfig(env = process.env) {
   const smtpHost = String(env.SMTP_HOST || "").trim();
   const smtpPort = positiveInteger(env.SMTP_PORT, 587);
@@ -52,5 +60,8 @@ export function readEmailConfig(env = process.env) {
     batchSize: Math.min(50, positiveInteger(env.EMAIL_OUTBOX_BATCH_SIZE, 10)),
     pollIntervalMs: positiveInteger(env.EMAIL_POLL_INTERVAL_MS, 30_000),
     confirmationTtlSeconds: positiveInteger(env.EMAIL_CONFIRMATION_TTL_SECONDS, 86_400),
+    digestHours: digestHours(env.EMAIL_DIGEST_HOURS),
+    digestTimeZone: String(env.EMAIL_DIGEST_TIME_ZONE || "Europe/Bratislava").trim(),
+    digestWindowMinutes: Math.min(60, positiveInteger(env.EMAIL_DIGEST_WINDOW_MINUTES, 60)),
   };
 }

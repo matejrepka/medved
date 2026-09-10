@@ -63,8 +63,9 @@ Live site: kdejemedved.sk
   integrácia používa trváci DB outbox, retry a súkromné schvaľovanie/zamietanie s auditom.
   Nastavenie je popísané v [`docs/telegram-notifications.md`](docs/telegram-notifications.md).
 - **E-mailové upozornenia** – potvrdený odber (double opt-in), výber všetkých oblastí
-  alebo konkrétnej lokality, trváci outbox, retry, ochrana pred duplicitami a odhlásenie
-  jedným kliknutím. Nastavenie je v [`docs/email-notifications.md`](docs/email-notifications.md).
+  alebo konkrétnej lokality, súhrny varovaní a správ o 6:00, 12:00 a 18:00,
+  trváci outbox, retry, ochrana pred duplicitami a odhlásenie jedným kliknutím.
+  Nastavenie je v [`docs/email-notifications.md`](docs/email-notifications.md).
 
 ## Prehľad
 
@@ -92,8 +93,8 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 ## Databázové migrácie
 
 Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom migrácie
-`docs/migration-006-news-incidents.sql`, `docs/migration-007-email-notifications.sql`
-a `docs/migration-008-priority-telegram.sql`
+`docs/migration-006-news-incidents.sql`, `docs/migration-007-email-notifications.sql`,
+`docs/migration-008-priority-telegram.sql` a `docs/migration-009-email-digests.sql`
 v Supabase SQL Editore. Pri existujúcej databáze ich po migráciách 001-005 spustite
 v tomto poradí.
 
