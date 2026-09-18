@@ -3,7 +3,7 @@
 Web app pre mapový prehľad výskytu medveďov na Slovensku. Spája verejné hlásenia,
 spravodajské články a vlastnú vrstvu moderácie do jednej mape a jedného zoznamu,
 aby bolo vidieť, kde sa udalosti opakujú, kde sú duplicity a kde ide len o textovo
-podobné záznamy
+podobné záznamy.
 
 Live site: kdejemedved.sk
 
