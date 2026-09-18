@@ -1468,6 +1468,7 @@ app.post("/api/reports", async (req, res) => {
 // --- Email subscriptions (public) ---
 
 const subscriptionAttempts = new Map();
+const feedbackAttempts = new Map();
 
 function subscriptionRateLimited(req) {
   const key = String(req.ip || req.socket.remoteAddress || "unknown");
@@ -1483,6 +1484,74 @@ function subscriptionRateLimited(req) {
   }
   return recent.length > 5;
 }
+
+function feedbackRateLimited(req) {
+  const key = String(req.ip || req.socket.remoteAddress || "unknown");
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const recent = (feedbackAttempts.get(key) || []).filter((time) => now - time < windowMs);
+  recent.push(now);
+  feedbackAttempts.set(key, recent);
+  if (feedbackAttempts.size > 1000) {
+    for (const [candidate, attempts] of feedbackAttempts) {
+      if (!attempts.some((time) => now - time < windowMs)) feedbackAttempts.delete(candidate);
+    }
+  }
+  return recent.length > 8;
+}
+
+app.post("/api/feedback", async (req, res) => {
+  const { kind, choice, message, email, website } = req.body || {};
+
+  // Tiché honeypot správanie neprezrádza automatizovaným odosielateľom filter.
+  if (typeof website === "string" && website.trim()) return res.json({ ok: true });
+
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  if (
+    normalizedEmail &&
+    (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+  ) {
+    return res.status(400).json({ ok: false, error: "Zadajte platnú e-mailovú adresu alebo pole nechajte prázdne." });
+  }
+
+  const pollChoices = {
+    yes: "Áno, určite",
+    maybe: "Možno, podľa obsahu",
+    no: "Nie, stačí mi web",
+  };
+  const isPoll = kind === "newsletter_poll";
+  const normalizedMessage = typeof message === "string" ? message.trim() : "";
+  if (isPoll && !Object.hasOwn(pollChoices, choice)) {
+    return res.status(400).json({ ok: false, error: "Vyberte jednu z možností ankety." });
+  }
+  if (!isPoll && (kind !== "message" || normalizedMessage.length < 3 || normalizedMessage.length > 2000)) {
+    return res.status(400).json({ ok: false, error: "Napíšte správu v rozsahu 3 až 2 000 znakov." });
+  }
+  if (feedbackRateLimited(req)) {
+    res.set("Retry-After", "900");
+    return res.status(429).json({ ok: false, error: "Priveľa odoslaní. Skúste to znova o 15 minút." });
+  }
+  if (!emailConfig.enabled) {
+    return res.status(503).json({ ok: false, error: "Spätnú väzbu teraz nemožno odoslať. Skúste to prosím neskôr." });
+  }
+
+  try {
+    await emailService.sendFeedback({
+      kind: isPoll ? "newsletter_poll" : "message",
+      choice: isPoll ? pollChoices[choice] : null,
+      message: isPoll ? null : normalizedMessage,
+      email: normalizedEmail || null,
+      receivedAt: new Date().toISOString(),
+    });
+    res.json({
+      ok: true,
+      message: isPoll ? "Ďakujeme za váš hlas." : "Ďakujeme. Vaša správa bola odoslaná.",
+    });
+  } catch (err) {
+    console.error("[feedback] delivery failed:", err.message);
+    res.status(500).json({ ok: false, error: "Správu sa nepodarilo odoslať. Skúste to prosím znova." });
+  }
+});
 
 function emailActionPage({ title, message, status = 200, action = null }) {
   const actionHtml = action

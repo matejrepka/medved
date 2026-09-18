@@ -2823,6 +2823,317 @@ main {
   }
 }
 
+/* ---------- Newsletter interest poll ---------- */
+.newsletter-poll {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.9fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 64px);
+  margin-top: clamp(20px, 3vw, 28px);
+  padding: clamp(26px, 4vw, 42px);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--bark) 14%, var(--line));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.newsletter-poll-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.newsletter-poll-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+
+.newsletter-poll h2 {
+  font-size: clamp(1.35rem, 3vw, 1.7rem);
+  line-height: 1.18;
+}
+
+.newsletter-poll-copy p {
+  max-width: 48ch;
+  margin: 9px 0 0;
+  color: var(--ink-2);
+}
+
+.newsletter-poll-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.newsletter-poll-form button {
+  min-height: 46px;
+  padding: 9px 12px;
+  color: var(--ink-2);
+  font: 650 0.91rem/1.2 var(--font-sans);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease,
+    transform 0.1s ease;
+}
+
+.newsletter-poll-form button:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.newsletter-poll-form button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.newsletter-poll-form button:disabled {
+  cursor: default;
+  opacity: 0.58;
+}
+
+.newsletter-poll-status {
+  min-height: 1.35em;
+  margin: 10px 0 0;
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+/* ---------- Compact feedback popup ---------- */
+.feedback-widget {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 180;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.feedback-toggle {
+  grid-row: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--accent-ink);
+  font: 650 0.9rem/1 var(--font-sans);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 24px rgba(26, 26, 23, 0.16);
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.feedback-toggle:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 10px 28px rgba(26, 26, 23, 0.2);
+  transform: translateY(-1px);
+}
+
+.feedback-toggle i {
+  font-size: 1.15rem;
+}
+
+.feedback-panel {
+  grid-row: 1;
+  width: min(390px, calc(100vw - 32px));
+  max-height: min(650px, calc(100dvh - 110px));
+  overflow-y: auto;
+  padding: 22px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 48px rgba(26, 26, 23, 0.2);
+  animation: feedback-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.feedback-panel[hidden] {
+  display: none;
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    filter: blur(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-panel {
+    animation: none;
+  }
+}
+
+.feedback-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.feedback-panel-heading h2 {
+  font-size: 1.48rem;
+  line-height: 1.18;
+}
+
+.feedback-panel-heading p {
+  margin: 7px 0 0;
+  color: var(--ink-2);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.feedback-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.feedback-close:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.feedback-panel form {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.feedback-panel label {
+  color: var(--ink-2);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.feedback-panel label span {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.feedback-panel textarea,
+.feedback-panel input {
+  width: 100%;
+  padding: 11px 13px;
+  color: var(--ink);
+  font: 1rem/1.45 var(--font-sans);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+
+.feedback-panel textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.feedback-panel textarea:focus,
+.feedback-panel input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.feedback-panel textarea::placeholder,
+.feedback-panel input::placeholder {
+  color: var(--ink-3);
+}
+
+.feedback-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.feedback-submit {
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 5px;
+}
+
+.feedback-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.feedback-note {
+  margin: 2px 0 0;
+  color: var(--ink-3);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.feedback-note a {
+  color: inherit;
+  font-weight: 650;
+}
+
+.feedback-status {
+  margin: 2px 0 0;
+}
+
+@media (max-width: 880px) {
+  .newsletter-poll {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
+@media (max-width: 620px) {
+  .newsletter-poll {
+    padding: 22px;
+  }
+
+  .newsletter-poll-form fieldset {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-widget {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px);
+  }
+
+  .feedback-toggle span {
+    display: none;
+  }
+
+  .feedback-toggle {
+    justify-content: center;
+    width: 46px;
+    padding: 0;
+  }
+
+  .feedback-panel {
+    max-height: calc(100dvh - var(--mobile-nav-height) - 94px);
+  }
+}
+
 /* ---------- Report form page ---------- */
 .report-container {
   max-width: 660px;

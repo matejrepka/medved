@@ -385,62 +385,76 @@
         </div>
       </section>
 
-      <section class="notify-section">
-        <div class="notify-inner">
-          <div class="notify-text">
-            <h2><i class="ph ph-bell-ringing" aria-hidden="true"></i> Upozorni ma</h2>
-            <p>
-              Chcete dostávať upozornenia o výskyte medveďov? Zadajte svoj email a vyberte,
-              či chcete sledovať všetky hlásenia alebo konkrétnu oblasť.
-            </p>
+      <section class="newsletter-poll" aria-labelledby="newsletterPollHeading">
+        <div class="newsletter-poll-copy">
+          <span class="newsletter-poll-icon" aria-hidden="true">
+            <i class="ph ph-envelope-simple"></i>
+          </span>
+          <div>
+            <h2 id="newsletterPollHeading">Privítali by ste e-mailové upozornenia?</h2>
+            <p>Krátke súhrny nových varovaní a správ — bez zbytočných e-mailov.</p>
           </div>
-          <form class="notify-form" id="notifyForm" novalidate>
-            <div class="notify-field">
-              <label class="sr-only" for="notifyEmail">Emailová adresa</label>
-              <input
-                type="email"
-                id="notifyEmail"
-                name="email"
-                placeholder="vas@email.sk"
-                required
-                autocomplete="email"
-                aria-describedby="notifyMessage"
-              />
-            </div>
-            <div class="notify-type">
-              <label class="notify-radio">
-                <input type="radio" name="notifyType" value="all" checked />
-                <span>Všetky hlásenia</span>
-              </label>
-              <label class="notify-radio">
-                <input type="radio" name="notifyType" value="area" />
-                <span>Konkrétna oblasť</span>
-              </label>
-            </div>
-            <div class="notify-area" id="notifyAreaWrap" hidden>
-              <label class="sr-only" for="notifyArea">Oblasť upozornení</label>
-              <input
-                type="text"
-                id="notifyArea"
-                name="areaName"
-                placeholder="napr. Liptovský Mikuláš, Banská Bystrica..."
-                autocomplete="off"
-              />
-            </div>
-            <button type="submit" class="btn notify-btn" id="notifyBtn">
-              <i class="ph ph-bell" aria-hidden="true"></i>
-              <span>Prihlásiť sa na odber</span>
-            </button>
-            <p class="notify-privacy">
-              Odber aktivujete až kliknutím na odkaz v potvrdzovacom e-maile.
-              Súhlas môžete kedykoľvek odvolať odkazom v každom upozornení.
-              <a href="/ochrana-sukromia">Ako chránime vaše údaje</a>
-            </p>
-            <div id="notifyMessage" class="form-message" role="alert"></div>
-          </form>
         </div>
+        <form class="newsletter-poll-form" id="newsletterPollForm">
+          <fieldset>
+            <legend class="sr-only">Vyberte odpoveď</legend>
+            <button type="submit" name="choice" value="yes">Áno, určite</button>
+            <button type="submit" name="choice" value="maybe">Možno</button>
+            <button type="submit" name="choice" value="no">Nie</button>
+          </fieldset>
+          <p class="newsletter-poll-status" id="newsletterPollStatus" role="status" aria-live="polite"></p>
+        </form>
       </section>
     </main>
+
+    <div class="feedback-widget" id="feedbackWidget">
+      <button
+        class="feedback-toggle"
+        id="feedbackToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="feedbackPanel"
+      >
+        <i class="ph ph-chat-circle-dots" aria-hidden="true"></i>
+        <span>Máte nápad?</span>
+      </button>
+      <aside class="feedback-panel" id="feedbackPanel" aria-labelledby="feedbackHeading" hidden>
+        <div class="feedback-panel-heading">
+          <div>
+            <h2 id="feedbackHeading">Čo môžeme zlepšiť?</h2>
+            <p>Napíšte nám nápad, pripomienku alebo krátku recenziu.</p>
+          </div>
+          <button class="feedback-close" id="feedbackClose" type="button" aria-label="Zavrieť spätnú väzbu">
+            <i class="ph ph-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <form id="feedbackForm" novalidate>
+          <label for="feedbackMessage">Vaša správa</label>
+          <textarea
+            id="feedbackMessage"
+            name="message"
+            rows="4"
+            minlength="3"
+            maxlength="2000"
+            placeholder="Čo by vám na Kde je Medveď pomohlo?"
+            required
+            aria-describedby="feedbackStatus"
+          ></textarea>
+          <label for="feedbackEmail">E-mail pre odpoveď <span>(nepovinné)</span></label>
+          <input id="feedbackEmail" name="email" type="email" autocomplete="email" placeholder="vas@email.sk" />
+          <div class="feedback-trap" aria-hidden="true">
+            <label for="feedbackWebsite">Webová stránka</label>
+            <input id="feedbackWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <button class="btn feedback-submit" id="feedbackSubmit" type="submit">
+            <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+            <span>Odoslať správu</span>
+          </button>
+          <p class="feedback-note">Správa príde priamo prevádzkovateľovi. <a href="/ochrana-sukromia">Ochrana súkromia</a></p>
+          <p class="form-message feedback-status" id="feedbackStatus" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+    </div>
 
     <footer class="site-footer">
       <div class="footer-inner">
@@ -500,7 +514,7 @@
       </div>
     </footer>
 
-    <script src="/home.js?v=20260731-production-home1"></script>
+    <script src="/home.js?v=20260914-feedback1"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

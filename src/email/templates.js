@@ -82,6 +82,34 @@ export function buildConfirmationEmail({ subscription, token, config }) {
   };
 }
 
+export function buildFeedbackEmail({ kind, choice, message, email, receivedAt }) {
+  const isPoll = kind === "newsletter_poll";
+  const title = isPoll ? "Nový hlas v ankete" : "Nová spätná väzba";
+  const subject = isPoll
+    ? `Anketa o upozorneniach: ${headerText(choice, "Nový hlas")} – Kde je Medveď`
+    : "Spätná väzba z webu – Kde je Medveď";
+  const content = isPoll
+    ? `<p style="margin:0;font-size:18px;line-height:1.65">Odpoveď: <strong>${escapeHtml(choice)}</strong></p>`
+    : `<p style="margin:0;font-size:16px;line-height:1.7;white-space:pre-wrap">${escapeHtml(message)}</p>`;
+  const contact = email
+    ? `<p style="margin:22px 0 0;color:#667068;font-size:13px">Kontakt na odosielateľa: <strong>${escapeHtml(email)}</strong></p>`
+    : "";
+  const time = formatDate(receivedAt);
+
+  return {
+    subject,
+    text: isPoll
+      ? `NOVÝ HLAS V ANKETE\n\nOdpoveď: ${choice}\nČas: ${time}`
+      : `NOVÁ SPÄTNÁ VÄZBA\n\n${message}\n\nKontakt: ${email || "neuvedený"}\nČas: ${time}`,
+    html: layout({
+      preheader: isPoll ? `Odpoveď v ankete: ${choice}` : "Nová správa od návštevníka webu.",
+      title,
+      body: `<h1 style="margin:0 0 18px;font-size:26px;line-height:1.25">${title}</h1>${content}${contact}`,
+      footer: `Odoslané cez domovskú stránku Kde je Medveď · ${escapeHtml(time)}`,
+    }),
+  };
+}
+
 export function buildWarningEmail({ row, subscription, unsubscribeToken, config }) {
   const payload = row.payload || {};
   const location = payload.location || "Lokalita neuvedená";

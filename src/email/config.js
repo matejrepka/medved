@@ -32,6 +32,7 @@ export function readEmailConfig(env = process.env) {
   const smtpPass = String(env.SMTP_PASS || "");
   const from = String(env.EMAIL_FROM || "").trim();
   const replyTo = String(env.EMAIL_REPLY_TO || "kontakt@kdejemedved.sk").trim();
+  const feedbackTo = String(env.FEEDBACK_TO || replyTo).trim();
   const tokenSecret = String(env.NEWSLETTER_TOKEN_SECRET || "").trim();
   const siteOrigin = normalizeOrigin(env.SITE_URL);
   const secure = booleanValue(env.SMTP_SECURE, smtpPort === 465);
@@ -55,6 +56,7 @@ export function readEmailConfig(env = process.env) {
     requireTls: booleanValue(env.SMTP_REQUIRE_TLS, !secure),
     from,
     replyTo,
+    feedbackTo,
     tokenSecret,
     siteOrigin,
     batchSize: Math.min(50, positiveInteger(env.EMAIL_OUTBOX_BATCH_SIZE, 10)),

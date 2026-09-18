@@ -7,6 +7,7 @@ const config = {
   enabled: true,
   from: "Alerts <alerts@example.test>",
   replyTo: "contact@example.test",
+  feedbackTo: "owner@example.test",
   siteOrigin: "https://example.test",
   tokenSecret: "a-secure-test-secret-with-more-than-32-characters",
   confirmationTtlSeconds: 3600,
@@ -34,6 +35,24 @@ test("confirmation delivery contains the signed confirmation link", async () => 
   assert.equal(messages[0].to, subscription.email);
   assert.match(messages[0].html, /\/api\/subscriptions\/confirm\?token=/);
   assert.match(messages[0].subject, /Potvrďte odber/);
+});
+
+test("feedback is sent to the owner and uses the visitor address for replies", async () => {
+  const messages = [];
+  const service = new EmailService({
+    config,
+    transport: { sendMail: async (message) => { messages.push(message); return { messageId: "feedback-1", rejected: [] }; } },
+  });
+  await service.sendFeedback({
+    kind: "message",
+    message: "Prosím pridajte filter podľa okresu.",
+    email: "visitor@example.test",
+    receivedAt: "2026-09-14T10:00:00Z",
+  });
+  assert.equal(messages[0].to, "owner@example.test");
+  assert.equal(messages[0].replyTo, "visitor@example.test");
+  assert.match(messages[0].subject, /Spätná väzba/);
+  assert.match(messages[0].text, /filter podľa okresu/);
 });
 
 test("outbox rows for one subscriber are combined into one digest", async () => {

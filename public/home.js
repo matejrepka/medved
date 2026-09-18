@@ -25,78 +25,131 @@
 
   syncThemeButton(currentTheme());
 
-  const form = document.getElementById("notifyForm");
-  if (!form) return;
-
-  const typeRadios = form.querySelectorAll('input[name="notifyType"]');
-  const areaWrap = document.getElementById("notifyAreaWrap");
-  const areaInput = document.getElementById("notifyArea");
-  const message = document.getElementById("notifyMessage");
-  const button = document.getElementById("notifyBtn");
-  const buttonLabel = button.querySelector("span");
-
-  function syncAreaField({ focus = false } = {}) {
-    const isArea = form.notifyType.value === "area";
-    areaWrap.hidden = !isArea;
-    areaInput.required = isArea;
-    if (isArea && focus) areaInput.focus();
+  async function sendFeedback(payload) {
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "Odoslanie sa nepodarilo. Skúste to prosím znova.");
+    }
+    return data;
   }
 
-  function showMessage(text, type = "") {
-    message.textContent = text;
-    message.className = `form-message${type ? ` ${type}` : ""}`;
+  const pollForm = document.getElementById("newsletterPollForm");
+  const pollStatus = document.getElementById("newsletterPollStatus");
+  const pollStorageKey = "newsletter-poll-vote-2026";
+
+  function setPollComplete(message) {
+    pollForm?.querySelectorAll("button").forEach((button) => {
+      button.disabled = true;
+    });
+    if (pollStatus) pollStatus.textContent = message;
   }
 
-  typeRadios.forEach((radio) => {
-    radio.addEventListener("change", () => syncAreaField({ focus: true }));
-  });
+  try {
+    if (localStorage.getItem(pollStorageKey)) {
+      setPollComplete("Ďakujeme, váš hlas už máme.");
+    }
+  } catch (error) {}
 
-  form.addEventListener("submit", async (event) => {
+  pollForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    showMessage("");
+    const submitter = event.submitter;
+    const choice = submitter?.value;
+    if (!choice) return;
 
-    const email = form.email.value.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showMessage("Zadajte platnú e-mailovú adresu.", "error");
-      form.email.focus();
-      return;
-    }
-
-    const notifyType = form.notifyType.value;
-    const areaName = notifyType === "area" ? areaInput.value.trim() : null;
-    if (notifyType === "area" && !areaName) {
-      showMessage("Zadajte názov oblasti, ktorú chcete sledovať.", "error");
-      areaInput.focus();
-      return;
-    }
-
-    button.disabled = true;
-    button.setAttribute("aria-busy", "true");
-    buttonLabel.textContent = "Odosielam...";
+    const buttons = pollForm.querySelectorAll("button");
+    buttons.forEach((button) => { button.disabled = true; });
+    submitter.setAttribute("aria-busy", "true");
+    if (pollStatus) pollStatus.textContent = "Odosielam váš hlas…";
 
     try {
-      const response = await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, notifyType, areaName }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Odber sa nepodarilo uložiť.");
-      }
-
-      showMessage(data.message || "Skontrolujte si e-mail a potvrďte odber.", "success");
-      form.reset();
-      syncAreaField();
+      const data = await sendFeedback({ kind: "newsletter_poll", choice });
+      try { localStorage.setItem(pollStorageKey, choice); } catch (error) {}
+      setPollComplete(data.message || "Ďakujeme za váš hlas.");
     } catch (error) {
-      showMessage(error.message || "Odber sa nepodarilo uložiť. Skúste to znova.", "error");
+      buttons.forEach((button) => { button.disabled = false; });
+      if (pollStatus) pollStatus.textContent = error.message;
     } finally {
-      button.disabled = false;
-      button.removeAttribute("aria-busy");
-      buttonLabel.textContent = "Prihlásiť sa na odber";
+      submitter.removeAttribute("aria-busy");
     }
   });
 
-  syncAreaField();
+  const feedbackToggle = document.getElementById("feedbackToggle");
+  const feedbackPanel = document.getElementById("feedbackPanel");
+  const feedbackClose = document.getElementById("feedbackClose");
+  const feedbackForm = document.getElementById("feedbackForm");
+  const feedbackMessage = document.getElementById("feedbackMessage");
+  const feedbackEmail = document.getElementById("feedbackEmail");
+  const feedbackStatus = document.getElementById("feedbackStatus");
+  const feedbackSubmit = document.getElementById("feedbackSubmit");
+  const feedbackSubmitLabel = feedbackSubmit?.querySelector("span");
+
+  function setFeedbackOpen(open, { restoreFocus = false } = {}) {
+    if (!feedbackPanel || !feedbackToggle) return;
+    feedbackPanel.hidden = !open;
+    feedbackToggle.setAttribute("aria-expanded", String(open));
+    if (open) {
+      requestAnimationFrame(() => feedbackMessage?.focus());
+    } else if (restoreFocus) {
+      feedbackToggle.focus();
+    }
+  }
+
+  feedbackToggle?.addEventListener("click", () => {
+    setFeedbackOpen(Boolean(feedbackPanel?.hidden));
+  });
+  feedbackClose?.addEventListener("click", () => setFeedbackOpen(false, { restoreFocus: true }));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && feedbackPanel && !feedbackPanel.hidden) {
+      setFeedbackOpen(false, { restoreFocus: true });
+    }
+  });
+
+  feedbackForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = feedbackMessage.value.trim();
+    const email = feedbackEmail.value.trim();
+    feedbackStatus.textContent = "";
+    feedbackStatus.className = "form-message feedback-status";
+
+    if (message.length < 3) {
+      feedbackStatus.textContent = "Napíšte prosím aspoň krátku správu.";
+      feedbackStatus.classList.add("error");
+      feedbackMessage.focus();
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      feedbackStatus.textContent = "E-mail nie je platný. Opravte ho alebo pole nechajte prázdne.";
+      feedbackStatus.classList.add("error");
+      feedbackEmail.focus();
+      return;
+    }
+
+    feedbackSubmit.disabled = true;
+    feedbackSubmit.setAttribute("aria-busy", "true");
+    feedbackSubmitLabel.textContent = "Odosielam…";
+
+    try {
+      const data = await sendFeedback({
+        kind: "message",
+        message,
+        email: email || null,
+        website: feedbackForm.website.value,
+      });
+      feedbackForm.reset();
+      feedbackStatus.textContent = data.message || "Ďakujeme. Vaša správa bola odoslaná.";
+      feedbackStatus.classList.add("success");
+    } catch (error) {
+      feedbackStatus.textContent = error.message;
+      feedbackStatus.classList.add("error");
+    } finally {
+      feedbackSubmit.disabled = false;
+      feedbackSubmit.removeAttribute("aria-busy");
+      feedbackSubmitLabel.textContent = "Odoslať správu";
+    }
+  });
 })();

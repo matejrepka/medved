@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 import { createEmailToken } from "./tokens.js";
-import { buildConfirmationEmail, buildDigestEmail } from "./templates.js";
+import { buildConfirmationEmail, buildDigestEmail, buildFeedbackEmail } from "./templates.js";
 import {
   cancelEmailNotifications,
   claimEmailNotifications,
@@ -86,6 +86,17 @@ export class EmailService {
     return this.#send(subscription.email, message);
   }
 
+  async sendFeedback(feedback) {
+    if (!this.config.enabled || !this.transport) throw new Error("Email delivery is not configured");
+    const message = buildFeedbackEmail(feedback);
+    return this.#send(
+      this.config.feedbackTo || this.config.replyTo,
+      message,
+      undefined,
+      feedback.email || this.config.replyTo
+    );
+  }
+
   async runAvailable(maxBatches = 3) {
     if (!this.config.enabled) return { processed: 0, sent: 0, disabled: true };
     if (this.inFlight) return this.inFlight;
@@ -153,10 +164,10 @@ export class EmailService {
     return { processed: rows.length, sent, subscriptions: groups.length };
   }
 
-  async #send(to, message, headers = undefined) {
+  async #send(to, message, headers = undefined, replyTo = this.config.replyTo) {
     const info = await this.transport.sendMail({
       from: this.config.from,
-      replyTo: this.config.replyTo || undefined,
+      replyTo: replyTo || undefined,
       to,
       subject: message.subject,
       text: message.text,
