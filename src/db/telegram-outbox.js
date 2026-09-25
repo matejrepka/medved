@@ -1,8 +1,30 @@
 import { getSupabase } from "./supabase.js";
 
-export async function claimTelegramNotifications(limit) {
+export async function claimTelegramNotifications(limit, reportsOnly = false) {
   const supabase = getSupabase();
   if (!supabase) return [];
+  if (reportsOnly) {
+    // Email-only deployments leave unrelated Telegram events untouched. Compare
+    // attempts and status when claiming so concurrent workers cannot both win.
+    const now = new Date().toISOString();
+    const stale = new Date(Date.now() - 300_000).toISOString();
+    const { data: candidates, error: queryError } = await supabase
+      .from("telegram_notification_outbox").select("*")
+      .eq("event_type", "pending_public_report")
+      .or(`and(status.eq.pending,available_at.lte.${now}),and(status.eq.processing,locked_at.lt.${stale})`)
+      .order("id").limit(Math.max(1, Math.min(50, limit || 10)));
+    if (queryError) throw queryError;
+    const claimed = [];
+    for (const row of candidates || []) {
+      const { data, error } = await supabase.from("telegram_notification_outbox")
+        .update({ status: "processing", attempts: row.attempts + 1, locked_at: now, updated_at: now })
+        .eq("id", row.id).eq("status", row.status).eq("attempts", row.attempts)
+        .select("*");
+      if (error) throw error;
+      claimed.push(...(data || []));
+    }
+    return claimed;
+  }
   const { data, error } = await supabase.rpc("claim_telegram_notification_outbox", {
     p_limit: limit,
   });

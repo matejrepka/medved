@@ -6,3 +6,6 @@ npm-debug.log*
 *.log
 .agents
 .codex
+
+.vercel
+.env*

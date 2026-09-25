@@ -25,6 +25,24 @@ const subscription = {
   confirmation_nonce: "nonce-value",
 };
 
+test("report approval email goes to the moderator with escaped details and an admin link", async () => {
+  const messages = [];
+  const service = new EmailService({
+    config: { ...config, enabled: false, moderationEnabled: true, moderationTo: "kdejemedved@gmail.com" },
+    transport: { sendMail: async (message) => { messages.push(message); return { rejected: [] }; } },
+  });
+  await service.sendReportModeration({
+    aggregate_id: "42",
+    payload: { location: "Martin\r\nInjected", description: "<script>bad</script>", created_at: "2026-09-22T10:00:00Z" },
+  });
+  assert.equal(messages[0].to, "kdejemedved@gmail.com");
+  assert.match(messages[0].text, /Hlásenie #42/);
+  assert.match(messages[0].html, /https:\/\/example.test\/admin/);
+  assert.match(messages[0].html, /&lt;script&gt;/);
+  assert.doesNotMatch(messages[0].subject, /[\r\n]/);
+  assert.doesNotMatch(messages[0].html, /<script>/);
+});
+
 test("confirmation delivery contains the signed confirmation link", async () => {
   const messages = [];
   const service = new EmailService({

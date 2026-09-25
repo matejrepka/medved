@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 import { createEmailToken } from "./tokens.js";
-import { buildConfirmationEmail, buildDigestEmail, buildFeedbackEmail } from "./templates.js";
+import { buildConfirmationEmail, buildDigestEmail, buildFeedbackEmail, buildReportModerationEmail } from "./templates.js";
 import {
   cancelEmailNotifications,
   claimEmailNotifications,
@@ -50,7 +50,7 @@ export class EmailService {
     logger = console,
   }) {
     this.config = config;
-    this.transport = transport || (config.enabled ? nodemailer.createTransport({
+    this.transport = transport || (config.enabled || config.moderationEnabled ? nodemailer.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
       secure: config.secure,
@@ -95,6 +95,11 @@ export class EmailService {
       undefined,
       feedback.email || this.config.replyTo
     );
+  }
+
+  async sendReportModeration(row) {
+    if (!(this.config.moderationEnabled ?? this.config.enabled) || !this.transport) throw new Error("Email delivery is not configured");
+    return this.#send(this.config.moderationTo, buildReportModerationEmail(row, this.config));
   }
 
   async runAvailable(maxBatches = 3) {

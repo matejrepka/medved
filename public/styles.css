@@ -25,6 +25,8 @@
   --bark: #7a4a24;
   --bark-hover: #623a1b;
   --bark-soft: rgba(122, 74, 36, 0.1);
+  --notice-orange: #9a4918;
+  --notice-orange-surface: #fff0e6;
   --moss: #7f9651;
 
   --shadow-sm: 0 1px 2px rgba(26, 26, 23, 0.05);
@@ -66,6 +68,8 @@
   --bark: #d0a06a;
   --bark-hover: #e0b77f;
   --bark-soft: rgba(208, 160, 106, 0.13);
+  --notice-orange: #ffd0ae;
+  --notice-orange-surface: #412514;
   --moss: #9dad6f;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -350,6 +354,41 @@ main {
   min-width: 0;
   position: relative;
   z-index: 1;
+}
+
+.service-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin: 0 0 clamp(24px, 3vw, 34px);
+  padding: 14px 16px;
+  color: var(--notice-orange);
+  background: var(--notice-orange-surface);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+
+.service-notice > i {
+  margin-top: 2px;
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+
+.service-notice h2 {
+  color: inherit;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.service-notice p {
+  max-width: 76ch;
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .mascot-hero {

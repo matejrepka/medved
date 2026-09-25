@@ -46,6 +46,7 @@ export class TelegramService {
     markSent = markTelegramNotificationSent,
     reschedule = rescheduleTelegramNotification,
     moderate = moderateTelegramOutboxItem,
+    sendReportEmail = null,
     logger = console,
   }) {
     this.config = config;
@@ -55,9 +56,14 @@ export class TelegramService {
     this.markSent = markSent;
     this.reschedule = reschedule;
     this.moderate = moderate;
+    this.sendReportEmail = sendReportEmail;
     this.logger = logger;
     this.inFlight = null;
     this.timer = null;
+  }
+
+  get enabled() {
+    return this.config.enabled || Boolean(this.sendReportEmail);
   }
 
   async runOnce() {
@@ -65,7 +71,7 @@ export class TelegramService {
   }
 
   async runAvailable(maxBatches = 3) {
-    if (!this.config.enabled) return { processed: 0, disabled: true };
+    if (!this.enabled) return { processed: 0, disabled: true };
     if (this.inFlight) return this.inFlight;
     this.inFlight = this.#drainBatches(maxBatches);
     try {
@@ -76,7 +82,7 @@ export class TelegramService {
   }
 
   async runForAggregate(aggregateType, aggregateId) {
-    if (!this.config.enabled) return { processed: 0, sent: 0, disabled: true };
+    if (!this.enabled) return { processed: 0, sent: 0, disabled: true };
     const rows = await this.claimForAggregate(aggregateType, aggregateId);
     return this.#deliver(rows);
   }
@@ -94,7 +100,7 @@ export class TelegramService {
   }
 
   async #drain() {
-    const rows = await this.claim(this.config.batchSize);
+    const rows = await this.claim(this.config.batchSize, !this.config.enabled);
     return this.#deliver(rows);
   }
 
@@ -102,6 +108,12 @@ export class TelegramService {
     let sent = 0;
     for (const row of rows) {
       try {
+        if (row.event_type === "pending_public_report" && this.sendReportEmail) {
+          await this.sendReportEmail(row);
+          await this.markSent(row.id, null);
+          sent += 1;
+          continue;
+        }
         const card = buildTelegramCard(row, this.config);
         const message = await this.api(this.config, "sendMessage", {
           chat_id: this.config.chatId,
@@ -118,7 +130,7 @@ export class TelegramService {
   }
 
   start() {
-    if (!this.config.enabled || this.timer) return;
+    if (!this.enabled || this.timer) return;
     this.runAvailable().catch((error) => this.logger.error(`[telegram] outbox failed: ${error.message}`));
     this.timer = setInterval(() => {
       this.runAvailable().catch((error) => this.logger.error(`[telegram] outbox failed: ${error.message}`));
@@ -127,7 +139,7 @@ export class TelegramService {
   }
 
   kick() {
-    if (!this.config.enabled) return;
+    if (!this.enabled) return;
     queueMicrotask(() => {
       this.runAvailable().catch((error) => this.logger.error(`[telegram] outbox failed: ${error.message}`));
     });

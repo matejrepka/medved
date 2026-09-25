@@ -14,6 +14,39 @@ const config = {
   pollIntervalMs: 30_000,
 };
 
+test("public report notifications use email even with Telegram disabled", async () => {
+  const delivered = [];
+  const marked = [];
+  const row = { id: 91, event_type: "pending_public_report", attempts: 1 };
+  const service = new TelegramService({
+    config: { ...config, enabled: false },
+    claim: async (_limit, reportsOnly) => { assert.equal(reportsOnly, true); return [row]; },
+    sendReportEmail: async (report) => delivered.push(report),
+    api: async () => assert.fail("must not send a Telegram message"),
+    markSent: async (...args) => marked.push(args),
+    reschedule: async () => assert.fail("must not retry"),
+  });
+  assert.deepEqual(await service.runOnce(), { processed: 1, sent: 1 });
+  assert.deepEqual(delivered, [row]);
+  assert.deepEqual(marked, [[91, null]]);
+});
+
+test("failed approval email remains queued for retry without falling back to Telegram", async () => {
+  const row = { id: 92, event_type: "pending_public_report", attempts: 1 };
+  const retries = [];
+  const service = new TelegramService({
+    config,
+    claimForAggregate: async () => [row],
+    sendReportEmail: async () => { throw new Error("SMTP unavailable"); },
+    api: async () => assert.fail("must not send a Telegram message"),
+    markSent: async () => assert.fail("must not mark a failed email sent"),
+    reschedule: async (report) => retries.push(report.id),
+    logger: { error() {} },
+  });
+  assert.deepEqual(await service.runForAggregate("bear_report", 1), { processed: 1, sent: 0 });
+  assert.deepEqual(retries, [92]);
+});
+
 function callback(data, overrides = {}) {
   return {
     callback_query: {

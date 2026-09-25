@@ -43,10 +43,12 @@ export function readEmailConfig(env = process.env) {
   if (!smtpPass) missing.push("SMTP_PASS");
   if (!from) missing.push("EMAIL_FROM");
   if (!siteOrigin) missing.push("SITE_URL (https)");
+  const moderationEnabled = missing.length === 0;
   if (tokenSecret.length < 32) missing.push("NEWSLETTER_TOKEN_SECRET (min. 32 znakov)");
 
   return {
     enabled: missing.length === 0,
+    moderationEnabled,
     missing,
     smtpHost,
     smtpPort,
@@ -57,6 +59,7 @@ export function readEmailConfig(env = process.env) {
     from,
     replyTo,
     feedbackTo,
+    moderationTo: String(env.MODERATION_EMAIL_TO || "kdejemedved@gmail.com").trim(),
     tokenSecret,
     siteOrigin,
     batchSize: Math.min(50, positiveInteger(env.EMAIL_OUTBOX_BATCH_SIZE, 10)),

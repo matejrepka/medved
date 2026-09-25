@@ -94,6 +94,7 @@ const parsedEmailConfig = readEmailConfig();
 const emailConfig = {
   ...parsedEmailConfig,
   enabled: parsedEmailConfig.enabled && isSupabaseConfigured(),
+  moderationEnabled: parsedEmailConfig.moderationEnabled && isSupabaseConfigured(),
 };
 
 const PUBLIC_PAGES = {
@@ -1036,11 +1037,15 @@ const newsStore = new ScheduledDataStore({
   recordRun: recordScrapeRun,
 });
 
-const telegramService = new TelegramService({ config: telegramConfig });
 const emailService = new EmailService({ config: emailConfig });
+const telegramService = new TelegramService({
+  config: telegramConfig,
+  // Public reports use the existing durable moderation queue, delivered by email.
+  sendReportEmail: (row) => emailService.sendReportModeration(row),
+});
 
 async function flushTelegramNotifications(context) {
-  if (!telegramConfig.enabled) return;
+  if (!telegramService.enabled) return;
   try {
     // Bounded, awaited delivery is important on ephemeral/serverless instances.
     // The durable outbox retains anything not reached in these batches.
@@ -1051,7 +1056,7 @@ async function flushTelegramNotifications(context) {
 }
 
 async function flushPriorityTelegramNotification(aggregateType, aggregateId, context) {
-  if (!telegramConfig.enabled || aggregateId == null) return { processed: 0, sent: 0 };
+  if (!telegramService.enabled || aggregateId == null) return { processed: 0, sent: 0 };
   try {
     return await telegramService.runForAggregate(aggregateType, aggregateId);
   } catch (err) {

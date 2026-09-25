@@ -1,3 +1,25 @@
+export function buildReportModerationEmail(row, config) {
+  const payload = row.payload || {};
+  const adminUrl = absoluteUrl(config.siteOrigin, "/admin");
+  const subject = `Na schválenie: ${headerText(payload.location, "Nové hlásenie medveďa")}`;
+  const details = [
+    `Hlásenie #${row.aggregate_id} čaká na schválenie.`,
+    `Lokalita: ${payload.location || "neuvedená"}`,
+    `Kedy: ${formatDate(payload.reported_date || payload.created_at)}`,
+    `Popis: ${payload.description || "neuvedený"}`,
+  ];
+  return {
+    subject,
+    text: `${details.join("\n")}\n\nSchváliť alebo zamietnuť v administrácii (po prihlásení): ${adminUrl}`,
+    html: layout({
+      title: subject,
+      preheader: "Nové používateľské varovanie čaká na kontrolu.",
+      body: `<h1>Varovanie na schválenie</h1>${details.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}${button(adminUrl, "Skontrolovať a schváliť")}`,
+      footer: "Po prihlásení otvorte čakajúce hlásenia. Varovanie sa zverejní až po schválení.",
+    }),
+  };
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")

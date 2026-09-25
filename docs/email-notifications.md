@@ -23,6 +23,7 @@ písmen a slovenskú diakritiku s lokalitou, titulkom a popisom položky.
    SMTP_PASS=...
    EMAIL_FROM=Kde je Medveď – upozornenia <warning@kdejemedved.sk>
    EMAIL_REPLY_TO=kontakt@kdejemedved.sk
+   MODERATION_EMAIL_TO=kdejemedved@gmail.com
    SITE_URL=https://www.kdejemedved.sk
    NEWSLETTER_TOKEN_SECRET=nahodna-hodnota-s-minimalne-32-znakmi
    EMAIL_DIGEST_HOURS=6,12,18
@@ -40,7 +41,21 @@ písmen a slovenskú diakritiku s lokalitou, titulkom a popisom položky.
 
 ## Spoľahlivosť a bezpečnosť
 
-- E-mail sa neposiela bez potvrdenia vlastníctva adresy.
+Používateľské hlásenia na schválenie sa odosielajú ihneď na
+`MODERATION_EMAIL_TO` (predvolene `kdejemedved@gmail.com`) namiesto Telegramu.
+E-mail obsahuje lokalitu, dátum, popis, ID hlásenia a odkaz na `/admin`, kde sa
+moderátor prihlási a hlásenie schváli alebo zamietne. Otvorenie e-mailu ani odkazu
+hlásenie neschváli. Tieto e-maily nečakajú na čas súhrnu ani na newsletterový odber.
+Používajú existujúci trvácny rad `telegram_notification_outbox` a opakovanie pri
+chybe SMTP (najviac 10 pokusov); vyžadujú existujúce migrácie 005 a 008.
+Nie je potrebná nová migrácia. Bez Telegramu worker vyberá iba používateľské
+hlásenia; ostatné Telegram udalosti necháva v rade. Už odoslané notifikácie sa
+automaticky neposielajú znova. Pri chýbajúcom SMTP zostávajú hlásenia v rade na
+opakovaný pokus, neposielajú sa náhradnou cestou cez Telegram.
+Schvaľovacie e-maily potrebujú SMTP a HTTPS `SITE_URL`; nevyžadujú
+`NEWSLETTER_TOKEN_SECRET`, pretože schvaľovanie chráni prihlásenie do administrácie.
+
+- Newsletter sa neposiela bez potvrdenia vlastníctva adresy.
 - Všetky pripravené položky jedného odberateľa sa nárokujú naraz a odošlú v jedinom
   e-maile so sekciami Varovania a Správy.
 - Jedinečný kľúč `(subscription_id, dedupe_key)` zabráni opakovanému zaradeniu položky.
