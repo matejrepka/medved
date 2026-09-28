@@ -694,7 +694,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
       : "";
     return `<article class="card sighting ssr-list-item" data-id="${escapeHtml(item.id)}">
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
-      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
+      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}" aria-label="${escapeHtml(`${item.location || "Lokalita neuvedená"}, varovanie z ${formatSlovakDate(item.reportedAt, withTime)}`)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
       ${note}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
     </article>`;
@@ -747,7 +747,7 @@ function renderSsrNews(items, emptyMessage = "Správy sa načítavajú…", limi
     const locations = renderSsrNewsLocations(item);
     return `<article class="card news ssr-list-item" data-id="${escapeHtml(item.id)}"${item.incidentId ? ` id="incident-${escapeHtml(item.incidentId)}"` : ""}>
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
-      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}">${escapeHtml(item.title || "Správa o medveďovi")}</a></h4>
+      <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}" aria-label="${escapeHtml(`${item.title || "Správa o medveďovi"}, publikované ${formatSlovakDate(item.date)}`)}">${escapeHtml(item.title || "Správa o medveďovi")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(item.source || "verejný zdroj", href ? [{ label: item.source || "Zdroj", url: href }] : [])}${item.sourceTypeLabel ? `<span>${escapeHtml(item.sourceTypeLabel)}</span>` : ""}${sourceCount}${official}<time datetime="${escapeHtml(item.date || "")}"><span class="meta-label">Publikované:</span>${escapeHtml(formatSlovakDate(item.date))}</time></div>
       ${item.summary || item.snippet ? `<p class="card-note">${escapeHtml(String(item.summary || item.snippet).slice(0, 320))}</p>` : ""}
       ${locations}<div class="news-card-cta"><a class="card-detail-action news-card-detail-action" href="${escapeHtml(detail)}"><span>Pozrieť súhrn a podrobnosti</span><i class="ph ph-arrow-right" aria-hidden="true"></i></a></div><div class="card-actions card-actions-news">${link ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Zdroj</span>${link}</div>` : ""}<a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v správe ${escapeHtml(item.title || "Správa o medveďovi")}">Nahlásiť chybu</a></div>${coverage}
@@ -1219,7 +1219,10 @@ app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
     if (!response.ok) throw new Error(`CARTO returned HTTP ${response.status}`);
 
     res.setHeader("Content-Type", response.headers.get("content-type") || "image/png");
-    res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+    // The public clients use a versioned tile URL, so every coordinate/style
+    // response is safe to keep until that version is intentionally bumped.
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.setHeader("CDN-Cache-Control", "public, max-age=31536000, immutable");
     res.send(Buffer.from(await response.arrayBuffer()));
   } catch (err) {
     console.error("[map-tiles] CARTO tile failed:", err.message);
@@ -2144,16 +2147,24 @@ app.get("/sitemap.xml", async (req, res) => {
 
 // Stručný strojovo čitateľný opis pre generatívne vyhľadávače a asistentov.
 // Nie je náhradou za HTML; odkazuje výhradne na rovnaký verejný obsah a API.
-app.get("/llms.txt", async (req, res) => {
+app.get("/llms.txt", (req, res) => {
   const origin = siteOrigin(req);
   let locationLinks = "";
-  try {
-    const { topLocations } = await loadLocationOverview();
+  const cachedOverview = locationOverviewCache.value;
+
+  if (cachedOverview?.topLocations?.length) {
+    const { topLocations } = cachedOverview;
     locationLinks = `\n## Najčastejšie lokality v aktuálnych dátach\n${topLocations
       .map((location) => `- [Výskyt medveďa: ${location.name}](${absoluteUrl(origin, location.path)})`)
       .join("\n")}\n`;
-  } catch (err) {
-    console.error("[seo] llms location links failed:", err.message);
+  }
+
+  // Discovery crawlers should never wait for database-backed aggregation.
+  // Refresh the optional location links in the background for later requests.
+  if (!cachedOverview || locationOverviewCache.expiresAt <= Date.now()) {
+    void loadLocationOverview().catch((err) => {
+      console.error("[seo] llms location links refresh failed:", err.message);
+    });
   }
   res
     .type("text/plain")
@@ -2681,6 +2692,21 @@ app.post("/api/admin/refresh", adminAuth, async (req, res) => {
 const immutableVendorHeaders = (res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
 };
+
+// The upstream icon stylesheet intentionally uses `font-display: block`,
+// which can hide every icon for hundreds of milliseconds on a cold visit.
+// Serve the same package CSS with the non-blocking display policy applied.
+const phosphorRegularCss = (
+  await readFile(
+    path.join(__dirname, "node_modules", "@phosphor-icons", "web", "src", "regular", "style.css"),
+    "utf8"
+  )
+).replace("font-display: block;", "font-display: swap;");
+
+app.get("/vendor/phosphor/regular/style.css", (_req, res) => {
+  immutableVendorHeaders(res);
+  res.type("text/css").send(phosphorRegularCss);
+});
 
 app.use(
   "/vendor/leaflet",

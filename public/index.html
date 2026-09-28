@@ -37,7 +37,7 @@
     />
     <link
       rel="stylesheet"
-      href="/vendor/phosphor/regular/style.css?v=2.1.1"
+      href="/vendor/phosphor/regular/style.css?v=2.1.1-display1"
       media="print"
       onload="this.media='all'"
     />
@@ -46,22 +46,32 @@
         rel="stylesheet"
         href="/fonts.css?v=20260928-1"
       />
-      <link rel="stylesheet" href="/vendor/phosphor/regular/style.css?v=2.1.1" />
+      <link rel="stylesheet" href="/vendor/phosphor/regular/style.css?v=2.1.1-display1" />
     </noscript>
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       href="/vendor/leaflet/leaflet.css?v=1.9.4"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
+      onload="this.onload=null;this.rel='stylesheet'"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260928-perf1" />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="/vendor/leaflet/leaflet.css?v=1.9.4"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+      />
+    </noscript>
+    <link rel="stylesheet" href="/styles.css?v=20260928-perf2" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
     <header class="site-header">
       <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
         <span class="brand-mark">
-          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Symbol medveďa" />
         </span>
         <span class="brand-name">Kde je Medve&#271;</span>
       </a>
@@ -338,7 +348,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=20260928-perf1"></script>
+    <script src="/app.js?v=20260928-perf2"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

@@ -131,8 +131,8 @@ function refitMapOnVisibleMarkers() {
 const TILES = {
   standard: {
     urls: {
-      light: "/api/map-tiles/light_all/{z}/{x}/{y}.png",
-      dark: "/api/map-tiles/dark_all/{z}/{x}/{y}.png",
+      light: "/api/map-tiles/light_all/{z}/{x}/{y}.png?v=20260928-1",
+      dark: "/api/map-tiles/dark_all/{z}/{x}/{y}.png?v=20260928-1",
     },
     options: {
       maxZoom: 19,
@@ -191,19 +191,29 @@ function setTiles(layerId) {
 // Čisté značky namiesto emoji. Kruhová = medvedie varovanie (moderované hlásenie),
 // hranatá inej farby = medvedie varovanie zo správ — vizuálne odlíšené.
 const pinIcon = L.divIcon({
-  className: "",
+  className: "map-marker-hitbox",
   html: '<div class="pin"></div>',
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-  popupAnchor: [0, -8],
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
+  popupAnchor: [0, -12],
 });
 const newsPinIcon = L.divIcon({
-  className: "",
+  className: "map-marker-hitbox",
   html: '<div class="pin pin-news"></div>',
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-  popupAnchor: [0, -8],
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
+  popupAnchor: [0, -12],
 });
+
+function accessibleMarker(position, icon, label) {
+  const marker = L.marker(position, { icon, title: label, alt: label });
+  marker.on("add", () => {
+    const element = marker.getElement();
+    element?.setAttribute("aria-label", label);
+    element?.setAttribute("title", label);
+  });
+  return marker.addTo(map);
+}
 
 // --- Poloha používateľa ---
 // Súradnice sa používajú iba lokálne v prehliadači na vycentrovanie mapy.
@@ -1163,7 +1173,7 @@ function renderSightings() {
         return `
       <article class="card sighting reveal" style="${revealStyle(i)}" data-id="${esc(s.id)}">
         ${recordSignalsHtml(kind, s.reportedAt)}
-        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}">${esc(s.location)}</a></h4>
+        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}" aria-label="${esc(`${s.location || "Lokalita neuvedená"}, varovanie z ${fmtDate(s.reportedAt, withTime)}`)}">${esc(s.location)}</a></h4>
         <div class="card-meta">
           ${listingSourceMetaHtml(sourceLabel, sourceEntries)}
           <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
@@ -1206,7 +1216,8 @@ function renderMarkers() {
   const bounds = [];
   for (const s of filteredSightings()) {
     if (!s.hasCoords) continue;
-    const marker = L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map);
+    const markerLabel = `Zobraziť hlásenie: ${s.location || "lokalita neuvedená"}`;
+    const marker = accessibleMarker([s.lat, s.lng], pinIcon, markerLabel);
     const sourceLabel = warningSourceLabel(s);
     const kind = warningRecordKind(s);
     const withTime = s.datePrecision !== "date";
@@ -1230,7 +1241,8 @@ function renderMarkers() {
     const kind = newsRecordKind(n);
     newsLocations(n).forEach((point, index) => {
       if (!point.hasCoords) return;
-      const marker = L.marker([point.lat, point.lng], { icon: newsPinIcon }).addTo(map);
+      const markerLabel = `Zobraziť varovanie zo správ: ${point.place || n.title || "lokalita neuvedená"}`;
+      const marker = accessibleMarker([point.lat, point.lng], newsPinIcon, markerLabel);
       marker.bindPopup(`
         ${recordSignalsHtml(kind, n.date)}
         <p class="popup-loc">${esc(point.place || "Varovanie zo správ")}</p>
@@ -1338,7 +1350,7 @@ function renderNews() {
           isWarning ? " is-warning" : ""
         }" style="${revealStyle(i)}" data-id="${esc(n.id)}"${n.incidentId ? ` id="incident-${esc(n.incidentId)}"` : ""}>
         ${recordSignalsHtml(kind, n.date)}
-        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}">${esc(n.title)}</a></h4>
+        <h4 class="card-title"><a class="card-title-link" href="${esc(detailUrl)}" aria-label="${esc(`${n.title || "Správa o medveďovi"}, publikované ${fmtDate(n.date)}`)}">${esc(n.title)}</a></h4>
         <div class="card-meta">
           ${sourceMeta}
           ${n.sourceCount > 1 ? `<span class="meta-coverage">${esc(countPhrase(n.sourceCount, ["zdroj", "zdroje", "zdrojov"]))}</span>` : ""}
@@ -1514,7 +1526,6 @@ async function loadData() {
       state.sightings = dedupeSightings(payload.items);
       state.sightingsUpdatedAt = payload.updatedAt;
       state.loaded.sightings = true;
-      renderMarkers();
       renderListAfterMarkers(renderSightings);
     })
     .catch(() => {
@@ -1528,7 +1539,6 @@ async function loadData() {
       state.news = payload.items;
       state.newsUpdatedAt = payload.updatedAt;
       state.loaded.news = true;
-      renderMarkers();
       renderListAfterMarkers(renderNews);
     })
     .catch(() => {
@@ -1536,6 +1546,21 @@ async function loadData() {
     });
 
   await Promise.all([sightingsRequest, newsRequest]);
+
+  // Fit once using the complete response set. Rendering after each endpoint
+  // used to move the map repeatedly and trigger multiple tile grids.
+  renderMarkers();
+
+  // Let the final data-driven fit run before adding the basemap. Previously
+  // Leaflet downloaded a complete zoom-7 view and discarded it immediately
+  // when the markers moved the map to zoom 8.
+  if (!tileLayer) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!tileLayer) setTiles(state.mapLayer);
+      });
+    });
+  }
 
   const failures = [];
   if (sourceFailed.sightings) failures.push("hlásenia");
@@ -1594,7 +1619,6 @@ if ("ResizeObserver" in window) {
 window.addEventListener("resize", handleMapContainerResize);
 
 // --- Štart ---
-setTiles(state.mapLayer);
 addLocationControl();
 addCenterMapControl();
 loadData();

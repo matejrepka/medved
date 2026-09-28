@@ -941,9 +941,12 @@ main {
 }
 
 /* Minimal map markers instead of emoji */
-.leaflet-div-icon {
+.leaflet-div-icon,
+.map-marker-hitbox {
   background: transparent;
   border: 0;
+  display: grid;
+  place-items: center;
 }
 .pin {
   width: 14px;
