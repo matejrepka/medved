@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex, follow" />
+    <title>Stránka sa nenašla | Kde je Medveď</title>
+    <meta
+      name="description"
+      content="Táto stránka sa nenašla. Vráťte sa na mapu alebo na domovskú stránku projektu Kde je Medveď."
+    />
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link href="/fonts.css?v=20260928-1" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="/vendor/phosphor/regular/style.css?v=2.1.1-display1"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260731-record-trust1" />
+    <link rel="stylesheet" href="/404.css?v=20260928-2" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
+  </head>
+  <body class="not-found-body">
+    <header class="site-header">
+      <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="" />
+        </span>
+        <span class="brand-name">Kde je Medve&#271;</span>
+      </a>
+      <nav class="main-nav" aria-label="Hlavné menu"></nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
+          <i class="ph ph-moon" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="not-found-page" id="mainContent">
+      <section class="not-found" aria-labelledby="notFoundTitle">
+        <div class="not-found-visual" aria-hidden="true">
+          <span class="not-found-code">404</span>
+          <picture>
+            <source
+              srcset="/assets/mascot/bear-404-ooo.webp?v=20260928-1"
+              type="image/webp"
+            />
+            <img
+              class="not-found-bear"
+              src="/assets/mascot/bear-404-ooo.png?v=20260928-1"
+              alt=""
+              width="1240"
+              height="1240"
+            />
+          </picture>
+        </div>
+
+        <div class="not-found-copy">
+          <p class="not-found-kicker">Stránka sa nenašla</p>
+          <h1 id="notFoundTitle">Oooo... táto stopa nikam nevedie.</h1>
+          <p>
+            Odkaz sa možno zatúlal do lesa alebo už neexistuje. Na mape však stále
+            nájdete najnovšie hlásenia.
+          </p>
+          <div class="not-found-actions">
+            <a class="btn" href="/">
+              <i class="ph ph-map-trifold" aria-hidden="true"></i>
+              Späť na mapu
+            </a>
+            <a class="not-found-home" href="/domov">
+              Na domovskú stránku
+              <i class="ph ph-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/page.js?v=20260928-1"></script>
+  </body>
+</html>

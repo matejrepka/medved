@@ -2781,6 +2781,16 @@ app.use(
   })
 );
 
+// Keep unknown browser routes inside the branded site shell while preserving
+// the status code that search engines and clients expect from a missing page.
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/") || !req.accepts("html")) return next();
+  return res
+    .status(404)
+    .set("X-Robots-Tag", "noindex, follow")
+    .sendFile(path.join(PUBLIC_DIR, "404.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
   console.log(

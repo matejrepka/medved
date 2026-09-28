@@ -30,6 +30,7 @@ const MASCOTS = [
     responsiveWidths: [640],
   },                                                                // hero detail, cropped bottom-right
   { name: "bear-helper", size: 460, webp: true },                   // CTA "Videli ste medveda?"
+  { name: "bear-404-ooo", size: 1240, webp: true },                // branded not-found page
 ];
 
 async function fileSize(p) {
