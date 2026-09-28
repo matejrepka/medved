@@ -1499,8 +1499,8 @@ function syncLoadStatus() {
 async function loadData() {
   state.dataLoading = true;
   syncLoadStatus();
-  // News načítavame bez cache, aby sa moderácia kategórie/lokality hneď
-  // prejavila aj na mape.
+  // Serverový store sa po moderácii obnoví a ETag ho lacno revaliduje, takže
+  // čerstvosť nevyžaduje nový databázový dotaz pri každom otvorení mapy.
   // Každý zdroj spracujeme hneď po jeho doručení. Pomalší endpoint správ tak
   // už neblokuje prvé hlásenia na mape. Zoznam pod mapou odložíme do ďalšej
   // úlohy, aby prehliadač dostal príležitosť značky najprv vykresliť.
@@ -1521,7 +1521,7 @@ async function loadData() {
       sourceFailed.sightings = true;
     });
 
-  const newsRequest = fetch(`/api/news?v=${API_VERSION}`, { cache: "no-store" })
+  const newsRequest = fetch(`/api/news?v=${API_VERSION}`, { credentials: "omit" })
     .then((response) => response.json())
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta správ");

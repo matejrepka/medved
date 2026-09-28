@@ -83,6 +83,8 @@ const NEWS_ROUTE_PREFIX = "/spravy/";
 const WARNING_ROUTE_PREFIX = "/varovania/";
 const ARCHIVE_PAGE_SIZE = 24;
 const ARCHIVE_PAGE_SIZES = new Set([24, 50, 100]);
+const PUBLIC_SSR_DATA_WAIT_MS = 180;
+const WARNINGS_CACHE_TTL_MS = 60 * 1000;
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
 const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
 const parsedTelegramConfig = readTelegramConfig();
@@ -873,10 +875,64 @@ const locationOverviewCache = {
   inFlight: null,
 };
 
+const warningsCache = {
+  value: null,
+  version: null,
+  expiresAt: 0,
+  inFlight: null,
+};
+
 function invalidateLocationOverviewCache() {
   locationOverviewCache.value = null;
   locationOverviewCache.version = null;
   locationOverviewCache.expiresAt = 0;
+}
+
+function invalidateWarningsCache() {
+  warningsCache.value = null;
+  warningsCache.version = null;
+  warningsCache.expiresAt = 0;
+  invalidateLocationOverviewCache();
+}
+
+function emptyLocationOverview() {
+  return {
+    warnings: [],
+    news: [],
+    locations: [],
+    topLocations: [],
+    report: { totals: {} },
+  };
+}
+
+async function loadLocationOverviewForRender() {
+  const version = latestContentDate();
+  const cached = locationOverviewCache.value;
+  const cacheIsFresh = cached &&
+    locationOverviewCache.version === version &&
+    locationOverviewCache.expiresAt > Date.now();
+
+  if (cacheIsFresh) return cached;
+
+  const pending = loadLocationOverview().catch((err) => {
+    console.error("[seo] public overview SSR failed:", err.message);
+    return null;
+  });
+
+  // Keep stale SSR content visible while it refreshes. On a cold start, never
+  // hold the whole document behind a slow database or network connection;
+  // the client-side API fills the live map and lists as soon as it can.
+  if (cached) return cached;
+
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(null), PUBLIC_SSR_DATA_WAIT_MS);
+  });
+  try {
+    return await Promise.race([pending, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function loadLocationOverview({ force = false } = {}) {
@@ -1185,15 +1241,36 @@ app.get("/api/sightings", async (_req, res) => {
 // hlásenia od používateľov / manuálne pridané varovania. Spravodajské články
 // zostávajú oddelené v /api/news a nikdy sa nepripájajú k sourceLinks hlásenia.
 async function loadWarnings() {
-  const [scraped, reports] = await Promise.all([
-    sightingsStore.get(),
-    loadApprovedBearReports().catch((err) => {
-      console.error("[warnings] reports load failed:", err.message);
-      return [];
-    }),
-  ]);
+  const version = sightingsStore.meta.fetchedAt || "unloaded";
+  if (
+    warningsCache.value &&
+    warningsCache.version === version &&
+    warningsCache.expiresAt > Date.now()
+  ) {
+    return warningsCache.value;
+  }
+  if (warningsCache.inFlight) return warningsCache.inFlight;
 
-  return mergeWarnings({ sightings: scraped, reports });
+  warningsCache.inFlight = (async () => {
+    const [scraped, reports] = await Promise.all([
+      sightingsStore.get(),
+      loadApprovedBearReports().catch((err) => {
+        console.error("[warnings] reports load failed:", err.message);
+        return [];
+      }),
+    ]);
+    const warnings = mergeWarnings({ sightings: scraped, reports });
+    warningsCache.value = warnings;
+    warningsCache.version = sightingsStore.meta.fetchedAt || "unloaded";
+    warningsCache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
+    return warnings;
+  })();
+
+  try {
+    return await warningsCache.inFlight;
+  } finally {
+    warningsCache.inFlight = null;
+  }
 }
 
 app.get("/api/warnings", async (_req, res) => {
@@ -1212,7 +1289,9 @@ app.get("/api/warnings", async (_req, res) => {
 
 app.get("/api/news", async (_req, res) => {
   try {
-    const data = isSupabaseConfigured() ? await loadNewsLogs() : await newsStore.get();
+    // Moderation and edit routes refresh this store. Re-querying Supabase here
+    // only delays every visitor without making the public result fresher.
+    const data = await newsStore.get();
     const scrapedTimes = data
       .map((item) => new Date(item._scrapedAt || 0).getTime())
       .filter((time) => Number.isFinite(time) && time > 0);
@@ -1225,7 +1304,7 @@ app.get("/api/news", async (_req, res) => {
       detailUrl: newsPath(item),
     }));
 
-    res.set("Cache-Control", "no-store, max-age=0");
+    res.set("Cache-Control", "no-cache");
     res.json({ updatedAt, count: items.length, items });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
@@ -1708,16 +1787,7 @@ async function renderPublicPage(req, res, pathname, page) {
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
     if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
-      const overview = await loadLocationOverview().catch((err) => {
-        console.error("[seo] public overview SSR failed:", err.message);
-        return {
-          warnings: [],
-          news: [],
-          locations: [],
-          topLocations: [],
-          report: { totals: {} },
-        };
-      });
+      const overview = (await loadLocationOverviewForRender()) || emptyLocationOverview();
       if (pathname === "/") {
         html = html
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
@@ -1750,7 +1820,9 @@ async function renderPublicPage(req, res, pathname, page) {
 
     const canonical = absoluteUrl(origin, pathname);
     res.set({
-      "Cache-Control": "no-cache",
+      "Cache-Control": pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania"
+        ? "public, max-age=60, stale-while-revalidate=300"
+        : "public, max-age=300, stale-while-revalidate=3600",
       "Content-Language": "sk",
       Link: `<${canonical}>; rel="canonical"`,
     });
@@ -2316,7 +2388,7 @@ app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   }
   try {
     await updateBearReportStatus(Number(req.params.id), status);
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     if (status === "approved") await flushEmailNotifications("report approval");
     res.json({ ok: true });
   } catch (err) {
@@ -2336,7 +2408,7 @@ app.post("/api/admin/sightings/:id/status", adminAuth, async (req, res) => {
     await sightingsStore.loadFromDatabase().catch((err) => {
       console.error("[sighting status] reload failed:", err.message);
     });
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     if (status === "approved") await flushEmailNotifications("sighting approval");
     res.json({ ok: true });
   } catch (err) {
@@ -2358,7 +2430,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news status] reload failed:", err.message);
     });
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -2398,7 +2470,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
     });
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
 
     res.json({
       ok: true,
@@ -2449,7 +2521,7 @@ app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news edit] reload failed:", err.message);
     });
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     res.json({ ok: true });
   } catch (err) {
     console.error("[news edit] failed:", err.message);
@@ -2468,7 +2540,7 @@ app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
         console.error("[sighting edit] reload failed:", err.message);
       });
     }
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     res.json({ ok: true });
   } catch (err) {
     console.error("[sighting edit] failed:", err.message);
@@ -2565,7 +2637,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       }
     }
 
-    invalidateLocationOverviewCache();
+    invalidateWarningsCache();
     res.json({ ok: true });
 
     // DB triggre už vytvorili trvácne outbox položky. Telegram zobudíme
@@ -2606,6 +2678,55 @@ app.post("/api/admin/refresh", adminAuth, async (req, res) => {
 
 // Servíruje @vercel/analytics ako ES modul priamo z node_modules, nech ho
 // vieme importovať v prehliadači bez bundlera (public/ je čistý HTML/JS).
+const immutableVendorHeaders = (res) => {
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+};
+
+app.use(
+  "/vendor/leaflet",
+  express.static(path.join(__dirname, "node_modules", "leaflet", "dist"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: immutableVendorHeaders,
+  })
+);
+
+app.use(
+  "/vendor/phosphor/regular",
+  express.static(path.join(__dirname, "node_modules", "@phosphor-icons", "web", "src", "regular"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: immutableVendorHeaders,
+  })
+);
+
+app.use(
+  "/vendor/chart",
+  express.static(path.join(__dirname, "node_modules", "chart.js", "dist"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: immutableVendorHeaders,
+  })
+);
+
+app.use(
+  "/vendor/fonts/hanken",
+  express.static(path.join(__dirname, "node_modules", "@fontsource-variable", "hanken-grotesk"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: immutableVendorHeaders,
+  })
+);
+
+app.use(
+  "/vendor/fonts/newsreader",
+  express.static(path.join(__dirname, "node_modules", "@fontsource-variable", "newsreader"), {
+    etag: true,
+    lastModified: true,
+    setHeaders: immutableVendorHeaders,
+  })
+);
+
 app.use(
   "/vendor/analytics",
   express.static(path.join(__dirname, "node_modules", "@vercel", "analytics", "dist"), {

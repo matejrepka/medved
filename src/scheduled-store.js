@@ -10,6 +10,7 @@ export class ScheduledDataStore {
     this.fetchedAt = 0;
     this.loadedAt = 0;
     this.inFlight = null;
+    this.loadInFlight = null;
     this.lastError = null;
     this.lastErrorStage = null;
     this.lastRun = null;
@@ -23,20 +24,30 @@ export class ScheduledDataStore {
 
   async loadFromDatabase() {
     if (!this.loadStored) return [];
-    const data = await this.loadStored();
-    if (Array.isArray(data)) {
-      const scrapedTimes = data
-        .map((item) => new Date(item._scrapedAt || 0).getTime())
-        .filter((time) => Number.isFinite(time) && time > 0);
+    if (this.loadInFlight) return this.loadInFlight;
 
-      this.value = data.map(({ _scrapedAt, ...item }) => item);
-      this.loadedAt = Date.now();
-      if (scrapedTimes.length > 0) {
-        this.fetchedAt = Math.max(...scrapedTimes);
+    this.loadInFlight = (async () => {
+      const data = await this.loadStored();
+      if (Array.isArray(data)) {
+        const scrapedTimes = data
+          .map((item) => new Date(item._scrapedAt || 0).getTime())
+          .filter((time) => Number.isFinite(time) && time > 0);
+
+        this.value = data.map(({ _scrapedAt, ...item }) => item);
+        this.loadedAt = Date.now();
+        if (scrapedTimes.length > 0) {
+          this.fetchedAt = Math.max(...scrapedTimes);
+        }
+        console.log(`[${this.name}] loaded ${this.value.length} items from Supabase`);
       }
-      console.log(`[${this.name}] loaded ${this.value.length} items from Supabase`);
+      return data;
+    })();
+
+    try {
+      return await this.loadInFlight;
+    } finally {
+      this.loadInFlight = null;
     }
-    return data;
   }
 
   async refresh(reason = "cron") {

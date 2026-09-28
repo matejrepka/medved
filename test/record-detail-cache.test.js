@@ -12,6 +12,10 @@ test("record detail retries with a fresh overview before returning a missing-rec
   );
   assert.match(
     source,
-    /await updateBearReportStatus\([\s\S]*?invalidateLocationOverviewCache\(\)/
+    /await updateBearReportStatus\([\s\S]*?invalidateWarningsCache\(\)/
+  );
+  assert.match(
+    source,
+    /function invalidateWarningsCache\(\) \{[\s\S]*?invalidateLocationOverviewCache\(\)/
   );
 });

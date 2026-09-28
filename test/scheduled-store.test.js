@@ -54,3 +54,28 @@ test("ScheduledDataStore uloží úspešný výsledok posledného behu", async (
   assert.equal(store.meta.lastRun.status, "success");
   assert.equal(store.meta.lastRun.itemCount, 2);
 });
+
+test("ScheduledDataStore zdieľa súbežné načítanie databázy", async () => {
+  let loads = 0;
+  let releaseLoad;
+  const gate = new Promise((resolve) => {
+    releaseLoad = resolve;
+  });
+  const store = new ScheduledDataStore({
+    name: "news",
+    fetcher: async () => [],
+    loadStored: async () => {
+      loads += 1;
+      await gate;
+      return [{ id: "article-1", _scrapedAt: "2026-09-28T08:00:00Z" }];
+    },
+  });
+
+  const startup = store.start();
+  const request = store.get();
+  releaseLoad();
+
+  const [, items] = await Promise.all([startup, request]);
+  assert.equal(loads, 1);
+  assert.deepEqual(items, [{ id: "article-1" }]);
+});

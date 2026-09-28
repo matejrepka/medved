@@ -23,9 +23,6 @@
       })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://unpkg.com" crossorigin />
     <link
       rel="preload"
       as="fetch"
@@ -33,20 +30,31 @@
       crossorigin="anonymous"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap"
-      rel="stylesheet"
+      href="/fonts.css?v=20260928-1"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
     <link
       rel="stylesheet"
-      href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"
+      href="/vendor/phosphor/regular/style.css?v=2.1.1"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="/fonts.css?v=20260928-1"
+      />
+      <link rel="stylesheet" href="/vendor/phosphor/regular/style.css?v=2.1.1" />
+    </noscript>
     <link
       rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      href="/vendor/leaflet/leaflet.css?v=1.9.4"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=20260731-news-cta1" />
+    <link rel="stylesheet" href="/styles.css?v=20260928-perf1" />
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -104,6 +112,7 @@
             class="map-filter-button"
             id="filterOpenBtn"
             type="button"
+            aria-label="Otvoriť filtre"
             aria-haspopup="dialog"
             aria-controls="filterDialog"
           >
@@ -325,11 +334,11 @@
 
     <script src="/page.js?v=20260731-map-first1"></script>
     <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      src="/vendor/leaflet/leaflet.js?v=1.9.4"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=20260811-updated-time1"></script>
+    <script src="/app.js?v=20260928-perf1"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

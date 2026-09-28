@@ -43,7 +43,7 @@
   --maxw: 1180px;
   --mobile-nav-height: 61px;
 
-  --topographic-bg: url("/assets/topographic-bg.png");
+  --topographic-bg: url("/assets/topographic-bg.webp");
   --topographic-opacity: 0.14;
   --topographic-filter: brightness(0.86) contrast(1.04);
 }
