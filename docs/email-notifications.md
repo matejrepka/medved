@@ -23,6 +23,8 @@ písmen a slovenskú diakritiku s lokalitou, titulkom a popisom položky.
    SMTP_PASS=...
    EMAIL_FROM=Kde je Medveď – upozornenia <warning@kdejemedved.sk>
    EMAIL_REPLY_TO=kontakt@kdejemedved.sk
+   # Voliteľné: kam chodia správy z kontaktného formulára (predvolene kontakt@kdejemedved.sk)
+   FEEDBACK_TO=kontakt@kdejemedved.sk
    MODERATION_EMAIL_TO=kdejemedved@gmail.com
    SITE_URL=https://www.kdejemedved.sk
    NEWSLETTER_TOKEN_SECRET=nahodna-hodnota-s-minimalne-32-znakmi

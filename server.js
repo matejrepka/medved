@@ -48,6 +48,7 @@ import {
   loadApprovedBearReports,
   loadBearReports,
   loadEmailSubscriptions,
+  loadFeedbackSubmissions,
   loadIncidentSuggestions,
   loadNewsLogs,
   loadPendingNews,
@@ -56,12 +57,14 @@ import {
   recordScrapeRun,
   saveBearReport,
   saveEmailSubscription,
+  saveFeedbackSubmission,
   saveManualNews,
   saveManualTumedved,
   saveNewsLogs,
   saveTumedvedLogs,
   saveWebsiteLog,
   updateBearReportStatus,
+  updateFeedbackEmailStatus,
   updateBearReportFields,
   updateNewsFields,
   updateSightingFields,
@@ -1618,18 +1621,32 @@ app.post("/api/feedback", async (req, res) => {
     res.set("Retry-After", "900");
     return res.status(429).json({ ok: false, error: "Priveľa odoslaní. Skúste to znova o 15 minút." });
   }
-  if (!emailConfig.enabled) {
-    return res.status(503).json({ ok: false, error: "Spätnú väzbu teraz nemožno odoslať. Skúste to prosím neskôr." });
-  }
-
   try {
-    await emailService.sendFeedback({
+    const feedback = {
       kind: isPoll ? "newsletter_poll" : "message",
       choice: isPoll ? pollChoices[choice] : null,
       message: isPoll ? null : normalizedMessage,
       email: normalizedEmail || null,
       receivedAt: new Date().toISOString(),
+    };
+    const saved = await saveFeedbackSubmission({
+      ...feedback,
+      userAgent: req.get("user-agent"),
+      ipHash: hashIp(req.ip || req.socket.remoteAddress),
+      emailStatus: emailConfig.enabled ? "pending" : "disabled",
     });
+
+    if (emailConfig.enabled) {
+      try {
+        await emailService.sendFeedback(feedback);
+        await updateFeedbackEmailStatus(saved.id, "sent");
+      } catch (emailError) {
+        console.error("[feedback] email delivery failed:", emailError.message);
+        await updateFeedbackEmailStatus(saved.id, "failed", emailError.message).catch((statusError) => {
+          console.error("[feedback] email status update failed:", statusError.message);
+        });
+      }
+    }
     res.json({
       ok: true,
       message: isPoll ? "Ďakujeme za váš hlas." : "Ďakujeme. Vaša správa bola odoslaná.",
@@ -2706,6 +2723,16 @@ const phosphorRegularCss = (
 app.get("/vendor/phosphor/regular/style.css", (_req, res) => {
   immutableVendorHeaders(res);
   res.type("text/css").send(phosphorRegularCss);
+});
+
+app.get("/api/admin/feedback", adminAuth, async (_req, res) => {
+  try {
+    const feedback = await loadFeedbackSubmissions();
+    res.set("Cache-Control", "private, no-store");
+    res.json({ ok: true, feedback });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.use(

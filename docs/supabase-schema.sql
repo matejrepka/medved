@@ -96,6 +96,32 @@ create index if not exists website_logs_created_at_idx
 create index if not exists website_logs_path_created_at_idx
   on public.website_logs (path, created_at desc);
 
+create table if not exists public.feedback_submissions (
+  id bigserial primary key,
+  kind text not null check (kind in ('message', 'newsletter_poll')),
+  choice text,
+  message text,
+  email text,
+  email_status text not null default 'pending'
+    check (email_status in ('pending', 'sent', 'failed', 'disabled')),
+  email_error text,
+  email_delivered_at timestamptz,
+  user_agent text,
+  ip_hash text,
+  created_at timestamptz not null default now(),
+  constraint feedback_submissions_payload_check check (
+    (kind = 'message' and message is not null and char_length(message) between 3 and 2000 and choice is null)
+    or
+    (kind = 'newsletter_poll' and choice in ('Áno, určite', 'Možno, podľa obsahu', 'Nie, stačí mi web') and message is null)
+  )
+);
+
+create index if not exists feedback_submissions_created_at_idx
+  on public.feedback_submissions (created_at desc);
+
+create index if not exists feedback_submissions_kind_created_at_idx
+  on public.feedback_submissions (kind, created_at desc);
+
 -- Status column for news moderation (existing rows default to 'approved').
 alter table public.news_logs
   add column if not exists status text not null default 'approved'
@@ -164,5 +190,6 @@ alter table public.tumedved_logs enable row level security;
 alter table public.news_logs enable row level security;
 alter table public.scrape_runs enable row level security;
 alter table public.website_logs enable row level security;
+alter table public.feedback_submissions enable row level security;
 alter table public.bear_reports enable row level security;
 alter table public.email_subscriptions enable row level security;

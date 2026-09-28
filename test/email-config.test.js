@@ -33,3 +33,12 @@ test("email digests default to Bratislava 06:00, 12:00 and 18:00", () => {
   assert.equal(config.digestTimeZone, "Europe/Bratislava");
   assert.equal(config.feedbackTo, "kontakt@kdejemedved.sk");
 });
+
+test("feedback keeps the contact mailbox when notification replies use another address", () => {
+  const config = readEmailConfig({
+    ...configuredEnv,
+    EMAIL_REPLY_TO: "upozornenia@example.test",
+  });
+  assert.equal(config.replyTo, "upozornenia@example.test");
+  assert.equal(config.feedbackTo, "kontakt@kdejemedved.sk");
+});

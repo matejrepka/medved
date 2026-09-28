@@ -1022,6 +1022,57 @@
         background: rgba(239,68,68,0.05);
       }
 
+      /* ---- Feedback and poll responses ---- */
+      .feedback-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .feedback-summary-card {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .feedback-summary-card strong { display: block; color: var(--ink); font-size: 1.3rem; }
+      .feedback-summary-card span { display: block; margin-top: 3px; color: var(--ink-3); font-size: 0.76rem; }
+      .feedback-list { display: grid; gap: 10px; }
+      .feedback-card {
+        padding: 15px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .feedback-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 9px;
+      }
+      .feedback-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .feedback-kind, .feedback-mail-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: var(--radius-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .feedback-kind.message { background: var(--accent-soft); color: var(--accent); }
+      .feedback-kind.poll { background: rgba(43, 123, 185, 0.1); color: #2b7bb9; }
+      .feedback-mail-state { background: var(--bg); color: var(--ink-3); border: 1px solid var(--line); }
+      .feedback-card time { color: var(--ink-3); font-size: 0.74rem; white-space: nowrap; }
+      .feedback-card-message { margin: 0; color: var(--ink); font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .feedback-card-contact { margin: 9px 0 0; color: var(--ink-3); font-size: 0.78rem; }
+      .feedback-card-contact a { color: var(--accent); }
+      @media (max-width: 640px) {
+        .feedback-summary { grid-template-columns: 1fr; }
+        .feedback-card-head { align-items: flex-start; }
+      }
+
       /* ---- Content management ---- */
       .content-toolbar {
         display: flex;
@@ -1481,6 +1532,10 @@
             <i class="ph ph-bell-ringing"></i> Odbery
             <span class="tab-count" id="tabSubsCount">0</span>
           </button>
+          <button class="admin-tab" data-tab="feedback">
+            <i class="ph ph-chat-centered-text"></i> Nápady
+            <span class="tab-count" id="tabFeedbackCount">0</span>
+          </button>
         </nav>
 
         <div class="admin-body">
@@ -1799,6 +1854,22 @@
             <div id="subscriptionsList"></div>
           </div>
 
+          <!-- Feedback and poll responses -->
+          <div class="tab-panel" id="panel-feedback">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Nápady a anketa</h2>
+                <span class="section-count" id="feedbackCount">0</span>
+              </div>
+              <button class="logout-btn" id="feedbackReload" type="button">
+                <i class="ph ph-arrows-clockwise"></i> Obnoviť
+              </button>
+            </div>
+            <p class="section-lede">Správy z „Máte nápad?“ a odpovede z ankety sú uložené v Supabase aj vtedy, keď e-mail zlyhá.</p>
+            <div class="feedback-summary" id="feedbackSummary"></div>
+            <div class="feedback-list" id="feedbackList"></div>
+          </div>
+
         </div>
       </div>
     </main>
@@ -1812,6 +1883,7 @@
       // --- Tabs ---
       const tabs = document.querySelectorAll('.admin-tab');
       const panels = document.querySelectorAll('.tab-panel');
+      let feedbackLoaded = false;
 
       function switchTab(tabName) {
         tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
@@ -1825,6 +1897,7 @@
           });
         }
         if (tabName === 'content' && !contentState.loaded && !contentState.loading) loadContent();
+        if (tabName === 'feedback' && !feedbackLoaded) loadFeedback();
         if (tabName === 'reports') scheduleReviewMapsRefresh();
       }
 
@@ -1856,6 +1929,7 @@
         loadStats();
         loadPending();
         loadSubscriptions();
+        loadFeedback();
         loadContent();
       }
 
@@ -2958,6 +3032,74 @@
           console.error('Failed to load subscriptions:', err);
         }
       }
+
+      // --- Feedback and newsletter poll ---
+      function feedbackEmailStatus(status) {
+        return {
+          sent: 'Email odoslaný',
+          failed: 'Email zlyhal',
+          disabled: 'Bez emailu',
+          pending: 'Email čaká',
+        }[status] || 'Neznámy stav';
+      }
+
+      async function loadFeedback() {
+        const list = document.getElementById('feedbackList');
+        const summary = document.getElementById('feedbackSummary');
+        try {
+          list.innerHTML = '<div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span></div>';
+          const res = await authFetch('/api/admin/feedback');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const rows = data.feedback || [];
+          const messages = rows.filter(row => row.kind === 'message');
+          const votes = rows.filter(row => row.kind === 'newsletter_poll');
+          const voteCounts = votes.reduce((counts, row) => {
+            counts[row.choice] = (counts[row.choice] || 0) + 1;
+            return counts;
+          }, {});
+
+          feedbackLoaded = true;
+          setText('feedbackCount', rows.length);
+          updateTabCount('tabFeedbackCount', messages.length);
+          summary.innerHTML = [
+            ['Správy', messages.length],
+            ['Áno / možno', (voteCounts['Áno, určite'] || 0) + (voteCounts['Možno, podľa obsahu'] || 0)],
+            ['Nie', voteCounts['Nie, stačí mi web'] || 0],
+          ].map(item => '<div class="feedback-summary-card"><strong>' + formatCount(item[1]) + '</strong><span>' + esc(item[0]) + '</span></div>').join('');
+
+          if (!rows.length) {
+            list.innerHTML = renderEmptyState('chat-centered-dots', 'Zatiaľ neprišli žiadne správy ani odpovede z ankety.');
+            return;
+          }
+
+          list.innerHTML = rows.map(row => {
+            const isMessage = row.kind === 'message';
+            const content = isMessage ? row.message : row.choice;
+            const contact = isMessage && row.email
+              ? '<p class="feedback-card-contact">Kontakt: <a href="mailto:' + encodeURIComponent(row.email) + '">' + esc(row.email) + '</a></p>'
+              : '';
+            return '<article class="feedback-card">' +
+              '<div class="feedback-card-head">' +
+                '<div class="feedback-card-meta">' +
+                  '<span class="feedback-kind ' + (isMessage ? 'message' : 'poll') + '"><i class="ph ph-' + (isMessage ? 'chat-centered-text' : 'chart-bar') + '"></i>' + (isMessage ? 'Nápad' : 'Anketa') + '</span>' +
+                  '<span class="feedback-mail-state">' + esc(feedbackEmailStatus(row.email_status)) + '</span>' +
+                '</div>' +
+                '<time datetime="' + esc(row.created_at || '') + '">' + formatDateTime(row.created_at) + '</time>' +
+              '</div>' +
+              '<p class="feedback-card-message">' + esc(content || 'Bez obsahu') + '</p>' +
+              contact +
+            '</article>';
+          }).join('');
+        } catch (err) {
+          feedbackLoaded = false;
+          summary.innerHTML = '';
+          list.innerHTML = renderEmptyState('warning-circle', 'Spätnú väzbu sa nepodarilo načítať.');
+          console.error('Failed to load feedback:', err);
+        }
+      }
+
+      document.getElementById('feedbackReload').addEventListener('click', loadFeedback);
 
       // --- Content management (všetky správy + hlásenia: hľadanie, zoradenie, editácia) ---
       const savedContentPreferences = (() => {

@@ -1569,6 +1569,57 @@ export async function deleteEmailSubscription(id) {
   if (error) throw error;
 }
 
+export async function saveFeedbackSubmission(feedback) {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error("Supabase is not configured");
+
+  const { data, error } = await supabase
+    .from("feedback_submissions")
+    .insert({
+      kind: feedback.kind,
+      choice: feedback.choice || null,
+      message: feedback.message || null,
+      email: feedback.email || null,
+      user_agent: feedback.userAgent || null,
+      ip_hash: feedback.ipHash || null,
+      email_status: feedback.emailStatus || "pending",
+    })
+    .select("id,kind,choice,message,email,email_status,created_at")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateFeedbackEmailStatus(id, status, errorMessage = null) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  const fields = {
+    email_status: status,
+    email_error: errorMessage ? String(errorMessage).slice(0, 1000) : null,
+    email_delivered_at: status === "sent" ? new Date().toISOString() : null,
+  };
+  const { error } = await supabase
+    .from("feedback_submissions")
+    .update(fields)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function loadFeedbackSubmissions() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("feedback_submissions")
+    .select("id,kind,choice,message,email,email_status,email_delivered_at,created_at")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return data || [];
+}
+
 export function hashIp(ip) {
   const salt = process.env.WEBSITE_LOG_IP_SALT;
   if (!ip || !salt) return null;
