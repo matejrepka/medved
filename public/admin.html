@@ -1955,9 +1955,9 @@
         loginBtn.disabled = true;
         loginError.style.display = 'none';
 
-        authHeader = 'Basic ' + btoa(user + ':' + pass);
-
         try {
+          const bytes = new TextEncoder().encode(user + ':' + pass);
+          authHeader = 'Basic ' + btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
           const res = await authFetch('/api/admin/pending');
           if (res.ok) {
             sessionStorage.setItem('adminAuth', authHeader);

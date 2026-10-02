@@ -39,6 +39,10 @@ import { readEmailConfig } from "./src/email/config.js";
 import { EmailService } from "./src/email/service.js";
 import { verifyEmailToken } from "./src/email/tokens.js";
 import {
+  basicAdminMatches, clientKey, createAttemptLimiter, isEmail,
+  rateLimit, sameOriginMutation, secretMatches, validatePublicReport,
+} from "./src/security.js";
+import {
   confirmEmailSubscription,
   deleteEmailSubscription,
   hashIp,
@@ -1138,14 +1142,12 @@ async function flushEmailNotifications(context) {
 
 const app = express();
 app.disable("x-powered-by");
-app.set("trust proxy", process.env.TRUST_PROXY === "true");
+// Trust one deployment proxy, not every address in X-Forwarded-For.
+app.set("trust proxy", process.env.TRUST_PROXY === "true" ? 1 : false);
 
 // Gzip/deflate odpovedí — JSON z API (až 1000 hlásení + 200 správ) aj
 // HTML/CSS/JS sa prenášajú výrazne menšie (~70-85 %).
 app.use(compression());
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
 // Základné bezpečnostné a indexačné hlavičky. Verejné JSON API ostáva dostupné,
 // administračné a cron URL sa však nemajú objavovať vo výsledkoch vyhľadávania.
@@ -1153,8 +1155,14 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(self), camera=(), microphone=()");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'; object-src 'none'; base-uri 'self'");
+  if (/^\/(?:admin(?:\.html)?|api\/(?:admin|cron|telegram|subscriptions))(?:\/|$)/i.test(req.path)) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Referrer-Policy", "no-referrer");
+  }
   if (
-    req.path === "/admin" ||
+    /^\/admin(?:\.html)?\/?$/i.test(req.path) ||
     req.path.startsWith("/api/admin") ||
     req.path.startsWith("/api/cron") ||
     req.path.startsWith("/api/telegram")
@@ -1163,6 +1171,14 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+app.use(express.json({ limit: "32kb" }));
+app.use(express.urlencoded({ extended: false, limit: "32kb", parameterLimit: 100 }));
+app.use("/api/admin", sameOriginMutation);
+const adminAttempts = createAttemptLimiter({ limit: 10 });
+app.post("/api/reports", rateLimit(createAttemptLimiter({ limit: 5 })));
+app.post("/api/subscriptions", rateLimit(createAttemptLimiter({ limit: 5 })));
+app.post("/api/feedback", rateLimit(createAttemptLimiter({ limit: 8 })));
 
 // Malý logger.
 app.use((req, _res, next) => {
@@ -1208,7 +1224,9 @@ app.use((req, res, next) => {
 const CARTO_RASTER_STYLES = new Set(["light_all", "dark_all"]);
 app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
   const { style, z, x, y } = req.params;
-  if (!CARTO_RASTER_STYLES.has(style) || ![z, x, y].every((value) => /^\d+$/.test(value))) {
+  const zoom = Number(z);
+  if (!CARTO_RASTER_STYLES.has(style) || ![z, x, y].every((value) => /^\d{1,8}$/.test(value)) ||
+      zoom > 20 || Number(x) >= 2 ** zoom || Number(y) >= 2 ** zoom) {
     return res.status(400).send("Invalid map tile request");
   }
   if (!CARTO_BASEMAPS_API_KEY) {
@@ -1218,7 +1236,7 @@ app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
   try {
     const tileUrl = new URL(`https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png`);
     tileUrl.searchParams.set("key", CARTO_BASEMAPS_API_KEY);
-    const response = await fetch(tileUrl);
+    const response = await fetch(tileUrl, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`CARTO returned HTTP ${response.status}`);
 
     res.setHeader("Content-Type", response.headers.get("content-type") || "image/png");
@@ -1350,9 +1368,9 @@ app.get("/api/status", (_req, res) => {
 });
 
 function isValidCronRequest(req) {
-  if (!CRON_REFRESH_SECRET) return false;
-  const token = req.query.secret;
-  return typeof token === "string" && token === CRON_REFRESH_SECRET;
+  const authorization = req.get("authorization");
+  const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : req.query.secret;
+  return secretMatches(CRON_REFRESH_SECRET, token);
 }
 
 // Obnoví obidva zdroje nezávisle. Keď jeden zlyhá (napr. tumedved.sk je za
@@ -1464,16 +1482,20 @@ async function refreshAll(reason) {
   };
 }
 
-app.all("/api/cron/refresh", async (req, res) => {
+app.all("/api/cron/refresh", async (req, res, next) => {
   if (!isValidCronRequest(req)) {
     return res.status(401).json({ ok: false, error: "Unauthorized" });
   }
 
-  const result = await refreshAll("cron");
-  res.status(result.ok ? 200 : 502).json({
-    ...result,
-    message: refreshResultMessage(result),
-  });
+  try {
+    const result = await refreshAll("cron");
+    res.status(result.ok ? 200 : 502).json({
+      ...result,
+      message: refreshResultMessage(result),
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Telegram posiela secret v hlavičke nastavenej pri registrácii webhooku.
@@ -1503,26 +1525,18 @@ app.post("/api/telegram/webhook", async (req, res) => {
 // --- Bear report (public) ---
 
 app.post("/api/reports", async (req, res) => {
-  const { location, description, reporterName, reporterEmail, lat, lng, reportedDate } = req.body || {};
-
-  if (!location || typeof location !== "string" || !location.trim()) {
-    return res.status(400).json({ ok: false, error: "Lokalita je povinná." });
+  const { report, error } = validatePublicReport(req.body);
+  if (error) return res.status(400).json({ ok: false, error });
+  if (!isSupabaseConfigured()) {
+    return res.status(503).json({ ok: false, error: "Hlásenia momentálne nie sú dostupné." });
   }
 
   try {
-    const report = {
-      location: location.trim(),
-      description: description?.trim() || null,
-      reporterName: reporterName?.trim() || null,
-      reporterEmail: reporterEmail?.trim() || null,
-      lat: Number(lat) || null,
-      lng: Number(lng) || null,
-      reportedDate: reportedDate || new Date().toISOString(),
-    };
     const result = await saveBearReport({
       ...report,
       status: "pending",
     });
+    if (!result?.id) throw new Error("Report was not saved");
     // Hlásenie z verejného formulára má najvyššiu prioritu: po databázovej
     // transakcii cielene vyzdvihneme práve jeho outbox riadok a odošleme ho
     // ešte počas requestu. Trvácny outbox/retry ostáva poistkou pri výpadku.
@@ -1557,39 +1571,6 @@ app.post("/api/reports", async (req, res) => {
 
 // --- Email subscriptions (public) ---
 
-const subscriptionAttempts = new Map();
-const feedbackAttempts = new Map();
-
-function subscriptionRateLimited(req) {
-  const key = String(req.ip || req.socket.remoteAddress || "unknown");
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000;
-  const recent = (subscriptionAttempts.get(key) || []).filter((time) => now - time < windowMs);
-  recent.push(now);
-  subscriptionAttempts.set(key, recent);
-  if (subscriptionAttempts.size > 1000) {
-    for (const [candidate, attempts] of subscriptionAttempts) {
-      if (!attempts.some((time) => now - time < windowMs)) subscriptionAttempts.delete(candidate);
-    }
-  }
-  return recent.length > 5;
-}
-
-function feedbackRateLimited(req) {
-  const key = String(req.ip || req.socket.remoteAddress || "unknown");
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000;
-  const recent = (feedbackAttempts.get(key) || []).filter((time) => now - time < windowMs);
-  recent.push(now);
-  feedbackAttempts.set(key, recent);
-  if (feedbackAttempts.size > 1000) {
-    for (const [candidate, attempts] of feedbackAttempts) {
-      if (!attempts.some((time) => now - time < windowMs)) feedbackAttempts.delete(candidate);
-    }
-  }
-  return recent.length > 8;
-}
-
 app.post("/api/feedback", async (req, res) => {
   const { kind, choice, message, email, website } = req.body || {};
 
@@ -1599,7 +1580,7 @@ app.post("/api/feedback", async (req, res) => {
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   if (
     normalizedEmail &&
-    (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+    !isEmail(normalizedEmail)
   ) {
     return res.status(400).json({ ok: false, error: "Zadajte platnú e-mailovú adresu alebo pole nechajte prázdne." });
   }
@@ -1611,15 +1592,11 @@ app.post("/api/feedback", async (req, res) => {
   };
   const isPoll = kind === "newsletter_poll";
   const normalizedMessage = typeof message === "string" ? message.trim() : "";
-  if (isPoll && !Object.hasOwn(pollChoices, choice)) {
+  if (isPoll && (typeof choice !== "string" || !Object.hasOwn(pollChoices, choice))) {
     return res.status(400).json({ ok: false, error: "Vyberte jednu z možností ankety." });
   }
   if (!isPoll && (kind !== "message" || normalizedMessage.length < 3 || normalizedMessage.length > 2000)) {
     return res.status(400).json({ ok: false, error: "Napíšte správu v rozsahu 3 až 2 000 znakov." });
-  }
-  if (feedbackRateLimited(req)) {
-    res.set("Retry-After", "900");
-    return res.status(429).json({ ok: false, error: "Priveľa odoslaní. Skúste to znova o 15 minút." });
   }
   try {
     const feedback = {
@@ -1629,27 +1606,41 @@ app.post("/api/feedback", async (req, res) => {
       email: normalizedEmail || null,
       receivedAt: new Date().toISOString(),
     };
-    const saved = await saveFeedbackSubmission({
-      ...feedback,
-      userAgent: req.get("user-agent"),
-      ipHash: hashIp(req.ip || req.socket.remoteAddress),
-      emailStatus: emailConfig.enabled ? "pending" : "disabled",
-    });
+    let saved = null;
+    let storageError = null;
+    try {
+      saved = await saveFeedbackSubmission({
+        ...feedback,
+        userAgent: req.get("user-agent"),
+        ipHash: hashIp(req.ip || req.socket.remoteAddress),
+        emailStatus: emailConfig.enabled ? "pending" : "disabled",
+      });
+    } catch (error) {
+      storageError = error;
+      console.error("[feedback] database save failed:", error.message);
+    }
 
+    let emailSent = false;
+    let emailError = null;
     if (emailConfig.enabled) {
       try {
         await emailService.sendFeedback(feedback);
-        await updateFeedbackEmailStatus(saved.id, "sent");
-      } catch (emailError) {
-        console.error("[feedback] email delivery failed:", emailError.message);
-        await updateFeedbackEmailStatus(saved.id, "failed", emailError.message).catch((statusError) => {
-          console.error("[feedback] email status update failed:", statusError.message);
-        });
+        emailSent = true;
+        if (saved) await updateFeedbackEmailStatus(saved.id, "sent");
+      } catch (error) {
+        emailError = error;
+        console.error("[feedback] email delivery failed:", error.message);
+        if (saved) {
+          await updateFeedbackEmailStatus(saved.id, "failed", error.message).catch((statusError) => {
+            console.error("[feedback] email status update failed:", statusError.message);
+          });
+        }
       }
     }
+    if (!saved && !emailSent) throw storageError || emailError || new Error("Feedback delivery is unavailable");
     res.json({
       ok: true,
-      message: isPoll ? "Ďakujeme za váš hlas." : "Ďakujeme. Vaša správa bola odoslaná.",
+      message: isPoll ? "Ďakujeme za váš hlas." : "Ďakujeme. Vašu správu sme prijali.",
     });
   } catch (err) {
     console.error("[feedback] delivery failed:", err.message);
@@ -1671,18 +1662,16 @@ app.post("/api/subscriptions", async (req, res) => {
   const { email, notifyType, areaName } = req.body || {};
 
   if (
-    !email || typeof email !== "string" || email.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+    typeof email !== "string" || !isEmail(email.trim())
   ) {
     return res.status(400).json({ ok: false, error: "Zadajte platnú emailovú adresu." });
   }
 
-  if (notifyType === "area" && (!areaName || !areaName.trim() || areaName.trim().length > 120)) {
-    return res.status(400).json({ ok: false, error: "Zadajte oblasť pre upozornenia." });
+  if (notifyType != null && !["area", "all"].includes(notifyType)) {
+    return res.status(400).json({ ok: false, error: "Neplatný typ odberu." });
   }
-  if (subscriptionRateLimited(req)) {
-    res.set("Retry-After", "900");
-    return res.status(429).json({ ok: false, error: "Priveľa pokusov. Skúste to znova o 15 minút." });
+  if (notifyType === "area" && (typeof areaName !== "string" || !areaName.trim() || areaName.trim().length > 120)) {
+    return res.status(400).json({ ok: false, error: "Zadajte oblasť pre upozornenia." });
   }
   if (!emailConfig.enabled) {
     return res.status(503).json({ ok: false, error: "E-mailové upozornenia momentálne nie sú dostupné." });
@@ -2250,12 +2239,15 @@ function adminAuth(req, res, next) {
     return fail(500, "Chyba servera: ADMIN_PASSWORD nie je nastavené v .env súbore.");
   }
 
-  const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
-  const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
-
-  if (login === 'admin' && password === adminPassword) {
+  const key = clientKey(req);
+  if (adminAttempts.blocked(key)) {
+    res.set("Retry-After", "900");
+    return fail(429, "Priveľa pokusov o prihlásenie. Skúste to znova o 15 minút.");
+  }
+  if (basicAdminMatches(req.headers.authorization, adminPassword)) {
     return next();
   }
+  adminAttempts.consume(key);
 
   // WWW-Authenticate len pre prehliadačovú navigáciu (/admin), nie pre fetch.
   if (!wantsJson) res.set('WWW-Authenticate', 'Basic realm="Admin Sledovac"');
@@ -2265,6 +2257,7 @@ function adminAuth(req, res, next) {
 app.get("/admin", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
+app.get("/admin.html", (_req, res) => res.redirect(301, "/admin"));
 
 app.get("/api/admin/pending", adminAuth, async (_req, res) => {
   try {
@@ -2818,26 +2811,42 @@ app.get("*", (req, res, next) => {
     .sendFile(path.join(PUBLIC_DIR, "404.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
-  console.log(
-    `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}; email: ${emailConfig.enabled ? "enabled" : `disabled (${emailConfig.missing.join(", ") || "Supabase"})`}`
-  );
-  telegramService.start();
-  emailService.start();
-  sightingsStore.start().catch((err) => {
-    console.error("[sightings] startup load failed:", err.message);
-  });
-  newsStore.start().catch((err) => {
-    console.error("[news] startup load failed:", err.message);
-  });
-
-  if (isSupabaseConfigured() && !DISABLE_STARTUP_REFRESH) {
-    Promise.all([
-      sightingsStore.refresh("startup"),
-      newsStore.refresh("startup"),
-    ]).catch((err) => {
-      console.error("[startup] refresh failed:", err.message);
-    });
-  }
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.status === 413 ? 413 : error.status === 400 ? 400 : 500;
+  if (status === 500) console.error("[request] failed:", error.message);
+  const message = status === 413 ? "Požiadavka je príliš veľká." :
+    status === 400 ? "Neplatná požiadavka." : "Požiadavku sa nepodarilo spracovať.";
+  if (req.path.startsWith("/api")) return res.status(status).json({ ok: false, error: message });
+  return res.status(status).type("text").send(message);
 });
+
+// Keep imports side-effect free so HTTP tests can start an isolated server
+// without loading production data or starting notification workers.
+export { app };
+export default app;
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  app.listen(PORT, () => {
+    console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
+    console.log(
+      `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}; email: ${emailConfig.enabled ? "enabled" : `disabled (${emailConfig.missing.join(", ") || "Supabase"})`}`
+    );
+    telegramService.start();
+    emailService.start();
+    sightingsStore.start().catch((err) => {
+      console.error("[sightings] startup load failed:", err.message);
+    });
+    newsStore.start().catch((err) => {
+      console.error("[news] startup load failed:", err.message);
+    });
+
+    if (isSupabaseConfigured() && !DISABLE_STARTUP_REFRESH) {
+      Promise.all([
+        sightingsStore.refresh("startup"),
+        newsStore.refresh("startup"),
+      ]).catch((err) => {
+        console.error("[startup] refresh failed:", err.message);
+      });
+    }
+  });
+}

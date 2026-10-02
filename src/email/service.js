@@ -119,8 +119,10 @@ export class EmailService {
     if (!slot || slot === this.lastDigestSlot) {
       return { processed: 0, sent: 0, scheduled: false };
     }
+    const result = await this.runAvailable(maxBatches);
+    // A failed claim must remain retryable during this delivery window.
     this.lastDigestSlot = slot;
-    return this.runAvailable(maxBatches);
+    return result;
   }
 
   async #drainBatches(maxBatches) {
@@ -179,6 +181,8 @@ export class EmailService {
       html: message.html,
       messageId: message.messageId,
       headers,
+      disableFileAccess: true,
+      disableUrlAccess: true,
     });
     if (Array.isArray(info.rejected) && info.rejected.length) {
       throw new Error(`SMTP rejected recipient: ${info.rejected.join(", ")}`);

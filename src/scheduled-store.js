@@ -1,10 +1,11 @@
 export class ScheduledDataStore {
-  constructor({ name, fetcher, loadStored, saveFresh, recordRun }) {
+  constructor({ name, fetcher, loadStored, saveFresh, recordRun, maxAgeMs = 60_000 }) {
     this.name = name;
     this.fetcher = fetcher;
     this.loadStored = loadStored;
     this.saveFresh = saveFresh;
     this.recordRun = recordRun;
+    this.maxAgeMs = maxAgeMs;
 
     this.value = null;
     this.fetchedAt = 0;
@@ -61,11 +62,6 @@ export class ScheduledDataStore {
         const data = await this.fetcher();
         sourceOutcomes = data.sourceOutcomes || null;
         const finishedAt = new Date().toISOString();
-        this.value = data;
-        this.fetchedAt = Date.now();
-        this.lastError = null;
-        this.lastErrorStage = null;
-
         if (this.saveFresh) {
           stage = "save";
           await this.saveFresh(data, finishedAt);
@@ -73,7 +69,14 @@ export class ScheduledDataStore {
         if (this.loadStored) {
           stage = "reload";
           await this.loadFromDatabase();
+        } else {
+          this.value = data;
         }
+        // Public readers must only see the filtered database result. Publishing
+        // scraped rows before save/reload bypasses news moderation on failure.
+        this.fetchedAt = Date.now();
+        this.lastError = null;
+        this.lastErrorStage = null;
         stage = "record";
         await this.record("success", reason, data.length, null, startedAt, finishedAt);
         this.lastRun = {
@@ -136,7 +139,14 @@ export class ScheduledDataStore {
   }
 
   async get() {
-    if (this.value !== null) return this.value;
+    if (this.value !== null) {
+      if (this.loadStored && !this.inFlight && Date.now() - this.loadedAt >= this.maxAgeMs) {
+        await this.loadFromDatabase().catch((err) => {
+          console.error(`[${this.name}] DB reload failed:`, err.message);
+        });
+      }
+      return this.value;
+    }
     if (this.inFlight) return this.inFlight;
 
     await this.loadFromDatabase().catch((err) => {

@@ -114,8 +114,7 @@ jobs:
             --fail-with-body \
             --show-error \
             --max-time 900 \
-            --get \
-            --data-urlencode "secret=$CRON_REFRESH_SECRET" \
+            --header "Authorization: Bearer $CRON_REFRESH_SECRET" \
             http://127.0.0.1:3000/api/cron/refresh; then
               echo ""
               echo "===== SERVER LOG ====="

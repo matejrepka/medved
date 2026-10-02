@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import nodemailer from "nodemailer";
 
 import { EmailService } from "../src/email/service.js";
 
@@ -53,6 +54,8 @@ test("confirmation delivery contains the signed confirmation link", async () => 
   assert.equal(messages[0].to, subscription.email);
   assert.match(messages[0].html, /\/api\/subscriptions\/confirm\?token=/);
   assert.match(messages[0].subject, /Potvrďte odber/);
+  assert.equal(messages[0].disableFileAccess, true);
+  assert.equal(messages[0].disableUrlAccess, true);
 });
 
 test("feedback is sent to the owner and uses the visitor address for replies", async () => {
@@ -160,4 +163,28 @@ test("scheduled delivery runs once at 06:00, 12:00 and 18:00 Bratislava time", a
   assert.deepEqual(await service.runScheduled(new Date("2026-07-31T10:00:00Z")), { processed: 0, sent: 0 });
   assert.deepEqual(await service.runScheduled(new Date("2026-07-31T16:00:00Z")), { processed: 0, sent: 0 });
   assert.equal(claims, 3);
+});
+
+test("a failed scheduled outbox claim retries within the same digest window", async () => {
+  let claims = 0;
+  const service = new EmailService({
+    config: { ...config, digestHours: [6], digestTimeZone: "Europe/Bratislava" },
+    transport: { sendMail: async () => assert.fail("empty outbox must not send") },
+    claim: async () => { if (++claims === 1) throw new Error("temporary DB outage"); return []; },
+  });
+  await assert.rejects(service.runScheduled(new Date("2026-10-02T04:00:00Z")), /temporary DB outage/);
+  assert.deepEqual(await service.runScheduled(new Date("2026-10-02T04:01:00Z")), { processed: 0, sent: 0 });
+  assert.equal(claims, 2);
+});
+
+test("patched Nodemailer builds confirmation MIME without external delivery", async () => {
+  const service = new EmailService({
+    config,
+    transport: nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "unix" }),
+  });
+  const info = await service.sendConfirmation(subscription);
+  assert.deepEqual(info.envelope.to, [subscription.email]);
+  const mime = info.message.toString();
+  assert.match(mime, /Content-Type: multipart\/alternative/);
+  assert.match(mime, /subscriptions\/confirm/);
 });

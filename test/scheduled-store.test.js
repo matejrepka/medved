@@ -79,3 +79,43 @@ test("ScheduledDataStore zdieľa súbežné načítanie databázy", async () => 
   assert.equal(loads, 1);
   assert.deepEqual(items, [{ id: "article-1" }]);
 });
+
+test("refresh never publishes unapproved scraped rows during save or after failure", async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const approved = [{ id: "approved" }];
+  const store = new ScheduledDataStore({
+    name: "news", loadStored: async () => approved,
+    fetcher: async () => [{ id: "pending", private: "internal analysis" }],
+    saveFresh: async () => { await gate; throw new Error("save failed"); },
+  });
+  await store.start();
+  const refresh = store.refresh();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(await store.get(), approved);
+  release();
+  await assert.rejects(refresh, /save failed/);
+  assert.deepEqual(await store.get(), approved);
+});
+
+test("successful refresh publishes only filtered DB rows; reload failures preserve approved data", async () => {
+  let failReload = false;
+  const approved = [{ id: "approved" }];
+  const store = new ScheduledDataStore({
+    name: "news", loadStored: async () => { if (failReload) throw new Error("reload failed"); return approved; },
+    fetcher: async () => [{ id: "pending" }], saveFresh: async () => {},
+  });
+  await store.start();
+  assert.deepEqual(await store.refresh(), approved);
+  failReload = true;
+  await assert.rejects(store.refresh(), /reload failed/);
+  assert.deepEqual(await store.get(), approved);
+});
+
+test("public data reloads after TTL so moderation by another instance becomes visible", async () => {
+  let rows = [{ id: "previously-approved" }];
+  const store = new ScheduledDataStore({ name: "news", loadStored: async () => rows, maxAgeMs: 0 });
+  await store.start();
+  rows = [];
+  assert.deepEqual(await store.get(), []);
+});

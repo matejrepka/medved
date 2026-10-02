@@ -141,7 +141,7 @@
         website: feedbackForm.website.value,
       });
       feedbackForm.reset();
-      feedbackStatus.textContent = data.message || "Ďakujeme. Vaša správa bola odoslaná.";
+      feedbackStatus.textContent = data.message || "Ďakujeme. Vašu správu sme prijali.";
       feedbackStatus.classList.add("success");
     } catch (error) {
       feedbackStatus.textContent = error.message;
