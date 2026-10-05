@@ -327,7 +327,7 @@ function addLocationControl() {
             ]).addTo(map);
 
             map.flyTo(position, Math.max(map.getZoom(), 14), { duration: 0.7 });
-            showMessage(`Poloha nájdená s presnosťou približne ${roundedAccuracy.toLocaleString("sk-SK")} m.`, "success");
+            showMessage(`Poloha nájdená s presnosťou približne ${roundedAccuracy.toLocaleString("sk-SK")} m.`, "success", 1500);
             resetButton();
           },
           (error) => {

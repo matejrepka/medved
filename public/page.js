@@ -7,6 +7,17 @@
   const header = document.querySelector(".site-header");
   if (!header) return;
 
+  const scrollMessage = document.getElementById("mapScrollMessage");
+  const scrollDismiss = document.getElementById("mapScrollDismiss");
+  const scrollArrow = document.getElementById("mapScrollArrow");
+  if (scrollMessage && scrollDismiss && scrollArrow) {
+    scrollDismiss.hidden = false;
+    scrollDismiss.addEventListener("click", () => {
+      scrollMessage.hidden = true;
+      scrollArrow.focus({ preventScroll: true });
+    });
+  }
+
   const primaryLinks = [
     { href: "/", label: "Mapa", icon: "map-trifold" },
     { href: "/domov", label: "Domov", icon: "house" },

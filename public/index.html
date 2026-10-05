@@ -89,6 +89,7 @@
       .map-first-page #map { position: absolute; inset: 0; width: 100%; height: 100%; }
       html:not([data-map-styles-ready]) .map-overlay-top,
       html:not([data-map-styles-ready]) .map-bottom-bar,
+      html:not([data-map-styles-ready]) .map-scroll-cue,
       html:not([data-map-styles-ready]) .map-load-status,
       html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: hidden; }
       html:not([data-map-styles-ready]) .activity-section { padding: 32px 24px; }
@@ -133,9 +134,9 @@
         .map-startup-actions { margin-top: 12px; }
       }
     </style>
-    <link rel="preload" as="style" href="/styles.css?v=20261005-startup1"
+    <link rel="preload" as="style" href="/styles.css?v=20261005-scroll-cue1"
       onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-map-styles-ready','');window.mapStartup?.ready('styles')" />
-    <noscript><link rel="stylesheet" href="/styles.css?v=20261005-startup1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
+    <noscript><link rel="stylesheet" href="/styles.css?v=20261005-scroll-cue1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -325,10 +326,19 @@
             <i class="ph ph-info" aria-hidden="true"></i>
             <span class="map-legend-label">Legenda</span>
           </button>
-          <a class="map-listings-jump" href="#aktuality" aria-label="Zobraziť zoznam hlásení a správ">
-            <i class="ph ph-list-bullets" aria-hidden="true"></i>
-            <span class="map-listings-label-full">Hlásenia a správy</span>
-            <span class="map-listings-label-short">Záznamy</span>
+        </div>
+
+        <div class="map-scroll-cue" aria-label="Záznamy pod mapou">
+          <div class="map-scroll-message" id="mapScrollMessage">
+            <a href="#aktuality">Konkrétne varovania pod mapou</a>
+            <button class="map-scroll-dismiss" id="mapScrollDismiss" type="button"
+              aria-label="Skryť správu o varovaniach pod mapou" aria-controls="mapScrollMessage" hidden>
+              <i class="ph ph-x" aria-hidden="true"></i>
+            </button>
+          </div>
+          <a class="map-scroll-arrow" id="mapScrollArrow" href="#aktuality"
+            aria-label="Prejsť na hlásenia a varovania pod mapou">
+            <i class="ph ph-caret-double-down" aria-hidden="true"></i>
           </a>
         </div>
 
@@ -420,7 +430,7 @@
         </dialog>
       </section>
 
-      <section class="activity-section" id="aktuality" aria-labelledby="activityTitle">
+      <section class="activity-section" id="aktuality" aria-labelledby="activityTitle" tabindex="-1">
         <div class="activity-heading">
           <div>
             <h2 id="activityTitle">Aktuálne hlásenia a správy</h2>
@@ -518,7 +528,7 @@
       </div>
     </footer>
 
-    <script src="/page.js?v=20260731-map-first1" defer></script>
+    <script src="/page.js?v=20261005-scroll-cue1" defer></script>
     <script
       src="/vendor/leaflet/leaflet.js?v=1.9.4"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="

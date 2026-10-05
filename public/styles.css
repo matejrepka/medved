@@ -4893,6 +4893,120 @@ html.dialog-open body {
   text-decoration: none;
 }
 
+.map-scroll-cue {
+  position: absolute;
+  z-index: var(--z-map-overlay);
+  bottom: 32px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  transform: translateX(-50%);
+}
+
+.map-scroll-message {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.map-viewport:has(.map-startup:not([hidden]):not(.is-error)) .map-scroll-cue {
+  visibility: hidden;
+}
+
+.map-scroll-message[hidden],
+.map-scroll-dismiss[hidden] {
+  display: none;
+}
+
+.map-scroll-message a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 9px 0 9px 16px;
+  color: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+.map-scroll-message a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.map-scroll-dismiss {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.map-scroll-dismiss:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.map-scroll-arrow {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  font-size: 24px;
+  text-decoration: none;
+}
+
+.map-scroll-arrow:hover {
+  color: var(--accent-ink);
+  background: var(--accent-hover);
+}
+
+.map-scroll-message a:focus-visible,
+.map-scroll-dismiss:focus-visible,
+.map-scroll-arrow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.map-first-page) { scroll-behavior: smooth; }
+  .map-scroll-arrow i { animation: map-scroll-nudge 2.2s ease-in-out 3; }
+}
+
+@keyframes map-scroll-nudge {
+  0%, 40%, 100% { transform: translateY(0); }
+  60% { transform: translateY(3px); }
+  80% { transform: translateY(0); }
+}
+
+@media (max-width: 1023px), (max-height: 540px) {
+  .map-scroll-cue { bottom: 84px; }
+}
+
 .map-noscript {
   position: absolute;
   z-index: var(--z-map-overlay);
