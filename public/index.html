@@ -94,28 +94,29 @@
       html:not([data-map-styles-ready]) .activity-section { padding: 32px 24px; }
       .map-startup { --startup-bg: #fbfbf9; --startup-ink: #1a1a17; --startup-muted: #425346; --startup-accent: #1f4b30; --startup-land: #e6ece1; --startup-line: #91a58a; position: absolute; inset: 0; z-index: 850; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 76px 24px; background: var(--startup-bg); color: var(--startup-ink); text-align: center; }
       [data-theme="dark"] .map-startup { --startup-bg: #1f201b; --startup-ink: #f1f0e8; --startup-muted: #b5c6b7; --startup-accent: #85c69a; --startup-land: #2c3a2c; --startup-line: #607e60; }
+      .map-startup { transition: opacity 260ms ease; }
+      .map-startup.is-leaving { opacity: 0; pointer-events: none; }
       .map-startup[hidden] { display: none; }
       .map-startup-art { display: block; flex: 0 1 auto; width: min(100%, 420px); height: auto; max-height: 240px; overflow: visible; }
       .map-startup-land { fill: var(--startup-land); stroke: var(--startup-line); stroke-width: 2; stroke-linejoin: round; }
-      .map-startup-bear { color: var(--startup-accent); }
+      .map-startup-logo { transform-box: fill-box; transform-origin: center; }
+      .map-startup-ring { fill: none; stroke-width: 4; }
+      .map-startup-ring-track { stroke: var(--startup-line); opacity: .4; }
+      .map-startup-ring-arc { stroke: var(--startup-accent); stroke-linecap: round; stroke-dasharray: 28 72; transform-box: fill-box; transform-origin: center; transform: rotate(-90deg); }
+      .map-startup-logo-dark { display: none; }
+      [data-theme="dark"] .map-startup-logo-light { display: none; }
+      [data-theme="dark"] .map-startup-logo-dark { display: block; }
       .map-startup-title { margin: 14px 0 0; font: 600 clamp(1.45rem, 4.8vw, 2rem)/1.2 var(--font-serif, Georgia, serif); letter-spacing: -.02em; text-wrap: balance; }
       .map-startup-detail { max-width: 36ch; margin: 12px auto 0; color: var(--startup-muted); font-size: .9rem; line-height: 1.6; text-wrap: pretty; }
-      .map-startup-track { width: 72px; height: 3px; margin: 22px auto; overflow: hidden; border-radius: 2px; background: var(--startup-land); }
-      .map-startup-track::after { content: ""; display: block; width: 28px; height: 100%; background: var(--startup-accent); }
-      .map-startup-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; }
+      .map-startup-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; margin-top: 22px; }
       .map-startup-actions a { display: inline-flex; align-items: center; min-height: 44px; color: var(--startup-accent); font-size: .85rem; text-underline-offset: 4px; }
       .map-startup-actions a[hidden] { display: none; }
       .map-startup-actions a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
-      .map-startup.is-error .map-startup-track { display: none; }
       @media (prefers-reduced-motion: no-preference) {
-        .map-startup:not(.is-error) .map-startup-bear { animation: startup-bear-step .7s ease-in-out infinite alternate; }
-        .map-startup:not(.is-error) .map-startup-paws-a { animation: startup-paw-step .7s ease-in-out infinite alternate; }
-        .map-startup:not(.is-error) .map-startup-paws-b { animation: startup-paw-step .7s ease-in-out infinite alternate-reverse; }
-        .map-startup:not(.is-error) .map-startup-track::after { animation: startup-progress 1.4s ease-in-out infinite alternate; }
+        .map-startup:not(.is-error) .map-startup-ring-arc { animation: startup-ring-spin 1.6s linear infinite; }
       }
-      @keyframes startup-bear-step { to { transform: translateY(-2px); } }
-      @keyframes startup-paw-step { to { transform: translate(2px, -3px); } }
-      @keyframes startup-progress { to { transform: translateX(44px); } }
+      @media (prefers-reduced-motion: reduce) { .map-startup { transition: none; } }
+      @keyframes startup-ring-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
       @media (max-width: 760px) {
         :root { --site-header-height: calc(56px + env(safe-area-inset-top)); --bottom-nav-space: calc(60px + env(safe-area-inset-bottom)); }
         .site-header { display: flex; justify-content: space-between; height: var(--site-header-height); padding: env(safe-area-inset-top) 12px 0; }
@@ -129,7 +130,7 @@
         .map-startup { padding: 56px 20px; }
         .map-startup-title { font-size: 1.35rem; }
         .map-startup-detail { margin-top: 8px; }
-        .map-startup-track { margin: 12px auto; }
+        .map-startup-actions { margin-top: 12px; }
       }
     </style>
     <link rel="preload" as="style" href="/styles.css?v=20261005-startup1"
@@ -170,27 +171,24 @@
         </p>
 
         <div class="map-startup" id="mapStartup">
-          <!-- Simplified Slovakia boundary: Natural Earth, public domain.
+          <!-- Slovakia boundary: Natural Earth 1:50m, public domain.
                https://github.com/nvkelso/natural-earth-vector -->
           <svg class="map-startup-art" viewBox="0 0 640 360" width="420" height="236" aria-hidden="true">
-            <path class="map-startup-land" d="M624.0,105.8 L594.3,148.3 L573.4,213.6 L550.6,230.1 L435.9,181.0 L400.8,190.9 L375.7,228.8 L325.4,248.9 L313.8,238.7 L261.7,263.6 L219.1,268.3 L210.5,300.5 L120.6,320.0 L81.2,302.6 L26.7,261.6 L16.0,205.9 L24.6,185.3 L39.8,149.6 L87.2,152.4 L123.8,135.6 L126.7,120.4 L147.2,112.6 L154.2,75.4 L178.8,68.3 L195.4,38.6 L227.3,38.4 L233.3,48.4 L277.3,26.0 L331.3,84.3 L394.6,49.1 L445.2,66.0 L522.2,42.7 L624.0,105.8 Z" />
-            <g transform="translate(280 138)">
-              <g class="map-startup-bear" fill="currentColor">
-                <g class="map-startup-paws-b" opacity=".55">
-                  <path d="M16 28h10l-2 22H12l2-5zM57 27h9l2 23H56l2-5z" />
-                </g>
-                <path d="M8 33C3 25 5 15 12 10C21 3 32 2 42 5C50 6 56 11 62 13L65 7C66 3 72 4 73 8L74 12C81 13 84 18 85 23L94 26L92 33L81 35L73 32C65 39 54 39 45 35L23 37L13 35Z" />
-                <g class="map-startup-paws-a">
-                  <path d="M9 29h12l-2 21H5l2-5zM61 29h11l4 21H62l2-5z" />
-                </g>
-              </g>
+            <path class="map-startup-land" d="M624.0,112.3 L622.4,119.1 L618.1,126.9 L612.6,135.0 L608.0,144.8 L601.9,165.7 L597.9,175.3 L581.6,194.3 L580.4,220.7 L578.2,222.6 L541.3,231.5 L536.5,230.2 L531.4,225.1 L528.7,221.3 L526.9,218.6 L523.7,211.3 L519.5,206.1 L513.2,201.9 L507.5,197.0 L500.1,196.8 L480.2,203.7 L466.4,204.5 L457.2,202.2 L444.9,198.0 L421.0,197.4 L404.6,201.1 L402.9,206.2 L387.8,238.4 L365.8,250.2 L346.7,262.3 L341.2,264.8 L331.7,261.0 L320.9,253.8 L311.9,250.1 L305.4,251.7 L298.2,259.9 L295.0,268.1 L273.3,274.1 L235.7,277.7 L222.7,285.8 L218.2,295.5 L218.0,303.0 L221.2,309.4 L217.2,316.8 L215.4,319.9 L188.8,321.5 L153.4,323.6 L132.3,323.1 L112.3,322.6 L98.8,316.2 L82.2,303.8 L64.7,287.3 L63.0,286.9 L60.4,285.2 L49.4,283.9 L46.5,284.9 L39.9,279.5 L38.0,272.5 L27.8,254.1 L16.3,223.7 L16.0,214.9 L20.5,204.8 L24.6,197.2 L25.2,191.1 L25.7,189.4 L29.1,176.8 L37.5,159.9 L45.2,150.1 L50.9,146.9 L62.5,149.8 L82.4,152.3 L97.7,150.0 L112.0,142.4 L119.7,135.8 L126.3,128.9 L128.5,124.4 L131.5,122.2 L143.3,118.2 L147.0,113.5 L148.6,104.7 L149.6,94.8 L152.0,87.4 L155.1,82.1 L176.9,69.1 L178.9,64.5 L182.4,60.1 L188.8,55.1 L195.1,48.0 L201.7,43.5 L210.3,44.0 L218.1,43.1 L224.3,40.6 L227.0,40.4 L238.3,42.4 L240.4,50.7 L241.6,59.2 L260.9,58.6 L271.7,40.2 L277.3,38.0 L286.3,31.6 L292.2,26.0 L296.3,29.5 L302.2,41.3 L308.5,50.8 L312.1,54.6 L312.5,57.5 L316.1,59.3 L323.1,60.3 L327.8,63.2 L329.2,72.0 L329.4,80.0 L327.1,85.7 L326.0,90.7 L330.9,92.7 L338.0,90.8 L343.1,88.0 L358.2,94.5 L363.6,79.9 L369.6,72.4 L377.4,68.9 L384.5,64.3 L390.9,61.0 L395.4,61.2 L397.3,59.9 L402.9,60.2 L409.3,61.7 L418.1,60.0 L430.2,63.6 L437.7,70.3 L445.1,72.6 L453.5,72.2 L459.3,68.5 L467.7,55.6 L473.8,55.8 L483.3,53.8 L496.7,53.9 L527.7,56.6 L535.5,61.6 L554.5,67.9 L562.8,75.2 L566.5,83.9 L568.5,89.9 L588.0,99.1 L617.0,110.9 L624.0,112.3 Z" />
+            <g transform="translate(324 160)">
+              <circle class="map-startup-ring map-startup-ring-track" r="70" />
+              <circle class="map-startup-ring map-startup-ring-arc" r="70" pathLength="100" />
+            </g>
+            <!-- Embed the existing logo marks so startup needs no image request. -->
+            <g class="map-startup-logo">
+              <image class="map-startup-logo-light" x="276" y="112" width="96" height="96" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAeFBMVEVMaXF+llB/llEfSi9VcUB/llF+lVBhgEofSi9+llAfSy5/llF9lE8fSy9/llAfSzB/llAfSzB/llF/llB+lVAfSzB+llCAl1EfSy8fSzAfSy8fSzAfSzAeSy8eSi8fSzB/llGHoFYhTzOEnFSCmVMfTDEgTTIiUjV5HQ3QAAAAH3RSTlMAo90zDPgwA/z8G7odx2ubhObMkkXzVutaSa+L2m17A2XpUwAAAAlwSFlzAAAD6AAAA+gBtXtSawAACKlJREFUeNrtWum2qjoMrlAo86CAiBNjff83vEkZBEQ3oHufte4yP85xKzTpl7FpCPnSl770pS996UtfWkOsJjL4j/0V5x9+/1XmzQdLDSLH8Xa7jaDdzvOcKFAt9otS1GsyK3B2pqToaVlkQypKXZHMjRfVYnxWBrEas6LdVimRVZnquiJI1++fUiFVqUgbR2UflQEWYqpnKkVWpKnSbb8oQBQk+CD+BLnwV/hDl3YB+5QIsIjlbHVgriNv2KO+3wLWjuNEUQAUgT043sbc7gU+4rEiKyVPrd9+G3x1sxfLAvMC8Y1UOrkso2rkgJaAOT5dZIoZvIsCvK1uFNizrpewp02ksmEk6FH7A5iKJPDS06wUIryDPt0pGS5VFKBV+lMkaH8Di5EKfE/Pyo21HgRGAgl3jzuJ6Gy7rn0mMmvRs72zUgKIsF5R6KleCCAXrSKeVTclvl4WG7pGDQC/mQndb4M11izM1wQAUz3bWiveJ9Y2w+0rHlsLIbzo7AWGkrpUgpZ/JgVvOBI6Ub2NFRKYgr9pvefIoMiNWGhLF763q/nTd0MZqKGWYLNkJUai4jP8hRpqCZwla1kSuH+xxnin3Qm2U+6thQoo9+o655sw6D1kh2w3d7nmhcJZzJ+RyYjBiAMQpMrcDTHiZagAtnz3VD7QRobh2xjT5kNAwQLSMnjx+FQVDOzPp2vlH9DyIWGzQVJJISbPtALhAnphzip773IwItt5fr3yUCaxz0+Hofxgh3oWzYJAuI1eTD3cMKOGjGQYtFcdkEOYa9r1quUukWM3zOXeArip+bEANTAFl2BvxEf7FGpIYXiy3WMsG/g9vWgVsEfSTu6BsnM84CYWlegsANTpwAV/G2c75DfOK8GoqjjPb7kW2snRPeUNeyB+y0NXJkMrwGiUzvGDxgTGPgjbN45+nleadud0RSCuFc/znPe+ha+rnCdyLyoIT5zn2cIJU30kKxj12QcufTZDMR6+y8PLAFdlZiwSYJV7OvrSsIeb/JlAhIQOjEABxc4h8JhRFGIkDvNl7IUIt+Tlss8g2Bb6UFRGzpwv548u2bmCAHamAOAwA2UxcsnXsEcBzncBIMHN80OhrJ4AsP+V/MEhz60noG0rqwQA/fO1/CFWuLTNkbMFYAMBIMT7bwig5bbcR2CmESq9QEjtfD1/lCA8tzagzEzxZk+A9QZ4Dwc3tET0AuVZin0IRN2ToICwur5HVVjnRTNTZqXDgbIYcV8CwKun++6ocUWhWW+WAJA2SsVqAHjFXuP+JD6QizBN5vkN/7nUTOm+nJuMgjJtEudrANDC7UcP0a55HkKhcD6fL8ckiZsKEZJRmgazKhJLaUpiSEEvLAD40/hBPoCc27HBHkrlCOpMZWZR2GrrpQto/GSQBwA0zsHxaa972xqTM9sLRdqoa3hmv4hB2oEcqgdUTjFUZ77xuOxmphPUVijc8KUJavmRPFgIVAAGOZxuoTGd4pyZAqhKVpvAiyzEYZf0xIffcbD4I8+vIZ1Yc8nRaFvUjyZPBdDAu8iBjyIOwA+vaNUDAmgC889aELYVsQXq86fhDdV8HMhXhQcs3MRX8sNWMQ56s8+GwZa9NgE8fbChD1Ra3CYujcdjVnjcLYPZp11rx34oBPiBDIOEiLiNymrxxqV+IS047ar0eSLE+C400AcIeXYqgRDBHhPcbA2Q7nztTsQ5OA1hgE+GAGncpn2brEZGgBpQlvc7xk6AUV7zk+MlPhgjJ4WoZJw6gUY6qH3AJEtpFAc1nmv2Rabdqsdbn+GgckBH7G8XK/3lDRd64gMth0dR3kEX5HwYaghNAlRyR2QAgcivpWQtRqAfBiDJuGB3TL4kPkBxwGq7EwDDMgbOflzQ5F5dvdQEHwWA0gM2TWNbw/Mxt2sVtPyaoquPibDKXhjGfsMbAkCSQ7fDFgycg+siC7y0sQFIQe0R3u2ZxbHLxFAPz29QTdmASP0UjU6rY548SFX9A1jPc7nQU9P0WwMAYZ0RamKtmLfi1K24rhq46xv10kktLJOtB6BzwxZNw696iN/rNe7TqYM8lGwxOi0AsKRNOxGIqrbAqf/uXKxBaBh4Rbeu6aRwfj2B58LFj7PuzsZtGB6b0BwPBOh+F04xbuZcRduG39BBTImSVV3uJhlVbc/REG5xFyBuELDZuJ11OYnGVXhKsFumBqu67qzJLp2KG88XO2akMwphlIP+KXymh+PxfDDe7PYLK7sj3B4UK1+m/cADpZAxvsTtztaWGkXrrxrQDQTivZOiIP8oCga5dcQwMUbtXLxIhgttGDXInLXXHjXkg7xi+FgMYIM0YZ1foEQ3DJVdL1mFKYe9LkYNsN20/q5F1DyVb7ty5+WJmyTYLL7FyE7OoUBBe9O05gwIV9fmPm2nHPDagb5jBTY2wPkN99c3M2bIsbgWIK7mn6BVXNsbCzy8vC8E61TQqnufgR9A09d3m8MmDq8AdcMqIBQ1aGtwcGNe1szTOxURec8TXC0RlzDEijxT2ou1m2EVlfbvMAK4LC+GzOHJNVXAyBMN0gyQ4OxG2eDaDKuY7cgMXpRnY+7I3/zEtV89QDKEVugYrRxGOjxvJ0YF0vSB//b9i0+4ido+QtuJAWCIeZoJ9nhjbZFP3HuqeIf2lHRBUz8UbznAUILihQTPBPsU/1qCTP93/Lthhn/Gv5tCWMJf+iR/UeXsinK2CDD4YRH26WE+R5lrivXgB/kwzTdFuHCi5DcmGtEQflYDzC15jPzKXCcs+rMawPwj8ltzpfVU0OuwmG1V8kvs2/EyJdP15/DvKPnd6V4AwYQJt8ngn2ZSRH59uBgYRPWM3xj9otxZ5C+mm8EdHGmUgXHi0VTJ3wxXi4OPsy2zssnFOOkKI4fsr/jX5T8LNlIpRnuhOttv3p5eXTMwRQOc5YX6NKAfmN8lbw1tsT9n35spYv+I+5e+9KUvfelLX/rf0H9f37vrxPYeBQAAAABJRU5ErkJggg==" />
+              <image class="map-startup-logo-dark" x="276" y="112" width="96" height="96" href="data:image/png;base64,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" />
             </g>
           </svg>
           <div role="status" aria-live="polite" aria-atomic="true">
             <p class="map-startup-title" id="mapStartupTitle">Načítavame mapu Slovenska…</p>
             <p class="map-startup-detail" id="mapStartupDetail">Pripravujeme mapu a aktuálne hlásenia o medveďoch.</p>
           </div>
-          <div class="map-startup-track" aria-hidden="true"></div>
           <div class="map-startup-actions">
             <a href="#aktuality">Pozrieť hlásenia a správy</a>
             <a href="/" id="mapStartupRetry" hidden>Skúsiť znova</a>
@@ -204,6 +202,50 @@
             var retry = document.getElementById("mapStartupRetry");
             retry.href = location.pathname + location.search;
             var ready = { styles: document.documentElement.hasAttribute("data-map-styles-ready"), tiles: false, leaflet: document.documentElement.hasAttribute("data-leaflet-styles-ready") };
+            var minimumVisibleMs = 2000;
+            var visibleSince = null;
+            var dismissTimer = null;
+            var fadeTimer = null;
+            var failed = false;
+
+            function maybeDismiss() {
+              if (failed || loader.hidden || loader.classList.contains("is-leaving")) return;
+              if (visibleSince === null || !ready.styles || !ready.tiles || !ready.leaflet) return;
+              clearTimeout(dismissTimer);
+              dismissTimer = setTimeout(function () {
+                loader.classList.add("is-leaving");
+                clearTimeout(slowTimer);
+                var fadeMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260;
+                fadeTimer = setTimeout(function () {
+                  loader.hidden = true;
+                  document.getElementById("map").setAttribute("aria-busy", "false");
+                  window.dispatchEvent(new Event("mapstartupready"));
+                }, fadeMs);
+              }, Math.max(0, minimumVisibleMs - (performance.now() - visibleSince)));
+            }
+
+            function startVisibilityTimer(paintedAt) {
+              if (visibleSince !== null) return;
+              visibleSince = paintedAt;
+              maybeDismiss();
+            }
+
+            // Count from first visible content, rather than navigation or an
+            // asset request. Every visit gets the same readable introduction.
+            if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes("paint")) {
+              var paintObserver = new PerformanceObserver(function (entries) {
+                entries.getEntries().forEach(function (entry) {
+                  if (entry.name !== "first-contentful-paint") return;
+                  startVisibilityTimer(entry.startTime);
+                  paintObserver.disconnect();
+                });
+              });
+              paintObserver.observe({ type: "paint", buffered: true });
+            } else {
+              requestAnimationFrame(function () {
+                requestAnimationFrame(function () { startVisibilityTimer(performance.now()); });
+              });
+            }
             var slowTimer = setTimeout(function () {
               if (loader.hidden) return;
               title.textContent = "Mapa sa ešte načítava…";
@@ -213,15 +255,15 @@
             window.mapStartup = {
               ready: function (part) {
                 ready[part] = true;
-                if (!ready.styles || !ready.tiles || !ready.leaflet) return;
-                loader.hidden = true;
-                clearTimeout(slowTimer);
-                document.getElementById("map").setAttribute("aria-busy", "false");
-                window.dispatchEvent(new Event("mapstartupready"));
+                maybeDismiss();
               },
               fail: function (message) {
                 if (loader.hidden) return;
+                failed = true;
+                clearTimeout(dismissTimer);
+                clearTimeout(fadeTimer);
                 clearTimeout(slowTimer);
+                loader.classList.remove("is-leaving");
                 loader.classList.add("is-error");
                 title.textContent = "Mapu sa nepodarilo načítať";
                 detail.textContent = message;

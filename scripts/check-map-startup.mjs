@@ -68,7 +68,12 @@ try {
       assert.match(await page.locator("#mapStartupTitle").textContent(), /Načítavame mapu Slovenska/);
       assert.equal(await page.locator("#map").getAttribute("aria-busy"), "true");
       assert.ok(await page.locator(".map-startup-land").isVisible());
-      assert.ok(await page.locator(".map-startup-bear").isVisible());
+      assert.ok(await page.locator(".map-startup-logo").isVisible());
+      assert.ok(await page.locator(".map-startup-ring-arc").isVisible());
+      assert.ok(await page.locator(`.map-startup-logo-${theme === "dark" ? "dark" : "light"}`).isVisible());
+      assert.equal(await page.locator(".map-startup-logo image").evaluateAll(images =>
+        images.every(image => image.getAttribute("href").startsWith("data:image/png;base64,"))
+      ), true, "The loading logo requires no additional image request");
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "No horizontal overflow");
       if (process.env.STARTUP_SCREENSHOT_DIR) {
         await mkdir(process.env.STARTUP_SCREENSHOT_DIR, { recursive: true });
@@ -78,9 +83,9 @@ try {
       assert.ok(await page.locator("#activityTitle").isVisible(), "Listings stay accessible even when CSS is stalled");
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.emulateMedia({ reducedMotion: "reduce" });
-      assert.equal(await page.locator(".map-startup-bear").evaluate(el => getComputedStyle(el).animationName), "none");
+      assert.equal(await page.locator(".map-startup-ring-arc").evaluate(el => getComputedStyle(el).animationName), "none");
       await page.emulateMedia({ reducedMotion: "no-preference" });
-      assert.notEqual(await page.locator(".map-startup-bear").evaluate(el => getComputedStyle(el).animationName), "none");
+      assert.notEqual(await page.locator(".map-startup-ring-arc").evaluate(el => getComputedStyle(el).animationName), "none");
 
       assets.release();
       await page.locator(".leaflet-tile").first().waitFor({ state: "attached" });
@@ -102,6 +107,41 @@ try {
       await context.close();
     }
   }
+
+  const fastContext = await browser.newContext();
+  try {
+    await fastContext.route("**/*", route => {
+      const url = new URL(route.request().url());
+      if (url.origin !== origin) return route.abort();
+      if (url.pathname.startsWith("/api/map-tiles/")) return route.fulfill({ contentType: "image/png", body: tile });
+      if (url.pathname === "/api/warnings") return route.fulfill({ json: { items: [warning] } });
+      if (url.pathname === "/api/news") return route.fulfill({ json: { items: [] } });
+      return route.continue();
+    });
+    const page = await fastContext.newPage();
+    await page.addInitScript(() => {
+      window.startupHiddenAt = null;
+      new MutationObserver(() => {
+        if (window.startupHiddenAt === null && document.getElementById("mapStartup")?.hidden) {
+          window.startupHiddenAt = performance.now();
+        }
+      }).observe(document, { attributes: true, subtree: true, attributeFilter: ["hidden"] });
+    });
+    // Repeated visits in one context prove this is not a first-visit-only delay.
+    for (const visit of [1, 2]) {
+      await page.goto(origin, { waitUntil: "domcontentloaded" });
+      await page.locator(".leaflet-marker-icon").first().waitFor({ state: "attached" });
+      await page.locator(".leaflet-tile-loaded").first().waitFor({ state: "attached" });
+      assert.ok(await page.locator("#mapStartup").isVisible(), "Map and data load behind the visible introduction");
+      await page.waitForFunction(() => window.startupHiddenAt !== null);
+      const visibleMs = await page.evaluate(() =>
+        window.startupHiddenAt - performance.getEntriesByName("first-contentful-paint")[0].startTime
+      );
+      assert.ok(visibleMs >= 2000, `Fast visit ${visit} must show the introduction for at least 2 seconds (${visibleMs}ms)`);
+      assert.ok(await page.locator(".leaflet-marker-icon").count());
+      console.log(`Startup OK: fast visit ${visit}; visible ${Math.round(visibleMs)}ms; map and markers loaded in background`);
+    }
+  } finally { await fastContext.close(); }
 
   const context = await browser.newContext();
   try {
