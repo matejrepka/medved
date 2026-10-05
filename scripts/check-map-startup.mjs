@@ -70,6 +70,20 @@ try {
       assert.ok(await page.locator(".map-startup-land").isVisible());
       assert.ok(await page.locator(".map-startup-logo").isVisible());
       assert.ok(await page.locator(".map-startup-ring-arc").isVisible());
+      assert.ok(await page.locator(".map-startup-art").evaluate(svg => {
+        const land = svg.querySelector(".map-startup-land");
+        const ring = svg.querySelector(".map-startup-ring-track");
+        const toLand = land.getCTM().inverse();
+        const fromRing = ring.getCTM();
+        // Check the full circle, its stroke, and a little breathing room.
+        const radius = ring.r.baseVal.value + 6;
+        return Array.from({ length: 128 }, (_, i) => {
+          const angle = i * Math.PI * 2 / 128;
+          const point = new DOMPoint(Math.cos(angle) * radius, Math.sin(angle) * radius)
+            .matrixTransform(fromRing).matrixTransform(toLand);
+          return land.isPointInFill(point);
+        }).every(Boolean);
+      }), "The entire loading ring must sit inside Slovakia");
       assert.ok(await page.locator(`.map-startup-logo-${theme === "dark" ? "dark" : "light"}`).isVisible());
       assert.equal(await page.locator(".map-startup-logo image").evaluateAll(images =>
         images.every(image => image.getAttribute("href").startsWith("data:image/png;base64,"))
