@@ -12,7 +12,8 @@
     "backfill:news-incidents": "node scripts/backfill-news-incidents.mjs",
     "build:geo": "node src/geo/build-gazetteer.mjs",
     "build:images": "node scripts/optimize-images.mjs",
-    "check:browser": "node scripts/check-browser.mjs"
+    "check:browser": "node scripts/check-browser.mjs",
+    "check:startup": "node scripts/check-map-startup.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

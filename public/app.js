@@ -2,6 +2,12 @@
 // Načíta dáta z vlastného API (/api/warnings, /api/news), vykreslí mapu
 // (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
+(function () {
+if (!window.L) {
+  window.mapStartup?.fail("Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite hlásenia a správy pod mapou.");
+  return;
+}
+
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
 const API_VERSION = "news-map-v9";
 const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
@@ -174,12 +180,30 @@ function setTiles(layerId) {
   const url = layer.urls ? layer.urls[currentTheme()] || layer.urls.light : layer.url;
 
   if (tileLayer) map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(url, layer.options).addTo(map);
+  const nextLayer = L.tileLayer(url, layer.options);
+  tileLayer = nextLayer;
   state.tileError = false;
-  tileLayer.once("tileerror", () => {
+  let loadedTiles = 0;
+  nextLayer.on("tileload", () => {
+    if (tileLayer !== nextLayer) return;
+    loadedTiles++;
+  });
+  nextLayer.on("tileerror", () => {
+    if (tileLayer !== nextLayer) return;
     state.tileError = true;
     syncLoadStatus();
   });
+  nextLayer.on("load", () => {
+    if (tileLayer !== nextLayer) return;
+    if (loadedTiles > 0) {
+      window.mapStartup?.ready("tiles");
+    } else {
+      state.tileError = true;
+      window.mapStartup?.fail("Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite hlásenia a správy pod mapou.");
+    }
+    syncLoadStatus();
+  });
+  nextLayer.addTo(map);
   state.mapLayer = id;
   try {
     localStorage.setItem("mapLayer", id);
@@ -1209,7 +1233,7 @@ function renderSightings() {
 }
 
 // --- Značky na mape ---
-function renderMarkers() {
+function renderMarkers({ fit = true } = {}) {
   state.markers.forEach((m) => map.removeLayer(m));
   state.markers.clear();
 
@@ -1273,9 +1297,9 @@ function renderMarkers() {
     setText("mapMetaCompact", compactLabel);
   }
 
-  if (bounds.length > 0) {
+  if (fit && bounds.length > 0) {
     fitMapToPoints(bounds);
-  } else if (hasDateFilter() || hasSearchFilter()) {
+  } else if (fit && (hasDateFilter() || hasSearchFilter())) {
     map.setView(SK_CENTER, 7);
   }
 }
@@ -1487,8 +1511,13 @@ function hideLoadStatus() {
 }
 
 function syncLoadStatus() {
+  // The inline first-paint loader owns feedback until the basemap is usable.
+  if (!$("mapStartup").hidden) {
+    hideLoadStatus();
+    return;
+  }
   if (state.dataLoading) {
-    showLoadStatus("Načítavam aktuálne dáta...");
+    showLoadStatus("Mapa je pripravená. Načítavam aktuálne hlásenia a správy…");
     return;
   }
   if (state.tileError) {
@@ -1508,7 +1537,23 @@ function syncLoadStatus() {
   hideLoadStatus();
 }
 
+window.addEventListener("mapstartupready", () => {
+  // Async CSS may finish after Leaflet measured the first map view.
+  map.invalidateSize({ pan: false });
+  syncLoadStatus();
+});
+
+async function fetchMapData(path) {
+  const response = await fetch(path, {
+    credentials: "omit",
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error("Dáta nie sú dostupné");
+  return response.json();
+}
+
 async function loadData() {
+  if (state.dataLoading) return;
   state.dataLoading = true;
   syncLoadStatus();
   // Serverový store sa po moderácii obnoví a ETag ho lacno revaliduje, takže
@@ -1519,26 +1564,26 @@ async function loadData() {
   const sourceFailed = { sightings: false, news: false };
   const renderListAfterMarkers = (renderList) => setTimeout(renderList, 0);
 
-  const sightingsRequest = fetch(`/api/warnings?v=${API_VERSION}`, { credentials: "omit" })
-    .then((response) => response.json())
+  const sightingsRequest = fetchMapData(`/api/warnings?v=${API_VERSION}`)
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta hlásení");
       state.sightings = dedupeSightings(payload.items);
       state.sightingsUpdatedAt = payload.updatedAt;
       state.loaded.sightings = true;
+      renderMarkers({ fit: false });
       renderListAfterMarkers(renderSightings);
     })
     .catch(() => {
       sourceFailed.sightings = true;
     });
 
-  const newsRequest = fetch(`/api/news?v=${API_VERSION}`, { credentials: "omit" })
-    .then((response) => response.json())
+  const newsRequest = fetchMapData(`/api/news?v=${API_VERSION}`)
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta správ");
       state.news = payload.items;
       state.newsUpdatedAt = payload.updatedAt;
       state.loaded.news = true;
+      renderMarkers({ fit: false });
       renderListAfterMarkers(renderNews);
     })
     .catch(() => {
@@ -1550,17 +1595,6 @@ async function loadData() {
   // Fit once using the complete response set. Rendering after each endpoint
   // used to move the map repeatedly and trigger multiple tile grids.
   renderMarkers();
-
-  // Let the final data-driven fit run before adding the basemap. Previously
-  // Leaflet downloaded a complete zoom-7 view and discarded it immediately
-  // when the markers moved the map to zoom 8.
-  if (!tileLayer) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!tileLayer) setTiles(state.mapLayer);
-      });
-    });
-  }
 
   const failures = [];
   if (sourceFailed.sightings) failures.push("hlásenia");
@@ -1621,7 +1655,11 @@ window.addEventListener("resize", handleMapContainerResize);
 // --- Štart ---
 addLocationControl();
 addCenterMapControl();
+// Start the basemap immediately, independently of either data endpoint.
+// No data request can hold the entire map behind its response.
+setTiles(state.mapLayer);
 loadData();
 // Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).
 setInterval(loadData, 15 * 60 * 1000);
+})();
 

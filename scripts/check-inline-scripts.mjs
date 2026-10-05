@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-for (const file of ["public/admin.html"]) {
+for (const file of ["public/admin.html", "public/index.html"]) {
   const html = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
   const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
   for (const [, source] of scripts) {

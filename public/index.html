@@ -54,7 +54,7 @@
       href="/vendor/leaflet/leaflet.css?v=1.9.4"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
-      onload="this.onload=null;this.rel='stylesheet'"
+      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-leaflet-styles-ready','');window.mapStartup?.ready('leaflet')"
     />
     <noscript>
       <link
@@ -64,7 +64,77 @@
         crossorigin=""
       />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260928-perf2" />
+    <!-- First-paint shell: no font, image, map library or API is needed. -->
+    <style>
+      :root { --site-header-height: 68px; --bottom-nav-space: 0px; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      .map-first-page { background: #f6f6f3; color: #1a1a17; font-family: system-ui, sans-serif; }
+      [data-theme="dark"] .map-first-page { background: #121310; color: #f1f0e8; }
+      .site-header { position: sticky; top: 0; z-index: 100; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; height: 68px; padding: 0 clamp(16px, 4vw, 36px); background: #fff; border-bottom: 1px solid #e7e7e1; }
+      [data-theme="dark"] .site-header { background: #1a1b17; border-color: #2b2c26; }
+      .brand { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; min-width: 0; }
+      .brand-mark { display: block; flex: 0 0 42px; width: 42px; height: 42px; }
+      .brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+      [data-theme="dark"] .brand-mark img { content: url("/assets/mascot/bear-head-mark-dark.png?v=20260713-2"); }
+      .brand-name { font: 600 1.22rem Georgia, serif; white-space: nowrap; }
+      .main-nav { display: flex; gap: 20px; }
+      .main-nav a { padding: 4px 8px; color: inherit; font-size: .95rem; text-decoration: none; }
+      .header-actions { display: flex; align-items: center; justify-self: end; gap: 10px; }
+      .updated { font-size: .78rem; }
+      .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; color: inherit; background: transparent; border: 0; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      .map-first-page .map-page-shell { width: 100%; max-width: none; margin: 0; padding: 0; }
+      .map-viewport { position: relative; isolation: isolate; width: 100%; height: calc(100vh - var(--site-header-height) - var(--bottom-nav-space)); height: calc(100dvh - var(--site-header-height) - var(--bottom-nav-space)); min-height: 420px; overflow: hidden; }
+      .map-first-page #map { position: absolute; inset: 0; width: 100%; height: 100%; }
+      html:not([data-map-styles-ready]) .map-overlay-top,
+      html:not([data-map-styles-ready]) .map-bottom-bar,
+      html:not([data-map-styles-ready]) .map-load-status,
+      html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: hidden; }
+      html:not([data-map-styles-ready]) .activity-section { padding: 32px 24px; }
+      .map-startup { --startup-bg: #fbfbf9; --startup-ink: #1a1a17; --startup-muted: #425346; --startup-accent: #1f4b30; --startup-land: #e6ece1; --startup-line: #91a58a; position: absolute; inset: 0; z-index: 850; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 76px 24px; background: var(--startup-bg); color: var(--startup-ink); text-align: center; }
+      [data-theme="dark"] .map-startup { --startup-bg: #1f201b; --startup-ink: #f1f0e8; --startup-muted: #b5c6b7; --startup-accent: #85c69a; --startup-land: #2c3a2c; --startup-line: #607e60; }
+      .map-startup[hidden] { display: none; }
+      .map-startup-art { display: block; flex: 0 1 auto; width: min(100%, 420px); height: auto; max-height: 240px; overflow: visible; }
+      .map-startup-land { fill: var(--startup-land); stroke: var(--startup-line); stroke-width: 2; stroke-linejoin: round; }
+      .map-startup-bear { color: var(--startup-accent); }
+      .map-startup-title { margin: 14px 0 0; font: 600 clamp(1.45rem, 4.8vw, 2rem)/1.2 var(--font-serif, Georgia, serif); letter-spacing: -.02em; text-wrap: balance; }
+      .map-startup-detail { max-width: 36ch; margin: 12px auto 0; color: var(--startup-muted); font-size: .9rem; line-height: 1.6; text-wrap: pretty; }
+      .map-startup-track { width: 72px; height: 3px; margin: 22px auto; overflow: hidden; border-radius: 2px; background: var(--startup-land); }
+      .map-startup-track::after { content: ""; display: block; width: 28px; height: 100%; background: var(--startup-accent); }
+      .map-startup-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; }
+      .map-startup-actions a { display: inline-flex; align-items: center; min-height: 44px; color: var(--startup-accent); font-size: .85rem; text-underline-offset: 4px; }
+      .map-startup-actions a[hidden] { display: none; }
+      .map-startup-actions a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+      .map-startup.is-error .map-startup-track { display: none; }
+      @media (prefers-reduced-motion: no-preference) {
+        .map-startup:not(.is-error) .map-startup-bear { animation: startup-bear-step .7s ease-in-out infinite alternate; }
+        .map-startup:not(.is-error) .map-startup-paws-a { animation: startup-paw-step .7s ease-in-out infinite alternate; }
+        .map-startup:not(.is-error) .map-startup-paws-b { animation: startup-paw-step .7s ease-in-out infinite alternate-reverse; }
+        .map-startup:not(.is-error) .map-startup-track::after { animation: startup-progress 1.4s ease-in-out infinite alternate; }
+      }
+      @keyframes startup-bear-step { to { transform: translateY(-2px); } }
+      @keyframes startup-paw-step { to { transform: translate(2px, -3px); } }
+      @keyframes startup-progress { to { transform: translateX(44px); } }
+      @media (max-width: 760px) {
+        :root { --site-header-height: calc(56px + env(safe-area-inset-top)); --bottom-nav-space: calc(60px + env(safe-area-inset-bottom)); }
+        .site-header { display: flex; justify-content: space-between; height: var(--site-header-height); padding: env(safe-area-inset-top) 12px 0; }
+        .main-nav { position: fixed; right: 0; bottom: 0; left: 0; height: var(--bottom-nav-space); align-items: center; justify-content: space-around; gap: 0; background: #fff; }
+        [data-theme="dark"] .main-nav { background: #1a1b17; }
+        .updated { display: none; }
+        .map-startup { padding: 68px 24px; }
+      }
+      @media (max-height: 540px) {
+        .map-startup-art { max-height: 120px; }
+        .map-startup { padding: 56px 20px; }
+        .map-startup-title { font-size: 1.35rem; }
+        .map-startup-detail { margin-top: 8px; }
+        .map-startup-track { margin: 12px auto; }
+      }
+    </style>
+    <link rel="preload" as="style" href="/styles.css?v=20261005-startup1"
+      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-map-styles-ready','');window.mapStartup?.ready('styles')" />
+    <noscript><link rel="stylesheet" href="/styles.css?v=20261005-startup1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -99,9 +169,73 @@
           Nejde o GPS sledovanie ani potvrdenie aktuálnej polohy zvieraťa.
         </p>
 
+        <div class="map-startup" id="mapStartup">
+          <!-- Simplified Slovakia boundary: Natural Earth, public domain.
+               https://github.com/nvkelso/natural-earth-vector -->
+          <svg class="map-startup-art" viewBox="0 0 640 360" width="420" height="236" aria-hidden="true">
+            <path class="map-startup-land" d="M624.0,105.8 L594.3,148.3 L573.4,213.6 L550.6,230.1 L435.9,181.0 L400.8,190.9 L375.7,228.8 L325.4,248.9 L313.8,238.7 L261.7,263.6 L219.1,268.3 L210.5,300.5 L120.6,320.0 L81.2,302.6 L26.7,261.6 L16.0,205.9 L24.6,185.3 L39.8,149.6 L87.2,152.4 L123.8,135.6 L126.7,120.4 L147.2,112.6 L154.2,75.4 L178.8,68.3 L195.4,38.6 L227.3,38.4 L233.3,48.4 L277.3,26.0 L331.3,84.3 L394.6,49.1 L445.2,66.0 L522.2,42.7 L624.0,105.8 Z" />
+            <g transform="translate(280 138)">
+              <g class="map-startup-bear" fill="currentColor">
+                <g class="map-startup-paws-b" opacity=".55">
+                  <path d="M16 28h10l-2 22H12l2-5zM57 27h9l2 23H56l2-5z" />
+                </g>
+                <path d="M8 33C3 25 5 15 12 10C21 3 32 2 42 5C50 6 56 11 62 13L65 7C66 3 72 4 73 8L74 12C81 13 84 18 85 23L94 26L92 33L81 35L73 32C65 39 54 39 45 35L23 37L13 35Z" />
+                <g class="map-startup-paws-a">
+                  <path d="M9 29h12l-2 21H5l2-5zM61 29h11l4 21H62l2-5z" />
+                </g>
+              </g>
+            </g>
+          </svg>
+          <div role="status" aria-live="polite" aria-atomic="true">
+            <p class="map-startup-title" id="mapStartupTitle">Načítavame mapu Slovenska…</p>
+            <p class="map-startup-detail" id="mapStartupDetail">Pripravujeme mapu a aktuálne hlásenia o medveďoch.</p>
+          </div>
+          <div class="map-startup-track" aria-hidden="true"></div>
+          <div class="map-startup-actions">
+            <a href="#aktuality">Pozrieť hlásenia a správy</a>
+            <a href="/" id="mapStartupRetry" hidden>Skúsiť znova</a>
+          </div>
+        </div>
+        <script>
+          (function () {
+            var loader = document.getElementById("mapStartup");
+            var title = document.getElementById("mapStartupTitle");
+            var detail = document.getElementById("mapStartupDetail");
+            var retry = document.getElementById("mapStartupRetry");
+            retry.href = location.pathname + location.search;
+            var ready = { styles: document.documentElement.hasAttribute("data-map-styles-ready"), tiles: false, leaflet: document.documentElement.hasAttribute("data-leaflet-styles-ready") };
+            var slowTimer = setTimeout(function () {
+              if (loader.hidden) return;
+              title.textContent = "Mapa sa ešte načítava…";
+              detail.textContent = "Pri pomalšom pripojení to môže chvíľu trvať. Hlásenia a správy si môžete pozrieť pod mapou.";
+              retry.hidden = false;
+            }, 8000);
+            window.mapStartup = {
+              ready: function (part) {
+                ready[part] = true;
+                if (!ready.styles || !ready.tiles || !ready.leaflet) return;
+                loader.hidden = true;
+                clearTimeout(slowTimer);
+                document.getElementById("map").setAttribute("aria-busy", "false");
+                window.dispatchEvent(new Event("mapstartupready"));
+              },
+              fail: function (message) {
+                if (loader.hidden) return;
+                clearTimeout(slowTimer);
+                loader.classList.add("is-error");
+                title.textContent = "Mapu sa nepodarilo načítať";
+                detail.textContent = message;
+                retry.hidden = false;
+                document.getElementById("map").setAttribute("aria-busy", "false");
+              }
+            };
+          })();
+        </script>
+
         <div
           id="map"
           role="region"
+          aria-busy="true"
           aria-label="Interaktívna mapa hláseného výskytu medveďov na Slovensku"
           aria-describedby="mapExplanation"
         ></div>
@@ -156,7 +290,7 @@
           </a>
         </div>
 
-        <div class="map-load-status" id="mapLoadStatus" role="status" aria-live="polite">
+        <div class="map-load-status" id="mapLoadStatus" role="status" aria-live="polite" hidden>
           Načítavam aktuálne dáta...
         </div>
 
@@ -342,13 +476,16 @@
       </div>
     </footer>
 
-    <script src="/page.js?v=20260731-map-first1"></script>
+    <script src="/page.js?v=20260731-map-first1" defer></script>
     <script
       src="/vendor/leaflet/leaflet.js?v=1.9.4"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
+      defer
+      onerror="window.mapStartup?.fail('Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"
     ></script>
-    <script src="/app.js?v=20260928-perf2"></script>
+    <script src="/app.js?v=20261005-startup1" defer
+      onerror="window.mapStartup?.fail('Načítanie stránky prerušilo pripojenie. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
 </html>

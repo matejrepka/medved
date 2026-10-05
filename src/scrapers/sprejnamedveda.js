@@ -79,6 +79,12 @@ export function buildSprejnamedvedaArticleIndex(posts = []) {
 
 export function isRelevantSprejnamedvedaRow(row, article = null) {
   const description = String(row?.description || "").replace(/\s+/g, " ").trim();
+  // Zdrojová mapa môže zameniť datovaciu značku agentúrneho článku za
+  // miesto pozorovania. Informácia o kalorickom príjme nie je hlásenie.
+  const nutritionArticle = /\bmedvede (?:musia|potrebuju)\b[^.]*\bprijat\b[^.]*\bkalori/u;
+  if ([row?.title, description, article?.excerpt].some((text) =>
+    nutritionArticle.test(normalizeSearchText(text))
+  )) return false;
   const importedArticle = extractImportedArticle(description);
   if (importedArticle) {
     return Boolean(article?.url) &&

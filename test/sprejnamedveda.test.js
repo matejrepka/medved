@@ -51,6 +51,39 @@ test("bežný komentár ponechá bez zmeny", () => {
   );
 });
 
+test("agentúrny článok o kalorickom príjme nie je pozorovanie v Bratislave", () => {
+  const row = {
+    location: "Bratislava",
+    observed_at: "2026-10-04",
+    lat: 48.1516988,
+    lng: 17.1093063,
+    description: "Bratislava 4. októbra (TASR) – Medvede musia na zimu prijať desaťkrát viac kalórií ako počas jari či leta.",
+  };
+
+  assert.equal(normalizeSprejnamedvedaRow(row), null);
+  assert.equal(normalizeSprejnamedvedaRow({
+    ...row,
+    description: "",
+    title: "Bratislava: Medvede musia na zimu prijať desaťkrát viac kalórií ako počas jari",
+  }), null);
+  assert.equal(normalizeSprejnamedvedaRow({ ...row, description: "" }, {
+    url: "https://www.sprejnamedveda.sk/aktuality/vyskyt-medveda-bratislava-4-10-2026/",
+    excerpt: row.description,
+  }), null);
+});
+
+test("skutočné pozorovanie v agentúrnej správe zostane prijaté", () => {
+  const row = {
+    location: "Hrochoť",
+    observed_at: "2026-10-04",
+    lat: 48.655,
+    lng: 19.312,
+    description: "Bratislava 4. októbra (TASR) – Pri obci Hrochoť dnes pozorovali medveďa.",
+  };
+
+  assert.equal(normalizeSprejnamedvedaRow(row)?.note, row.description);
+});
+
 test("neúplný zvyšok dátumu nepoužije ako komentár", () => {
   assert.equal(
     cleanSprejnamedvedaDescription(
