@@ -10,12 +10,11 @@
 //    — vyžadujeme veľké začiatočné písmeno (vlastné meno) a skórujeme zhody:
 //    "v obci X", "starosta X" či výskyt v tele článku majú prednosť.
 
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { projectDirectory, readText } from "#platform";
 import path from "node:path";
 
 const PLACES_PATH = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
+  projectDirectory, "src", "geo",
   "sk-places.json"
 );
 
@@ -210,7 +209,7 @@ let placesPromise = null;
 /** Načíta gazetteer, predspracuje a vytvorí index podľa prvých 4 znakov názvu. */
 function loadPlaces() {
   if (!placesPromise) {
-    placesPromise = readFile(PLACES_PATH, "utf8")
+    placesPromise = readText(PLACES_PATH)
       .then((raw) => JSON.parse(raw))
       .then((arr) => {
         const list = arr.map((p) => {

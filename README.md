@@ -92,6 +92,10 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 
 ## Databázové migrácie
 
+Nasadenie backendu aj mapy na Cloudflare Workers je popísané v
+[`docs/cloudflare-workers.md`](docs/cloudflare-workers.md). Samotné nahratie
+`public/` nestačí; Workers musí spúšťať aj API cez `wrangler.jsonc`.
+
 Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom migrácie
 `docs/migration-006-news-incidents.sql`, `docs/migration-007-email-notifications.sql`,
 `docs/migration-008-priority-telegram.sql`, `docs/migration-009-email-digests.sql` a

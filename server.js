@@ -10,7 +10,7 @@ import compression from "compression";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { readFile } from "node:fs/promises";
+import { projectDirectory, isWorker, readText, serveAssets, defer } from "#platform";
 
 import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
@@ -77,7 +77,7 @@ import {
   reviewNewsWithAutomaticIncident,
 } from "./src/db/repository.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = projectDirectory;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
 const CARTO_BASEMAPS_API_KEY = process.env.CARTO_BASEMAPS_API_KEY;
@@ -925,6 +925,9 @@ async function loadLocationOverviewForRender() {
     console.error("[seo] public overview SSR failed:", err.message);
     return null;
   });
+  // The fast SSR timeout must not cancel the database refresh when a Worker
+  // returns its HTML response before the query completes.
+  defer(pending);
 
   // Keep stale SSR content visible while it refreshes. On a cold start, never
   // hold the whole document behind a slow database or network connection;
@@ -1078,7 +1081,7 @@ function slovakCount(value, one, few, many) {
 
 async function getPageTemplate(file) {
   if (!pageTemplateCache.has(file)) {
-    pageTemplateCache.set(file, await readFile(path.join(PUBLIC_DIR, file), "utf8"));
+    pageTemplateCache.set(file, await readText(path.join(PUBLIC_DIR, file)));
   }
   return pageTemplateCache.get(file);
 }
@@ -1143,11 +1146,12 @@ async function flushEmailNotifications(context) {
 const app = express();
 app.disable("x-powered-by");
 // Trust one deployment proxy, not every address in X-Forwarded-For.
-app.set("trust proxy", process.env.TRUST_PROXY === "true" ? 1 : false);
+app.set("trust proxy", isWorker || process.env.TRUST_PROXY === "true" ? 1 : false);
 
 // Gzip/deflate odpovedí — JSON z API (až 1000 hlásení + 200 správ) aj
 // HTML/CSS/JS sa prenášajú výrazne menšie (~70-85 %).
-app.use(compression());
+// Cloudflare compresses responses at the edge; avoid encoding them twice.
+if (!isWorker) app.use(compression());
 
 // Základné bezpečnostné a indexačné hlavičky. Verejné JSON API ostáva dostupné,
 // administračné a cron URL sa však nemajú objavovať vo výsledkoch vyhľadávania.
@@ -1201,7 +1205,7 @@ app.use((req, res, next) => {
     if (!shouldLogWebsiteRequest(req)) return;
 
     const responseMs = Number((process.hrtime.bigint() - started) / 1000000n);
-    saveWebsiteLog({
+    defer(saveWebsiteLog({
       method: req.method,
       path: req.path,
       statusCode: res.statusCode,
@@ -1211,7 +1215,7 @@ app.use((req, res, next) => {
       ipHash: hashIp(req.ip || req.socket.remoteAddress),
     }).catch((err) => {
       console.error("[website_logs] insert failed:", err.message);
-    });
+    }));
   });
 
   next();
@@ -2254,8 +2258,12 @@ function adminAuth(req, res, next) {
   return fail(401, 'Vyžaduje sa prihlásenie (meno: admin).');
 }
 
-app.get("/admin", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
+app.get("/admin", async (_req, res, next) => {
+  try {
+    res.type("html").send(await getPageTemplate("admin.html"));
+  } catch (error) {
+    next(error);
+  }
 });
 app.get("/admin.html", (_req, res) => res.redirect(301, "/admin"));
 
@@ -2707,10 +2715,7 @@ const immutableVendorHeaders = (res) => {
 // which can hide every icon for hundreds of milliseconds on a cold visit.
 // Serve the same package CSS with the non-blocking display policy applied.
 const phosphorRegularCss = (
-  await readFile(
-    path.join(__dirname, "node_modules", "@phosphor-icons", "web", "src", "regular", "style.css"),
-    "utf8"
-  )
+  await readText(path.join(__dirname, "node_modules", "@phosphor-icons", "web", "src", "regular", "style.css"))
 ).replace("font-display: block;", "font-display: swap;");
 
 app.get("/vendor/phosphor/regular/style.css", (_req, res) => {
@@ -2727,6 +2732,8 @@ app.get("/api/admin/feedback", adminAuth, async (_req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+app.use(serveAssets);
 
 app.use(
   "/vendor/leaflet",
@@ -2803,12 +2810,14 @@ app.use(
 
 // Keep unknown browser routes inside the branded site shell while preserving
 // the status code that search engines and clients expect from a missing page.
-app.get("*", (req, res, next) => {
+app.get("*", async (req, res, next) => {
   if (req.path.startsWith("/api/") || !req.accepts("html")) return next();
-  return res
-    .status(404)
-    .set("X-Robots-Tag", "noindex, follow")
-    .sendFile(path.join(PUBLIC_DIR, "404.html"));
+  try {
+    return res.status(404).set("X-Robots-Tag", "noindex, follow")
+      .type("html").send(await getPageTemplate("404.html"));
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use((error, req, res, next) => {
@@ -2823,9 +2832,14 @@ app.use((error, req, res, next) => {
 
 // Keep imports side-effect free so HTTP tests can start an isolated server
 // without loading production data or starting notification workers.
-export { app };
+async function runNotificationJobs() {
+  await flushTelegramNotifications("scheduled");
+  await flushEmailNotifications("scheduled");
+}
+
+export { app, runNotificationJobs };
 export default app;
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (!isWorker && process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   app.listen(PORT, () => {
     console.log(`\n🐻 Medveď Sledovač beží na http://localhost:${PORT}\n`);
     console.log(

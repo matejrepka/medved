@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { defer } from "#platform";
 
 import { callTelegramApi } from "./api.js";
 import {
@@ -140,9 +141,7 @@ export class TelegramService {
 
   kick() {
     if (!this.enabled) return;
-    queueMicrotask(() => {
-      this.runAvailable().catch((error) => this.logger.error(`[telegram] outbox failed: ${error.message}`));
-    });
+    defer(this.runAvailable().catch((error) => this.logger.error(`[telegram] outbox failed: ${error.message}`)));
   }
 
   async handleUpdate(update) {

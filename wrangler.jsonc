@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "kdejemedved",
+  "main": "dist-worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "enable_nodejs_fs_module", "enable_nodejs_http_server_modules", "nodejs_compat_populate_process_env"],
+  "no_bundle": true,
+  "keep_vars": true,
+  "build": {
+    "command": "npm run build:worker"
+  },
+  "assets": {
+    "directory": "dist-worker/public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -4,9 +4,16 @@
   "description": "Web app, ktorá zbiera hlásenia o výskyte medveďov z tumedved.sk a slovenské správy o medveďoch a zobrazuje ich na mape.",
   "type": "module",
   "main": "server.js",
+  "imports": {
+    "#platform": "./src/platform.js"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "build:worker": "node scripts/build-worker.mjs",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check:worker": "node scripts/check-worker.mjs",
     "check": "node --check server.js && node --check src/security.js && node --check src/scrapers/public-fetch.js && node --check src/incidents.js && node --check src/news-locations.js && node --check src/db/repository.js && node --check src/ai/news-classifier.js && node --check src/ai/report-spam-classifier.js && node --check src/geo/search.js && node --check src/telegram/api.js && node --check src/telegram/cards.js && node --check src/telegram/config.js && node --check src/telegram/service.js && node --check src/db/telegram-outbox.js && node --check src/email/config.js && node --check src/email/tokens.js && node --check src/email/templates.js && node --check src/email/service.js && node --check src/db/email-outbox.js && node --check public/app.js && node --check public/page.js && node --check public/home.js && node --check public/stats.js && node scripts/check-inline-scripts.mjs && node scripts/check-seo.mjs",
     "test": "node --test",
     "backfill:news-incidents": "node scripts/backfill-news-incidents.mjs",
@@ -38,6 +45,9 @@
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
-    "sharp": "^0.35.5"
+    "esbuild": "^0.28.2",
+    "miniflare": "^5.20261006.1-alpha",
+    "sharp": "^0.35.5",
+    "wrangler": "^4.149.0"
   }
 }

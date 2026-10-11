@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { isWorker, defer } from "#platform";
 
 import { createEmailToken } from "./tokens.js";
 import { buildConfirmationEmail, buildDigestEmail, buildFeedbackEmail, buildReportModerationEmail } from "./templates.js";
@@ -56,7 +57,7 @@ export class EmailService {
       secure: config.secure,
       requireTLS: config.requireTls,
       auth: { user: config.smtpUser, pass: config.smtpPass },
-      pool: true,
+      pool: !isWorker,
       maxConnections: 3,
       maxMessages: 100,
       connectionTimeout: 10_000,
@@ -201,8 +202,6 @@ export class EmailService {
 
   kick() {
     if (!this.config.enabled) return;
-    queueMicrotask(() => {
-      this.runScheduled().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`));
-    });
+    defer(this.runScheduled().catch((error) => this.logger.error(`[email] outbox failed: ${error.message}`)));
   }
 }
