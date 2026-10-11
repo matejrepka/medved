@@ -10,7 +10,7 @@ import compression from "compression";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { projectDirectory, isWorker, readText, serveAssets, defer } from "#platform";
+import { projectDirectory, isWorker, readText, serveAssets, defer, getEnvironment } from "#platform";
 
 import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
@@ -80,8 +80,6 @@ import {
 const __dirname = projectDirectory;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
-const CARTO_BASEMAPS_API_KEY = process.env.CARTO_BASEMAPS_API_KEY;
-const CRON_REFRESH_SECRET = process.env.CRON_REFRESH_SECRET;
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "03a59456ce8341fba7b18cf916aa32e8";
 const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk";
 const CONTENT_UPDATED = "2026-07-14T00:00:00+02:00";
@@ -1233,13 +1231,14 @@ app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
       zoom > 20 || Number(x) >= 2 ** zoom || Number(y) >= 2 ** zoom) {
     return res.status(400).send("Invalid map tile request");
   }
-  if (!CARTO_BASEMAPS_API_KEY) {
+  const mapKey = String(getEnvironment().CARTO_BASEMAPS_API_KEY || "").trim();
+  if (!mapKey) {
     return res.status(503).send("Map tiles are not configured");
   }
 
   try {
     const tileUrl = new URL(`https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png`);
-    tileUrl.searchParams.set("key", CARTO_BASEMAPS_API_KEY);
+    tileUrl.searchParams.set("key", mapKey);
     const response = await fetch(tileUrl, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`CARTO returned HTTP ${response.status}`);
 
@@ -1362,8 +1361,10 @@ app.get("/api/stats", async (_req, res) => {
 
 // Stav serverového obnovovania dát.
 app.get("/api/status", (_req, res) => {
+  res.set("Cache-Control", "no-store");
   res.json({
     supabaseConfigured: isSupabaseConfigured(),
+    mapTilesConfigured: Boolean(String(getEnvironment().CARTO_BASEMAPS_API_KEY || "").trim()),
     refreshMode: "external-cron",
     emailNotificationsEnabled: emailConfig.enabled,
     sightings: sightingsStore.meta,
@@ -1374,7 +1375,7 @@ app.get("/api/status", (_req, res) => {
 function isValidCronRequest(req) {
   const authorization = req.get("authorization");
   const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : req.query.secret;
-  return secretMatches(CRON_REFRESH_SECRET, token);
+  return secretMatches(getEnvironment().CRON_REFRESH_SECRET, token);
 }
 
 // Obnoví obidva zdroje nezávisle. Keď jeden zlyhá (napr. tumedved.sk je za
@@ -2238,7 +2239,7 @@ function adminAuth(req, res, next) {
   const fail = (status, msg) =>
     wantsJson ? res.status(status).json({ ok: false, error: msg }) : res.status(status).send(msg);
 
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPassword = getEnvironment().ADMIN_PASSWORD;
   if (!adminPassword) {
     return fail(500, "Chyba servera: ADMIN_PASSWORD nie je nastavené v .env súbore.");
   }

@@ -41,10 +41,15 @@ and Secrets, then deploy:
 Keep the existing optional OpenRouter, Telegram, SMTP, newsletter and logging
 configuration. None of these values is embedded in the frontend or the build.
 Runtime bindings populate `process.env` through the explicit compatibility flag.
+The map key, Supabase credentials, admin password and cron secret are read directly
+from the current Worker's request bindings. This prevents a reused code instance
+from retaining empty or old values after a secret-only update.
 
 ## Verify the deployed version
 
-- `/api/status` must return HTTP 200 and JSON.
+- `/api/status` must return HTTP 200 and JSON with `mapTilesConfigured: true` and
+  `supabaseConfigured: true`. These fields only report presence; they do not reveal
+  secret values or validate the upstream credentials.
 - `/api/map-tiles/dark_all/0/0/0.png` must return HTTP 200 and a PNG.
 - `/api/warnings` and `/api/news` must return JSON containing `items` arrays.
 - `/vendor/leaflet/leaflet.js` and the local font URLs must return HTTP 200.

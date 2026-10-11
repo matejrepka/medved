@@ -29,13 +29,36 @@ const fixtures = {
   ADMIN_PASSWORD: "test-only-admin-password",
   DISABLE_WEBSITE_LOGS: "true",
 };
+const rotated = {
+  ...fixtures,
+  CARTO_BASEMAPS_API_KEY: "test-only-rotated-carto-key",
+  SUPABASE_SERVICE_ROLE_KEY: "test-only-rotated-service-key",
+};
+const seenMapKeys = new Set();
+const seenDatabaseKeys = new Set();
+const script = await readFile(path.join(root, config.main), "utf8");
 
-function createRuntime(bindings) {
+function createRuntime(bindings, simulateUpdates = false) {
   // Explicit fixture bindings: never load .env or contact production services.
   return new Miniflare(convertV4MiniflareOptions({
     name: "medved-test",
-    modules: true,
-    scriptPath: path.join(root, config.main),
+    ...(simulateUpdates ? {
+      // Test-only wrapper varies handler bindings without reloading the module,
+      // reproducing Cloudflare's isolate reuse after a secret-only deployment.
+      modules: [{
+        type: "ESModule", path: path.join(root, "fixture-entry.js"),
+        contents: `import worker from './fixture-app.js';
+          let calls = 0;
+          const variants = ${JSON.stringify({ added: fixtures, rotated })};
+          export default { ...worker, async fetch(request, env, ctx) {
+            const update = variants[new URL(request.url).searchParams.get('fixtureBindings')];
+            const response = await worker.fetch(request, update ? {...env, ...update} : env, ctx);
+            const result = new Response(response.body, response);
+            result.headers.set('x-fixture-calls', String(++calls));
+            return result;
+          }};`,
+      }, { type: "ESModule", path: path.join(root, "fixture-app.js"), contents: script }],
+    } : { modules: true, scriptPath: path.join(root, config.main) }),
     compatibilityDate: config.compatibility_date,
     compatibilityFlags: config.compatibility_flags,
     bindings,
@@ -49,13 +72,17 @@ function createRuntime(bindings) {
     outboundService(request) {
       const url = new URL(request.url);
       if (url.hostname === "basemaps.cartocdn.com") {
-        assert.equal(url.searchParams.get("key"), fixtures.CARTO_BASEMAPS_API_KEY);
+        const key = url.searchParams.get("key");
+        assert.ok([fixtures.CARTO_BASEMAPS_API_KEY, rotated.CARTO_BASEMAPS_API_KEY].includes(key));
+        seenMapKeys.add(key);
         tileRequests++;
         return new Response(png, { headers: { "content-type": "image/png" } });
       }
       if (url.hostname === "fixture.supabase.co") {
         databaseRequests++;
-        assert.equal(request.headers.get("apikey"), fixtures.SUPABASE_SERVICE_ROLE_KEY);
+        const key = request.headers.get("apikey");
+        assert.ok([fixtures.SUPABASE_SERVICE_ROLE_KEY, rotated.SUPABASE_SERVICE_ROLE_KEY].includes(key));
+        seenDatabaseKeys.add(key);
         return Response.json(url.pathname.endsWith("/tumedved_logs") ? [sighting] : []);
       }
       if (url.hostname === "nominatim.openstreetmap.org") return Response.json([]);
@@ -125,4 +152,39 @@ try {
   console.log("Workers check passed: missing tile secret gives an explicit 503 instead of a routing 404");
 } finally {
   await unconfigured.dispose();
+}
+
+const changing = createRuntime({ DISABLE_WEBSITE_LOGS: "true" }, true);
+try {
+  const get = (route, variant = "", headers = {}) => changing.dispatchFetch(
+    `https://www.kdejemedved.sk${route}?fixtureBindings=${variant}`,
+    { headers: { "accept-encoding": "identity", ...headers } },
+  );
+  let response = await get("/api/map-tiles/dark_all/0/0/0.png");
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("x-fixture-calls"), "1");
+  for (const [index, variant] of ["added", "rotated"].entries()) {
+    response = await get("/api/map-tiles/dark_all/0/0/0.png", variant);
+    assert.equal(response.status, 200, `Map key ${variant} is read from this request's bindings`);
+    assert.equal(response.headers.get("x-fixture-calls"), String(index * 2 + 2), "Same module instance is retained");
+    await response.arrayBuffer();
+    response = await get("/api/admin/pending", variant, {
+      authorization: `Basic ${Buffer.from(`admin:${fixtures.ADMIN_PASSWORD}`).toString("base64")}`,
+    });
+    assert.equal(response.status, 200, `Database key ${variant} is read from this request's bindings`);
+    await response.arrayBuffer();
+  }
+  assert.ok(seenMapKeys.has(rotated.CARTO_BASEMAPS_API_KEY));
+  assert.ok(seenDatabaseKeys.has(rotated.SUPABASE_SERVICE_ROLE_KEY));
+  response = await get("/api/status", "added");
+  const status = await response.json();
+  assert.equal(status.mapTilesConfigured, true);
+  assert.equal(status.supabaseConfigured, true);
+  response = await get("/api/status");
+  const missingStatus = await response.json();
+  assert.equal(missingStatus.mapTilesConfigured, false, "Removed bindings are not retained");
+  assert.equal(missingStatus.supabaseConfigured, false);
+  console.log("Workers checks passed: adding, rotating and removing secrets on the same module instance");
+} finally {
+  await changing.dispose();
 }

@@ -1,9 +1,14 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { env as workerEnvironment } from "cloudflare:workers";
 import resources from "#worker-resources";
 
 const requestContext = new AsyncLocalStorage();
 export const projectDirectory = "/app";
 export const isWorker = true;
+
+// Bindings can change while Cloudflare reuses the same code isolate. Read the
+// current handler's env rather than a process.env snapshot captured at startup.
+export const getEnvironment = () => requestContext.getStore()?.env ?? workerEnvironment;
 
 export async function readText(filename) {
   if (!Object.hasOwn(resources, filename)) throw new Error(`Missing bundled resource: ${filename}`);

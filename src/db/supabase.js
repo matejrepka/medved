@@ -1,23 +1,27 @@
 import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { getEnvironment } from "#platform";
 
 let client = null;
+let clientUrl = null;
+let clientKey = null;
 
 export function isSupabaseConfigured() {
-  return Boolean(supabaseUrl && supabaseServiceKey);
+  const env = getEnvironment();
+  return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
 export function getSupabase() {
-  if (!isSupabaseConfigured()) return null;
-  if (!client) {
+  const { SUPABASE_URL: supabaseUrl, SUPABASE_SERVICE_ROLE_KEY: supabaseServiceKey } = getEnvironment();
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  if (!client || clientUrl !== supabaseUrl || clientKey !== supabaseServiceKey) {
     client = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
       },
     });
+    clientUrl = supabaseUrl;
+    clientKey = supabaseServiceKey;
   }
   return client;
 }
