@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "kdejemedved",
+  "name": "medved",
   "main": "dist-worker/index.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "enable_nodejs_fs_module", "enable_nodejs_http_server_modules", "nodejs_compat_populate_process_env"],

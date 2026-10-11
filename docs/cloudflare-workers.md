@@ -12,13 +12,13 @@ Use Node.js 24 for the deployment tools. From the repository directory:
 npm ci
 npm run check:worker
 npx wrangler login
-npm run deploy -- --name YOUR_EXISTING_WORKER_NAME
+npm run deploy
 ```
 
-Replace `YOUR_EXISTING_WORKER_NAME` with the exact Worker name shown in Cloudflare
-Workers & Pages. Deploying to the existing name preserves its custom domain and
-secrets. The default name in `wrangler.jsonc` is `kdejemedved`; update that field
-to the existing name if it differs, especially when using Workers Builds.
+The production request logs identify the existing Worker as `medved`.
+`wrangler.jsonc` targets that exact name. Deploying to the existing Worker keeps
+the website connected to the same custom domain and secret bindings.
+Do not put this site's runtime secrets on a separate Worker named `kdejemedved`.
 
 For a Git-connected Cloudflare Workers build, use the repository root, install
 dependencies including dev dependencies, and set the deploy command to
@@ -27,8 +27,8 @@ push the configuration, Workers source, scripts, package manifest and lockfile.
 Do not deploy with an assets-only command such as `wrangler deploy --assets public`.
 
 The configuration uses `keep_vars: true` to preserve dashboard variables. Store
-the following production values in the **existing Worker's** Settings → Variables
-and Secrets, then deploy:
+the following production values in **medved → Settings → Variables
+and Secrets → Production**, then deploy:
 
 | Name | Purpose |
 | --- | --- |
@@ -56,7 +56,7 @@ from retaining empty or old values after a secret-only update.
 
 A tile response of 503 means `CARTO_BASEMAPS_API_KEY` is missing; 502 means the
 upstream tile request failed. A 404 still means the API Worker is not serving the
-domain. `npx wrangler tail --name YOUR_EXISTING_WORKER_NAME` shows runtime errors
+domain. `npx wrangler tail --name medved` shows runtime errors
 without putting production secrets in this repository.
 
 ## Data refresh and notifications
