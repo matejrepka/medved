@@ -28,7 +28,7 @@ import {
   classifyReportSpam,
 } from "./src/ai/report-spam-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
-import { isSlovakCoordinate, searchSlovakLocations } from "./src/geo/search.js";
+import { isSlovakCoordinate, searchSlovakLocations, resolveSlovakLocation } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
 import { mergeLocationPages } from "./src/location-pages.js";
@@ -2291,12 +2291,7 @@ async function resolveAdminLocation(name, latValue, lngValue) {
   const selected = selectedAdminLocation(name, latValue, lngValue);
   if (selected) return selected;
 
-  const gz = await loadPlaces();
-  const municipality = lookupPlaceByName(name, gz);
-  if (municipality) return municipality;
-
-  const results = await searchSlovakLocations(name);
-  return results[0] || null;
+  return resolveSlovakLocation(name);
 }
 
 function adminInputError(message) {
@@ -2340,7 +2335,7 @@ app.get("/api/admin/locations", adminAuth, async (req, res) => {
 
   try {
     const gz = await loadPlaces();
-    const municipality = lookupPlaceByName(query, gz);
+    const municipality = lookupPlaceByName(query, gz, { exactOnly: true });
     let remote = [];
     try {
       remote = await searchSlovakLocations(query);

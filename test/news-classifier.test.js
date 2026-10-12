@@ -7,6 +7,20 @@ import {
 } from "../src/ai/news-classifier.js";
 import { geocodeNews } from "../src/geo/geocode.js";
 
+test("AI tourist-place classification uses the shared resolver instead of nearby municipality coordinates", async () => {
+  const items = [{ title: "V Slovenskom raji poranil medveď bežca", place: "Hrabušice", lat: 48.976, lng: 20.414, hasCoords: true }];
+  await classifyFreshNews(items, {
+    apiKey: "test-key", minIntervalMs: 0,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({
+      results: [{ index: 0, category: "warning", places: ["Kláštorská cesta, Slovenský raj"], confidence: 0.98 }],
+    }) } }] }) }),
+  });
+  assert.equal(items[0].place, "Kláštorská cesta");
+  assert.equal(items[0].hasCoords, true);
+  assert.equal(items[0].lat, 48.9526744);
+  assert.deepEqual(items[0].locations, [{ place: "Kláštorská cesta", lat: 48.9526744, lng: 20.3988546, hasCoords: true }]);
+});
+
 test("parseClassificationResponse validates and normalizes model JSON", () => {
   const results = parseClassificationResponse(
     '```json\n{"results":[{"index":0,"category":"warning","place":"  Morské oko  ","confidence":1.4},{"index":1,"category":"article","place":"Bratislava","confidence":0.8}]}\n```',

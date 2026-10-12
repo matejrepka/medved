@@ -1,7 +1,7 @@
 // Lokálne geokódovanie správ — z nadpisu a tela článku zistí, o akú slovenskú
-// obec/mesto ide, a vráti jej súradnice. Žiadne sieťové dopyty: porovnávame len
-// s gazetteerom (sk-places.json), ktorý obsahuje všetky obce SR a zostaví sa
-// vopred (build-gazetteer.mjs).
+// obec/mesto alebo overenú turistickú lokalitu ide, a vráti jej súradnice.
+// Žiadne sieťové dopyty: používame sk-places.json (obce SR, build-gazetteer.mjs)
+// a miestne turistické názvy z tourist-places.js.
 //
 // Výzvy a ako ich riešime:
 //  • Skloňovanie ("v Ružomberku", "pri Brezne") — neporovnávame presne, ale
@@ -12,6 +12,7 @@
 
 import { projectDirectory, readText } from "#platform";
 import path from "node:path";
+import { findTouristPlace } from "./tourist-places.js";
 
 const PLACES_PATH = path.join(
   projectDirectory, "src", "geo",
@@ -374,7 +375,7 @@ export function findPlace(title, body, gz) {
  * @param {{list:Array}} gz  predspracovaný gazetteer
  * @returns {{name,lat,lng,type}|null}
  */
-export function lookupPlaceByName(name, gz) {
+export function lookupPlaceByName(name, gz, { exactOnly = false } = {}) {
   const list = gz?.list;
   if (!list || !list.length || !name) return null;
 
@@ -387,7 +388,7 @@ export function lookupPlaceByName(name, gz) {
     const pn = denorm(p.name).replace(/\s+/g, " ").trim();
     if (pn === q) {
       if (!exact || p.rank > exact.rank) exact = p;
-    } else if (pn.startsWith(q) || q.startsWith(pn)) {
+    } else if (!exactOnly && (pn.startsWith(q) || q.startsWith(pn))) {
       const better =
         !prefix ||
         p.rank > prefix.rank ||
@@ -525,13 +526,12 @@ export function findPlaceMentions(title, body, gz) {
  */
 export async function geocodeNews(items) {
   const gz = await loadPlaces();
-  if (!gz.list.length) return items.map((it) => ({ ...it, hasCoords: false }));
 
   return items.map((it) => {
     const body = it.body || it.snippet || "";
     const noPlace = { ...it, place: null, lat: null, lng: null, hasCoords: false };
-    // findPlace dá výsledok len ak je obec v kontexte skutočného výskytu.
-    const hit = findPlace(it.title, body, gz);
+    // Pomenovaná trasa v kontexte výskytu má prednosť pred okolitou obcou.
+    const hit = findTouristPlace(it.title, body) || findPlace(it.title, body, gz);
     if (!hit) return noPlace;
     return { ...it, place: hit.name, lat: hit.lat, lng: hit.lng, hasCoords: true };
   });

@@ -86,6 +86,7 @@ function createRuntime(bindings, simulateUpdates = false) {
         return Response.json(url.pathname.endsWith("/tumedved_logs") ? [sighting] : []);
       }
       if (url.hostname === "nominatim.openstreetmap.org") return Response.json([]);
+      if (url.hostname === "overpass-api.de") return Response.json({ elements: [] });
       throw new Error(`Unexpected outbound request: ${url.hostname}`);
     },
   }));
@@ -137,6 +138,15 @@ try {
   });
   assert.equal(response.status, 200, "Offline location gazetteer is bundled");
   assert.match(await response.text(), /Brezno/);
+  response = await get("/api/admin/locations?q=" + encodeURIComponent("Kláštorská cesta v Slovenskom raji"), {
+    headers: { authorization: `Basic ${Buffer.from(`admin:${fixtures.ADMIN_PASSWORD}`).toString("base64")}` },
+  });
+  assert.equal(response.status, 200, "Tourist aliases and coordinates are bundled in Workers");
+  const tourist = (await response.json()).results[0];
+  assert.equal(tourist.name, "Kláštorská cesta");
+  assert.equal(tourist.lat, 48.9526744);
+  assert.equal(tourist.lng, 20.3988546);
+  assert.match(tourist.label, /orientačný bod na trase/);
   const worker = await runtime.getWorker("medved-test");
   await worker.scheduled({ cron: "*/5 * * * *" });
   console.log("Workers checks passed: API, runtime secrets, tiles, SSR, assets, admin authentication and gazetteer");

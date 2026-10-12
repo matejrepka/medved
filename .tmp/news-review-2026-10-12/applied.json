@@ -1,0 +1,516 @@
+{
+  "groups": {
+    "raj": {
+      "id": "c0386434-1947-4d06-98c3-777df42eda72",
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Kláštorská cesta",
+      "lat": 48.9526744,
+      "lng": 20.3988546,
+      "title": "Stret medveďa s bežcom na Kláštorskej ceste v Slovenskom raji",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené."
+    },
+    "liptov": {
+      "id": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "date": "2026-10-04",
+      "precision": "approximate",
+      "place": "Svätý Kríž",
+      "lat": 49.05074,
+      "lng": 19.53482,
+      "title": "Víkendové hlásenia medveďa: Svätý Kríž, Závažná Poruba, Iľanovo a Urpín – Vartovka",
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok."
+    },
+    "mysla": {
+      "id": "6fb23f8b-abb0-4ba1-aecc-9a3fd3f36643",
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Vyšná Myšľa",
+      "lat": 48.63412,
+      "lng": 21.38744,
+      "title": "Medvedica s mláďatami pri Vyšnej Myšli",
+      "summary": "V stredu ráno 7. októbra 2026 spozorovali medvedicu s mláďatami pri výjazde z Vyšnej Myšle smerom na Košice. Košická krajská polícia vyzvala ľudí na zvýšenú opatrnosť a informovala zásahový tím. V tejto správe sa neuvádza útok na človeka."
+    },
+    "zmos": {
+      "id": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Mošovce",
+      "lat": null,
+      "lng": null,
+      "title": "ZMOS po brífingu v Mošovciach žiada zmenu manažmentu medveďa hnedého",
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa."
+    },
+    "map1": {
+      "id": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "date": "2026-10-01",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 1. októbru 2026",
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania."
+    },
+    "map24": {
+      "id": "e623d959-7433-4683-9a58-f2ed488a1f47",
+      "date": "2026-09-24",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 24. septembru 2026",
+      "summary": "Mapa ŠOP SR sumarizuje hlásenia výskytu medveďa hnedého na Slovensku od začiatku roka do 24. septembra 2026. Bola zverejnená 25. septembra. Počty hlásení podľa okresov nie sú počtami jedincov ani presnými bodmi aktuálneho výskytu."
+    },
+    "map28": {
+      "id": "66333b62-ddbe-4987-86e0-6062aed6c6e8",
+      "date": "2026-09-28",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 28. septembru 2026",
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 28. septembru 2026. Mapa vychádza z podnetov verejnosti a ukazuje hlásenia podľa okresov, nie počty medveďov ani presné body nových incidentov."
+    },
+    "map8": {
+      "id": "36a916ed-72a4-45b8-af30-b598ae2a0e5f",
+      "date": "2026-10-08",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 8. októbru 2026",
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 8. októbru 2026. Údaje z podnetov verejnosti poskytujú orientačný prehľad výskytu podľa okresov a nepredstavujú počet jednotlivých zvierat."
+    },
+    "kremnica": {
+      "id": "4f9ace5c-8f6e-4a41-a0d7-82e233399c90",
+      "date": "2026-10-03",
+      "precision": "day",
+      "place": "Nová dolina",
+      "lat": 48.716378,
+      "lng": 18.9075803,
+      "title": "Možný výskyt medveďa v Novej doline a na Ludovike v Kremnici",
+      "summary": "Obyvateľka Kremnice uviedla, že 3. októbra večer počula v Novej doline ručanie pripisované medveďovi. Podobný zvuk zaznel deň predtým na Ludovike. Pozorovanie nie je potvrdené a článok upozorňuje aj na jeleniu ruju. Osobitne pripomína upozornenie ŠOP na Urpín – Vartovku."
+    },
+    "kamenista": {
+      "id": "19455e49-179b-4e5e-88ca-5ccff961c299",
+      "date": "2026-10-05",
+      "precision": "approximate",
+      "place": "Kamenistá dolina",
+      "lat": 49.1743971,
+      "lng": 19.8735673,
+      "hasCoords": true,
+      "title": "Medvedica s dvoma mláďatami v Kamenistej doline",
+      "summary": "Turisti v Kamenistej doline v Západných Tatrách zachytili medvedicu s dvoma mláďatami z bezpečnej vzdialenosti. Zvieratá sa k turistom nepribližovali a článok neuvádza zranenia. Presný dátum stretnutia nebol zverejnený; dátum skupiny je orientačný."
+    },
+    "hronska": {
+      "id": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "date": "2026-09-28",
+      "precision": "approximate",
+      "place": "Hronská Dúbrava",
+      "lat": 48.58929,
+      "lng": 19.00084,
+      "title": "Upozornenie na medveďa pri Hronskej Dúbrave a Trnavej Hore",
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza."
+    }
+  },
+  "results": [
+    {
+      "index": 3,
+      "id": "news-sporomedvedovnaslovenskupokracujekymstarostoviachcuvacsiuregulaciuochranarizavad",
+      "action": "incident_created",
+      "status": "approved",
+      "incidentId": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "sourceType": "national"
+    },
+    {
+      "index": 4,
+      "id": "news-medvedesaobjavujutamkderokynebolicosadeje",
+      "status": "approved",
+      "incidentId": null
+    },
+    {
+      "index": 5,
+      "id": "news-medvedesaobjavujuajvblizkostiobcinavychodeslovenska",
+      "status": "approved",
+      "incidentId": null
+    },
+    {
+      "index": 7,
+      "id": "news-pm3705",
+      "action": "incident_created",
+      "status": "approved",
+      "incidentId": "36a916ed-72a4-45b8-af30-b598ae2a0e5f",
+      "sourceType": "official_notice"
+    },
+    {
+      "index": 9,
+      "id": "news-prvyutokmedvedavslovenskomrajiselmanaznamejturistickejtrasezranilabezca",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 10,
+      "id": "news-stretmedvedaabezcavnarodnomparkuvtejtooblastisidajtevelkypozor",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 11,
+      "id": "news-poutokochvturciprichadzadalsitlaknazmenuzmoschcemedvedapreraditdonizsiehostupnao",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "sourceType": "local_original"
+    },
+    {
+      "index": 12,
+      "id": "news-poutokochvturcipritvrdzujusamospravystarostoviaziadajuabybolmedvedmenejchraneny",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "sourceType": "local_original"
+    },
+    {
+      "index": 13,
+      "id": "news-pozormedvedzaznamenalihovtejtolokalite",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 14,
+      "id": "news-vystrahapreturistovvslovenskomrajivoblubenejlokalitesapohybujemedved",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 15,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivyskocilnanhozkrikovaporanilmurukuajnohu",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 16,
+      "id": "news-pm3690",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "official_notice"
+    },
+    {
+      "index": 17,
+      "id": "news-vslovenskomrajidoslokstretuclovekasmedvedomnamiestepatrazasahovytim",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 18,
+      "id": "news-utokmedvedavslovenskomrajinamuzavyskocilpriklastorisku",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 19,
+      "id": "news-utokmedvedavslovenskomrajiselmavyskocilazkroviaazranilabezca",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 20,
+      "id": "news-vovyhladavanejturistickejlokalitevslovenskomrajiporanilmedvedbezcaposelmepatraza",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 21,
+      "id": "news-aktualnedesivyutokmedvedanaclovekahlasiazraneniavyslalizasahovytimposelmepatraju",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 22,
+      "id": "news-varovanienavychodeslovenskanedalekotejtoobcespozorovalimedvedicusmladatami",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "6fb23f8b-abb0-4ba1-aecc-9a3fd3f36643",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 23,
+      "id": "news-prikosiciachspozorovalimedvedicusmladatamipoliciavydalaprisnevarovanie",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "6fb23f8b-abb0-4ba1-aecc-9a3fd3f36643",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 24,
+      "id": "news-kritickasituaciasmedvedmivyvolavaostrureakciuzdruzeniemiestaobcislovenskaziadavl",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 25,
+      "id": "news-zmosziadavladuriesitzmenusystemumanazmentupopulaciemedveda",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "18561134-8b48-4b46-9538-029f6f0eb33a",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 26,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivybeholpriamozkrovia",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 27,
+      "id": "news-obyvateliavkosickomokresevstrehupritejtoobcispozorovalimedvedicusmladatami",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "6fb23f8b-abb0-4ba1-aecc-9a3fd3f36643",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 28,
+      "id": "news-medvedzranilbezcapridoobednajsombehunaklastorskejceste",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "national"
+    },
+    {
+      "index": 30,
+      "id": "news-medvedesuopatblizsiekludomzaznamenaliichnaviacerychmiestachochranariradiazvysitp",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 31,
+      "id": "news-medvedavidelinaliptoveajpribanskejbystriciochranariupozornujuturistovnazvysenuop",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 32,
+      "id": "news-videoturistovvtatrachprekvapilamedvediarodinkanajedinecnestretnutietakskoronezab",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "19455e49-179b-4e5e-88ca-5ccff961c299",
+      "sourceType": "local_original"
+    },
+    {
+      "index": 33,
+      "id": "news-vktorychokresochslovenskamasnajvacsiusancustretnutmedvedazverejniliaktualnumapuv",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "sourceType": "national"
+    },
+    {
+      "index": 34,
+      "id": "news-vbanskejbystriciajkremniciupozornujunamedvedaprinovejdolinepoculimiestnijehoruca",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "4f9ace5c-8f6e-4a41-a0d7-82e233399c90",
+      "sourceType": "local_original"
+    },
+    {
+      "index": 35,
+      "id": "news-slovacidajtesipozormedvedavidelivtrochlokalitachsemradsejnechodte",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 36,
+      "id": "news-pm3686",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "official_notice"
+    },
+    {
+      "index": 37,
+      "id": "news-sopsrupozornujenavyskytmedvedahnedehovtrochlokalitachnaliptove",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 40,
+      "id": "news-pozornapotulkachprirodouzverejniliaktualnumapuvyskytumedvedovnaslovenskupodlaokr",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "sourceType": "national"
+    },
+    {
+      "index": 41,
+      "id": "news-pozorpripotulkachlesomzverejniliaktualnumapuvyskytumedvedovnaslovenskuvietecorob",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "sourceType": "national"
+    },
+    {
+      "index": 42,
+      "id": "news-pozornapotulkylesomzverejniliaktualnumapuvyskytumedvedovnaslovenskuvietecorobitp",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "preservedDuplicateUrl": true
+    },
+    {
+      "index": 45,
+      "id": "news-pm3676",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "sourceType": "official_notice"
+    },
+    {
+      "index": 47,
+      "id": "news-aktualnamapavyskytumedvedovakojenatomvasokres",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "e623d959-7433-4683-9a58-f2ed488a1f47",
+      "sourceType": "national"
+    },
+    {
+      "index": 48,
+      "id": "news-pm3655",
+      "action": "incident_created",
+      "status": "approved",
+      "incidentId": "66333b62-ddbe-4987-86e0-6062aed6c6e8",
+      "sourceType": "official_notice"
+    },
+    {
+      "index": 49,
+      "id": "news-pozorpriziarinadhronomvblizkostiobcisaobjavilmedved",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 51,
+      "id": "news-medvedsaobjavilpritychtodvochobciachnastrednomslovensku",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 53,
+      "id": "news-opatrnevokoliziarunadhronommedvedesaobjavilivobciachhronskadubravaatrnavahora",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 54,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivyskocilnanehozkrovia",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "national"
+    },
+    {
+      "index": 55,
+      "id": "news-utokmedvedanafrekventovanomchodnikuselmavyskocilanabezcazkroviadomacespravy",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 56,
+      "id": "news-ochranariupozornujunavyskytmedvedahnedehonaliptoveobjavilsavtrochlokalitach",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 57,
+      "id": "news-vslovenskomrajidoslokstretuclovekasmedvedom",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 59,
+      "id": "news-byvatevtychtookresochdajtesipozornamedvedevjednomevidujuviacako500hlaseniakojena",
+      "action": "article_moved",
+      "status": "approved",
+      "incidentId": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "sourceType": "national"
+    },
+    {
+      "index": 61,
+      "id": "news-ochranaripostreteupozornujunamedvedavslovenskomrajipoznateznamezasadyktorebystea",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "c0386434-1947-4d06-98c3-777df42eda72",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 62,
+      "id": "news-voviacerychlokalitachhlasiavyskytmedvedajednajekusokodturistickehochodnika",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "sourceType": "syndication"
+    },
+    {
+      "index": 63,
+      "id": "news-pozornamedvedavokolidvochobciochranarivydalivarovanie",
+      "action": "article_attached",
+      "status": "approved",
+      "incidentId": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "sourceType": "national"
+    },
+    {
+      "index": 38,
+      "id": "news-vruskuodmenujuludizaodstrelmedvedovselmytamutociavovelkom",
+      "status": "rejected",
+      "locationCleared": true
+    },
+    {
+      "index": 46,
+      "id": "news-manzelovnapadolmedvedpriamovichzahradesokujucecoimzachranilozivot",
+      "status": "rejected",
+      "locationCleared": true
+    }
+  ]
+}

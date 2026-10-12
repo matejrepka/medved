@@ -1,0 +1,22 @@
+{
+  "Vartovka, Banská Bystrica": [
+    {
+      "name": "Vartovka",
+      "label": "Vartovka, Banská Bystrica, okres Banská Bystrica, Banskobystrický kraj, 974 01, Slovensko",
+      "lat": 48.7180496,
+      "lng": 19.1536819,
+      "type": "peak",
+      "source": "openstreetmap"
+    }
+  ],
+  "Ludovika, Kremnica": [
+    {
+      "name": "Štôlňa Ludovika",
+      "label": "Štôlňa Ludovika, Banská cesta, Kremnica, okres Žiar nad Hronom, Banskobystrický kraj, 967 01, Slovensko",
+      "lat": 48.7116994,
+      "lng": 18.9000908,
+      "type": "adit",
+      "source": "openstreetmap"
+    }
+  ]
+}

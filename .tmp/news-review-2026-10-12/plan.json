@@ -1,0 +1,1287 @@
+{
+  "window": {
+    "from": "2026-09-28",
+    "to": "2026-10-12"
+  },
+  "actor": "reviewed-news:2026-10-12",
+  "groups": {
+    "raj": {
+      "id": "c0386434-1947-4d06-98c3-777df42eda72",
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Kláštorská cesta",
+      "lat": 48.9526744,
+      "lng": 20.3988546,
+      "title": "Stret medveďa s bežcom na Kláštorskej ceste v Slovenskom raji",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené."
+    },
+    "liptov": {
+      "id": "5cd6e642-ff91-4e93-ad42-cf094916bbf2",
+      "date": "2026-10-04",
+      "precision": "approximate",
+      "place": "Svätý Kríž",
+      "lat": 49.05074,
+      "lng": 19.53482,
+      "title": "Víkendové hlásenia medveďa: Svätý Kríž, Závažná Poruba, Iľanovo a Urpín – Vartovka",
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok."
+    },
+    "mysla": {
+      "id": "6fb23f8b-abb0-4ba1-aecc-9a3fd3f36643",
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Vyšná Myšľa",
+      "lat": 48.63412,
+      "lng": 21.38744,
+      "title": "Medvedica s mláďatami pri Vyšnej Myšli",
+      "summary": "V stredu ráno 7. októbra 2026 spozorovali medvedicu s mláďatami pri výjazde z Vyšnej Myšle smerom na Košice. Košická krajská polícia vyzvala ľudí na zvýšenú opatrnosť a informovala zásahový tím. V tejto správe sa neuvádza útok na človeka."
+    },
+    "zmos": {
+      "id": null,
+      "date": "2026-10-07",
+      "precision": "day",
+      "place": "Mošovce",
+      "lat": null,
+      "lng": null,
+      "title": "ZMOS po brífingu v Mošovciach žiada zmenu manažmentu medveďa hnedého",
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa."
+    },
+    "map1": {
+      "id": "ac48fbf2-fa8c-4fde-beb2-26ad26774c93",
+      "date": "2026-10-01",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 1. októbru 2026",
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania."
+    },
+    "map24": {
+      "id": "e623d959-7433-4683-9a58-f2ed488a1f47",
+      "date": "2026-09-24",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 24. septembru 2026",
+      "summary": "Mapa ŠOP SR sumarizuje hlásenia výskytu medveďa hnedého na Slovensku od začiatku roka do 24. septembra 2026. Bola zverejnená 25. septembra. Počty hlásení podľa okresov nie sú počtami jedincov ani presnými bodmi aktuálneho výskytu."
+    },
+    "map28": {
+      "id": null,
+      "date": "2026-09-28",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 28. septembru 2026",
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 28. septembru 2026. Mapa vychádza z podnetov verejnosti a ukazuje hlásenia podľa okresov, nie počty medveďov ani presné body nových incidentov."
+    },
+    "map8": {
+      "id": null,
+      "date": "2026-10-08",
+      "precision": "day",
+      "place": "Slovensko",
+      "lat": null,
+      "lng": null,
+      "title": "Mapa hlásení výskytu medveďa: aktualizácia k 8. októbru 2026",
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 8. októbru 2026. Údaje z podnetov verejnosti poskytujú orientačný prehľad výskytu podľa okresov a nepredstavujú počet jednotlivých zvierat."
+    },
+    "kremnica": {
+      "id": "4f9ace5c-8f6e-4a41-a0d7-82e233399c90",
+      "date": "2026-10-03",
+      "precision": "day",
+      "place": "Nová dolina",
+      "lat": 48.716378,
+      "lng": 18.9075803,
+      "title": "Možný výskyt medveďa v Novej doline a na Ludovike v Kremnici",
+      "summary": "Obyvateľka Kremnice uviedla, že 3. októbra večer počula v Novej doline ručanie pripisované medveďovi. Podobný zvuk zaznel deň predtým na Ludovike. Pozorovanie nie je potvrdené a článok upozorňuje aj na jeleniu ruju. Osobitne pripomína upozornenie ŠOP na Urpín – Vartovku."
+    },
+    "kamenista": {
+      "id": "19455e49-179b-4e5e-88ca-5ccff961c299",
+      "date": "2026-10-05",
+      "precision": "approximate",
+      "place": "Kamenistá dolina",
+      "lat": 49.1743971,
+      "lng": 19.8735673,
+      "hasCoords": true,
+      "title": "Medvedica s dvoma mláďatami v Kamenistej doline",
+      "summary": "Turisti v Kamenistej doline v Západných Tatrách zachytili medvedicu s dvoma mláďatami z bezpečnej vzdialenosti. Zvieratá sa k turistom nepribližovali a článok neuvádza zranenia. Presný dátum stretnutia nebol zverejnený; dátum skupiny je orientačný."
+    },
+    "hronska": {
+      "id": "dafa02ee-d612-4bf2-802b-9dab6e807a8e",
+      "date": "2026-09-28",
+      "precision": "approximate",
+      "place": "Hronská Dúbrava",
+      "lat": 48.58929,
+      "lng": 19.00084,
+      "title": "Upozornenie na medveďa pri Hronskej Dúbrave a Trnavej Hore",
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza."
+    }
+  },
+  "entries": [
+    {
+      "index": 3,
+      "id": "news-sporomedvedovnaslovenskupokracujekymstarostoviachcuvacsiuregulaciuochranarizavad",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-12T10:16:08.895706+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "zmos",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 4,
+      "id": "news-medvedesaobjavujutamkderokynebolicosadeje",
+      "expectedStatus": "pending",
+      "expectedUpdatedAt": "2026-10-10T09:54:39.581+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": null,
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "Článok vysvetľuje možné príčiny stretov ľudí s medveďmi vrátane dostupnej potravy a jesennej aktivity. Prináša širšiu diskusiu o prevencii a regulácii; neoznamuje nové miestne pozorovanie.",
+      "eventDate": null,
+      "precision": "unknown"
+    },
+    {
+      "index": 5,
+      "id": "news-medvedesaobjavujuajvblizkostiobcinavychodeslovenska",
+      "expectedStatus": "pending",
+      "expectedUpdatedAt": "2026-10-12T00:35:48.878+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Vyšná Myšľa",
+          "lat": 48.63412,
+          "lng": 21.38744,
+          "hasCoords": true
+        },
+        {
+          "place": "Nižný Klátov",
+          "lat": 48.72997,
+          "lng": 21.14138,
+          "hasCoords": true
+        },
+        {
+          "place": "Vyšný Klátov",
+          "lat": 48.74448,
+          "lng": 21.12444,
+          "hasCoords": true
+        }
+      ],
+      "group": null,
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "Vodiči spozorovali medvedicu s mláďatami pri Vyšnej Myšli. Článok uvádza aj pozorovanie medzi Nižným a Vyšným Klátovom a ako samostatný kontext pripomína stret s bežcom v Slovenskom raji. Presný dátum pozorovaní pri obciach nie je uvedený.",
+      "eventDate": null,
+      "precision": "unknown"
+    },
+    {
+      "index": 7,
+      "id": "news-pm3705",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:42:00.396547+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map8",
+      "sourceType": "official_notice",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 8. októbru 2026. Údaje z podnetov verejnosti poskytujú orientačný prehľad výskytu podľa okresov a nepredstavujú počet jednotlivých zvierat.",
+      "eventDate": "2026-10-08",
+      "precision": "day"
+    },
+    {
+      "index": 9,
+      "id": "news-prvyutokmedvedavslovenskomrajiselmanaznamejturistickejtrasezranilabezca",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:43:16.980175+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 10,
+      "id": "news-stretmedvedaabezcavnarodnomparkuvtejtooblastisidajtevelkypozor",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:45:19.656613+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 11,
+      "id": "news-poutokochvturciprichadzadalsitlaknazmenuzmoschcemedvedapreraditdonizsiehostupnao",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:46:36.260146+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "zmos",
+      "sourceType": "local_original",
+      "publishedAt": null,
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 12,
+      "id": "news-poutokochvturcipritvrdzujusamospravystarostoviaziadajuabybolmedvedmenejchraneny",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:46:08.60029+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "zmos",
+      "sourceType": "local_original",
+      "publishedAt": null,
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 13,
+      "id": "news-pozormedvedzaznamenalihovtejtolokalite",
+      "expectedStatus": "pending",
+      "expectedUpdatedAt": "2026-10-12T00:35:48.878+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 14,
+      "id": "news-vystrahapreturistovvslovenskomrajivoblubenejlokalitesapohybujemedved",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:47:42.62406+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 15,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivyskocilnanhozkrikovaporanilmurukuajnohu",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:48:18.716817+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 16,
+      "id": "news-pm3690",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:48:35.905364+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorisko",
+          "lat": 48.9447228,
+          "lng": 20.421619,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "official_notice",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 17,
+      "id": "news-vslovenskomrajidoslokstretuclovekasmedvedomnamiestepatrazasahovytim",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:48:56.064609+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 18,
+      "id": "news-utokmedvedavslovenskomrajinamuzavyskocilpriklastorisku",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:49:09.133009+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 19,
+      "id": "news-utokmedvedavslovenskomrajiselmavyskocilazkroviaazranilabezca",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:53:21.049391+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 20,
+      "id": "news-vovyhladavanejturistickejlokalitevslovenskomrajiporanilmedvedbezcaposelmepatraza",
+      "expectedStatus": "pending",
+      "expectedUpdatedAt": "2026-10-10T17:22:54.624+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 21,
+      "id": "news-aktualnedesivyutokmedvedanaclovekahlasiazraneniavyslalizasahovytimposelmepatraju",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:00:34.417065+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 22,
+      "id": "news-varovanienavychodeslovenskanedalekotejtoobcespozorovalimedvedicusmladatami",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:54:26.081059+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Vyšná Myšľa",
+          "lat": 48.63412,
+          "lng": 21.38744,
+          "hasCoords": true
+        }
+      ],
+      "group": "mysla",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "V stredu ráno 7. októbra 2026 spozorovali medvedicu s mláďatami pri výjazde z Vyšnej Myšle smerom na Košice. Košická krajská polícia vyzvala ľudí na zvýšenú opatrnosť a informovala zásahový tím. V tejto správe sa neuvádza útok na človeka.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 23,
+      "id": "news-prikosiciachspozorovalimedvedicusmladatamipoliciavydalaprisnevarovanie",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:00:29.791325+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Vyšná Myšľa",
+          "lat": 48.63412,
+          "lng": 21.38744,
+          "hasCoords": true
+        }
+      ],
+      "group": "mysla",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "V stredu ráno 7. októbra 2026 spozorovali medvedicu s mláďatami pri výjazde z Vyšnej Myšle smerom na Košice. Košická krajská polícia vyzvala ľudí na zvýšenú opatrnosť a informovala zásahový tím. V tejto správe sa neuvádza útok na človeka.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 24,
+      "id": "news-kritickasituaciasmedvedmivyvolavaostrureakciuzdruzeniemiestaobcislovenskaziadavl",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:54:34.130664+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "zmos",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 25,
+      "id": "news-zmosziadavladuriesitzmenusystemumanazmentupopulaciemedveda",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:54:36.480335+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "zmos",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ZMOS na brífingu v Mošovciach 7. októbra 2026 žiadal vládu o zmeny manažmentu medveďa hnedého a európskych pravidiel jeho ochrany. Samosprávy upozornili na problémy v Turci a na Liptove. Ide o správy o stanovisku samospráv, nie o nové miestne pozorovanie medveďa.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 26,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivybeholpriamozkrovia",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:55:06.232182+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 27,
+      "id": "news-obyvateliavkosickomokresevstrehupritejtoobcispozorovalimedvedicusmladatami",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:55:01.35376+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Vyšná Myšľa",
+          "lat": 48.63412,
+          "lng": 21.38744,
+          "hasCoords": true
+        }
+      ],
+      "group": "mysla",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "V stredu ráno 7. októbra 2026 spozorovali medvedicu s mláďatami pri výjazde z Vyšnej Myšle smerom na Košice. Košická krajská polícia vyzvala ľudí na zvýšenú opatrnosť a informovala zásahový tím. V tejto správe sa neuvádza útok na človeka.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 28,
+      "id": "news-medvedzranilbezcapridoobednajsombehunaklastorskejceste",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:54:56.166165+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 30,
+      "id": "news-medvedesuopatblizsiekludomzaznamenaliichnaviacerychmiestachochranariradiazvysitp",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:00:19.637471+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 31,
+      "id": "news-medvedavidelinaliptoveajpribanskejbystriciochranariupozornujuturistovnazvysenuop",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:00:13.184588+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 32,
+      "id": "news-videoturistovvtatrachprekvapilamedvediarodinkanajedinecnestretnutietakskoronezab",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:05:25.104775+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kamenistá dolina",
+          "lat": 49.1743971,
+          "lng": 19.8735673,
+          "hasCoords": true
+        }
+      ],
+      "group": "kamenista",
+      "sourceType": "local_original",
+      "publishedAt": null,
+      "summary": "Turisti v Kamenistej doline v Západných Tatrách zachytili medvedicu s dvoma mláďatami z bezpečnej vzdialenosti. Zvieratá sa k turistom nepribližovali a článok neuvádza zranenia. Presný dátum stretnutia nebol zverejnený; dátum skupiny je orientačný.",
+      "eventDate": "2026-10-05",
+      "precision": "approximate"
+    },
+    {
+      "index": 33,
+      "id": "news-vktorychokresochslovenskamasnajvacsiusancustretnutmedvedazverejniliaktualnumapuv",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-05T15:23:30.646482+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 34,
+      "id": "news-vbanskejbystriciajkremniciupozornujunamedvedaprinovejdolinepoculimiestnijehoruca",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:07:57.472776+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Nová dolina",
+          "lat": 48.716378,
+          "lng": 18.9075803,
+          "hasCoords": true
+        },
+        {
+          "place": "Ludovika, Kremnica",
+          "lat": 48.7116994,
+          "lng": 18.9000908,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "kremnica",
+      "sourceType": "local_original",
+      "publishedAt": null,
+      "summary": "Obyvateľka Kremnice uviedla, že 3. októbra večer počula v Novej doline ručanie pripisované medveďovi. Podobný zvuk zaznel deň predtým na Ludovike. Pozorovanie nie je potvrdené a článok upozorňuje aj na jeleniu ruju. Osobitne pripomína upozornenie ŠOP na Urpín – Vartovku.",
+      "eventDate": "2026-10-03",
+      "precision": "day"
+    },
+    {
+      "index": 35,
+      "id": "news-slovacidajtesipozormedvedavidelivtrochlokalitachsemradsejnechodte",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:59:58.054261+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 36,
+      "id": "news-pm3686",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:59:51.272078+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "official_notice",
+      "publishedAt": null,
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 37,
+      "id": "news-sopsrupozornujenavyskytmedvedahnedehovtrochlokalitachnaliptove",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:59:29.481245+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 40,
+      "id": "news-pozornapotulkachprirodouzverejniliaktualnumapuvyskytumedvedovnaslovenskupodlaokr",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-05T14:44:04.183042+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 41,
+      "id": "news-pozorpripotulkachlesomzverejniliaktualnumapuvyskytumedvedovnaslovenskuvietecorob",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-05T14:46:13.489+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 42,
+      "id": "news-pozornapotulkylesomzverejniliaktualnumapuvyskytumedvedovnaslovenskuvietecorobitp",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-05T14:44:10.69119+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 45,
+      "id": "news-pm3676",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-02T10:57:47.325167+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "official_notice",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 47,
+      "id": "news-aktualnamapavyskytumedvedovakojenatomvasokres",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-02T10:58:18.263155+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map24",
+      "sourceType": "national",
+      "publishedAt": null,
+      "summary": "Mapa ŠOP SR sumarizuje hlásenia výskytu medveďa hnedého na Slovensku od začiatku roka do 24. septembra 2026. Bola zverejnená 25. septembra. Počty hlásení podľa okresov nie sú počtami jedincov ani presnými bodmi aktuálneho výskytu.",
+      "eventDate": "2026-09-24",
+      "precision": "day"
+    },
+    {
+      "index": 48,
+      "id": "news-pm3655",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-01T10:12:32.869+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map28",
+      "sourceType": "official_notice",
+      "publishedAt": null,
+      "summary": "ŠOP SR zverejnila samostatnú aktualizáciu mapy hlásení výskytu medveďa hnedého k 28. septembru 2026. Mapa vychádza z podnetov verejnosti a ukazuje hlásenia podľa okresov, nie počty medveďov ani presné body nových incidentov.",
+      "eventDate": "2026-09-28",
+      "precision": "day"
+    },
+    {
+      "index": 49,
+      "id": "news-pozorpriziarinadhronomvblizkostiobcisaobjavilmedved",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-01T10:12:32.869+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Hronská Dúbrava",
+          "lat": 48.58929,
+          "lng": 19.00084,
+          "hasCoords": true
+        },
+        {
+          "place": "Trnavá Hora",
+          "lat": 48.59038,
+          "lng": 18.95349,
+          "hasCoords": true
+        }
+      ],
+      "group": "hronska",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza.",
+      "eventDate": "2026-09-28",
+      "precision": "approximate"
+    },
+    {
+      "index": 51,
+      "id": "news-medvedsaobjavilpritychtodvochobciachnastrednomslovensku",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-05T14:52:46.658358+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Hronská Dúbrava",
+          "lat": 48.58929,
+          "lng": 19.00084,
+          "hasCoords": true
+        },
+        {
+          "place": "Trnavá Hora",
+          "lat": 48.59038,
+          "lng": 18.95349,
+          "hasCoords": true
+        }
+      ],
+      "group": "hronska",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza.",
+      "eventDate": "2026-09-28",
+      "precision": "approximate"
+    },
+    {
+      "index": 53,
+      "id": "news-opatrnevokoliziarunadhronommedvedesaobjavilivobciachhronskadubravaatrnavahora",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-01T10:12:32.869+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Hronská Dúbrava",
+          "lat": 48.58929,
+          "lng": 19.00084,
+          "hasCoords": true
+        },
+        {
+          "place": "Trnavá Hora",
+          "lat": 48.59038,
+          "lng": 18.95349,
+          "hasCoords": true
+        }
+      ],
+      "group": "hronska",
+      "sourceType": "syndication",
+      "publishedAt": null,
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza.",
+      "eventDate": "2026-09-28",
+      "precision": "approximate"
+    },
+    {
+      "index": 54,
+      "id": "news-medvedzautocilnabezcavslovenskomrajivyskocilnanehozkrovia",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-10T09:54:39.581+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "national",
+      "publishedAt": "2026-10-07T14:33:00.000Z",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 55,
+      "id": "news-utokmedvedanafrekventovanomchodnikuselmavyskocilanabezcazkroviadomacespravy",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:58:18.165593+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": "2026-10-07T16:52:00.000Z",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 56,
+      "id": "news-ochranariupozornujunavyskytmedvedahnedehonaliptoveobjavilsavtrochlokalitach",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:58:10.379073+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": "2026-10-05T00:00:00.000Z",
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 57,
+      "id": "news-vslovenskomrajidoslokstretuclovekasmedvedom",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:56:59.798332+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": "2026-10-07T00:00:00.000Z",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 59,
+      "id": "news-byvatevtychtookresochdajtesipozornamedvedevjednomevidujuviacako500hlaseniakojena",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:00:47.65512+00:00",
+      "status": "approved",
+      "category": "article",
+      "locations": [],
+      "group": "map1",
+      "sourceType": "national",
+      "publishedAt": "2026-10-07T06:00:00.000Z",
+      "summary": "ŠOP SR zverejnila mapu hlásení výskytu medveďa hnedého na Slovensku k 1. októbru 2026. Údaje sumarizujú podnety verejnosti podľa okresov, nevyjadrujú počet jednotlivých medveďov a neurčujú presné miesto nového pozorovania.",
+      "eventDate": "2026-10-01",
+      "precision": "day"
+    },
+    {
+      "index": 61,
+      "id": "news-ochranaripostreteupozornujunamedvedavslovenskomrajipoznateznamezasadyktorebystea",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T17:55:54.096939+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Kláštorská cesta",
+          "lat": 48.9526744,
+          "lng": 20.3988546,
+          "hasCoords": true
+        }
+      ],
+      "group": "raj",
+      "sourceType": "syndication",
+      "publishedAt": "2026-10-08T11:51:00.000Z",
+      "summary": "Dňa 7. októbra 2026 medveď poranil bežca na Kláštorskej ceste medzi Podleskom a Kláštoriskom, približne kilometer nad Podleskom. Muža ošetrili v nemocnici a lokalitu monitoruje zásahový tím. Súradnice označujú orientačný bod na trase, presné miesto stretu nebolo zverejnené.",
+      "eventDate": "2026-10-07",
+      "precision": "day"
+    },
+    {
+      "index": 62,
+      "id": "news-voviacerychlokalitachhlasiavyskytmedvedajednajekusokodturistickehochodnika",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-10-09T18:05:59.256763+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Svätý Kríž",
+          "lat": 49.05074,
+          "lng": 19.53482,
+          "hasCoords": true
+        },
+        {
+          "place": "Závažná Poruba",
+          "lat": 49.05519,
+          "lng": 19.64893,
+          "hasCoords": true
+        },
+        {
+          "place": "Iľanovo",
+          "lat": 49.0539587,
+          "lng": 19.6179136,
+          "hasCoords": true
+        },
+        {
+          "place": "Urpín – Vartovka",
+          "lat": 48.7180496,
+          "lng": 19.1536819,
+          "hasCoords": true
+        }
+      ],
+      "group": "liptov",
+      "sourceType": "syndication",
+      "publishedAt": "2026-10-05T10:29:00.000Z",
+      "summary": "ŠOP SR 5. októbra upozornila na víkendové hlásenia z okolia Svätého Kríža, Závažnej Poruby a Iľanova a z lokality Urpín – Vartovka pri Banskej Bystrici. Oblasti monitorujú zásahové tímy NAPANT a STRED. Ide o spoločné upozornenie na viac lokalít, nie o jeden útok.",
+      "eventDate": "2026-10-04",
+      "precision": "approximate"
+    },
+    {
+      "index": 63,
+      "id": "news-pozornamedvedavokolidvochobciochranarivydalivarovanie",
+      "expectedStatus": "approved",
+      "expectedUpdatedAt": "2026-09-29T22:19:15.808+00:00",
+      "status": "approved",
+      "category": "warning",
+      "locations": [
+        {
+          "place": "Hronská Dúbrava",
+          "lat": 48.58929,
+          "lng": 19.00084,
+          "hasCoords": true
+        },
+        {
+          "place": "Trnavá Hora",
+          "lat": 48.59038,
+          "lng": 18.95349,
+          "hasCoords": true
+        }
+      ],
+      "group": "hronska",
+      "sourceType": "national",
+      "publishedAt": "2026-09-28T10:55:00.000Z",
+      "summary": "ŠOP SR upozornila na výskyt medveďa hnedého v okolí Hronskej Dúbravy a Trnavej Hory v okrese Žiar nad Hronom. Situáciu monitoruje Zásahový tím ŠOP SR STRED. Správy z 28. a 29. septembra nadväzujú na rovnaké upozornenie; presný deň pozorovaní sa neuvádza.",
+      "eventDate": "2026-09-28",
+      "precision": "approximate"
+    }
+  ],
+  "cleanRejected": [
+    {
+      "index": 38,
+      "id": "news-vruskuodmenujuludizaodstrelmedvedovselmytamutociavovelkom",
+      "expectedStatus": "rejected",
+      "expectedUpdatedAt": "2026-10-05T14:43:59.194508+00:00",
+      "category": "article",
+      "locations": []
+    },
+    {
+      "index": 46,
+      "id": "news-manzelovnapadolmedvedpriamovichzahradesokujucecoimzachranilozivot",
+      "expectedStatus": "rejected",
+      "expectedUpdatedAt": "2026-10-02T10:58:13.966323+00:00",
+      "category": "article",
+      "locations": []
+    }
+  ]
+}
