@@ -22,6 +22,18 @@ const warning = {
   lat: 49.08, lng: 19.61, hasCoords: true, reportedAt: "2026-10-05T09:00:00.000Z",
   source: "tumedved.sk", note: "Testovacie hlásenie",
 };
+const newsItem = {
+  id: "incident-startup-news", incidentId: "startup-news", isIncident: true,
+  title: "Stret medveďa s bežcom na Kláštorskej ceste", category: "warning",
+  date: "2026-10-07", source: "ŠOP SR", articleUrl: "https://www.pozormedved.sk/test",
+  detailUrl: "/varovania/test", summary: "Zásahový tím monitoruje Kláštorskú cestu.",
+  locations: [{ place: "Kláštorská cesta", lat: 48.9526744, lng: 20.3988546 }],
+  verificationStatus: "official_notice", sourceCount: 2,
+  coverage: [
+    { id: "official", source: "ŠOP SR", sourceTypeLabel: "Úradné oznámenie", url: "https://www.pozormedved.sk/test", publishedAt: "2026-10-07" },
+    { id: "media", source: "TASR", sourceTypeLabel: "Prevzatá správa", url: "https://www.teraz.sk/test", publishedAt: "2026-10-08" },
+  ],
+};
 function gate() {
   let release;
   const promise = new Promise(resolve => { release = resolve; });
@@ -52,7 +64,7 @@ try {
         }
         if (url.pathname === "/api/news") {
           await news.promise;
-          return route.fulfill({ json: { items: [], updatedAt: null } });
+          return route.fulfill({ json: { items: [newsItem], updatedAt: newsItem.date } });
         }
         if (/\.(css|js|woff2)$/.test(url.pathname)) await assets.promise;
         return route.continue();
@@ -104,18 +116,29 @@ try {
       assets.release();
       await page.locator(".leaflet-tile").first().waitFor({ state: "attached" });
       assert.ok(await page.locator("#mapStartup").isVisible(), "Loader stays visible while tiles are pending");
-      sightings.release();
-      await page.locator(".leaflet-marker-icon").first().waitFor({ state: "attached" });
+      const newsFirst = name === "mobile";
+      (newsFirst ? news : sightings).release();
+      await page.locator(newsFirst ? "#newsList .card" : "#sightingsList .card").first().waitFor({ state: "attached" });
       assert.ok(await page.locator("#mapStartup").isVisible(), "Data alone cannot dismiss the tile loader");
       tiles.release();
+      await page.locator(".leaflet-tile-loaded").first().waitFor({ state: "attached" });
+      // Advance past the introduction: the remaining feed, rather than the
+      // minimum display time, must now be what keeps the map covered.
+      await page.waitForTimeout(2100);
+      assert.ok(await page.locator("#mapStartup").isVisible(), "Tiles cannot dismiss the loader while either feed is pending");
+      assert.equal(await page.locator("#map").getAttribute("aria-busy"), "true");
+      assert.equal(await page.locator(newsFirst ? "#sightingsList" : "#newsList").getAttribute("aria-busy"), "true");
+      (newsFirst ? sightings : news).release();
       await page.locator("#mapStartup").waitFor({ state: "hidden" });
-      assert.match(await page.locator("#mapLoadStatus").textContent(), /Mapa je pripravená/);
-      assert.equal(await page.locator("#map").getAttribute("aria-busy"), "false");
-      news.release();
       await page.locator("#mapLoadStatus").waitFor({ state: "hidden" });
+      assert.equal(await page.locator("#map").getAttribute("aria-busy"), "false");
+      assert.equal(await page.locator("#newsList").getAttribute("aria-busy"), "false");
+      assert.equal(await page.locator("#newsCount").textContent(), "1");
+      assert.match(await page.locator("#newsList").textContent(), /Kláštorskej ceste/);
+      assert.ok(await page.locator("#newsList .coverage-details").count());
       assert.ok(await page.locator(".leaflet-marker-icon").count());
       assert.deepEqual(errors, [], "No startup JavaScript errors");
-      console.log(`Startup OK: ${name}; first paint ${firstPaint}ms with all CSS/JS/fonts held; tiles and markers independent of slow news`);
+      console.log(`Startup OK: ${name}; first paint ${firstPaint}ms; map waits for tiles, warnings and populated news`);
     } finally {
       assets.release(); tiles.release(); sightings.release(); news.release();
       await context.close();
@@ -177,21 +200,26 @@ try {
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(origin + "/?theme=dark", { waitUntil: "networkidle" });
+    await page.locator("[data-consent='necessary']").click();
     assert.match(await page.locator("#mapStartupTitle").textContent(), /nepodarilo/);
     assert.ok(await page.locator("#mapStartupRetry").isVisible());
     assert.equal(await page.locator("#mapStartupRetry").getAttribute("href"), "/?theme=dark");
     await page.locator('.map-startup-actions a[href="#aktuality"]').click();
-    assert.ok(await page.locator("#activityTitle").evaluate(el => {
+    await page.waitForFunction(() => {
+      const el = document.getElementById("activityTitle");
       const rect = el.getBoundingClientRect();
       return rect.top >= 0 && rect.bottom <= innerHeight;
-    }));
+    });
     failTiles = false;
     await page.locator("#mapStartupRetry").click();
-    await page.locator("#mapStartup").waitFor({ state: "hidden" });
-    await page.waitForFunction(() => document.getElementById("mapLoadStatus").classList.contains("is-error"));
-    assert.match(await page.locator("#mapLoadStatus").textContent(), /správy/);
+    await page.waitForFunction(() => document.querySelector("#newsList [data-source-load-error]") !== null);
+    assert.ok(await page.locator("#mapStartup").isVisible(), "Failed news keeps the map covered");
+    assert.match(await page.locator("#mapStartupDetail").textContent(), /správy/);
+    assert.match(await page.locator("#newsList").textContent(), /sa nepodarilo načítať/);
+    assert.equal(await page.locator("#newsList").getAttribute("aria-busy"), "false");
     failNews = false;
-    await page.locator("[data-retry-load]").click();
+    await page.locator("#mapStartupRetry").click();
+    await page.locator("#mapStartup").waitFor({ state: "hidden" });
     await page.locator("#mapLoadStatus").waitFor({ state: "hidden" });
     assert.ok(await page.locator(".leaflet-marker-icon").count());
     failLibrary = true;
@@ -199,8 +227,55 @@ try {
     assert.match(await page.locator("#mapStartupTitle").textContent(), /nepodarilo/);
     assert.ok(await page.locator("#mapStartupRetry").isVisible());
     assert.deepEqual(errors, [], "Failed libraries must not trigger cascading JavaScript errors");
-    console.log("Startup OK: tile failure, accessible listings, reload, API failure/retry, missing map library");
+    console.log("Startup OK: tile failure, accessible listings, news error replaces loading text, retry, missing map library");
   } finally { await context.close(); }
+
+  const timeoutContext = await browser.newContext();
+  const stalledNews = gate();
+  try {
+    await timeoutContext.addInitScript(() => {
+      // Use the real browser abort mechanism with a short test deadline.
+      const timeout = AbortSignal.timeout.bind(AbortSignal);
+      AbortSignal.timeout = ms => timeout(ms === 30000 ? 100 : ms);
+      const interval = window.setInterval.bind(window);
+      window.setInterval = (callback, ms, ...args) => {
+        if (ms === 15 * 60 * 1000) window.retryMapFeeds = callback;
+        return interval(callback, ms, ...args);
+      };
+    });
+    let stall = true, failRefresh = false;
+    await timeoutContext.route("**/*", async route => {
+      const url = new URL(route.request().url());
+      if (url.origin !== origin) return route.abort();
+      if (url.pathname.startsWith("/api/map-tiles/")) return route.fulfill({ contentType: "image/png", body: tile });
+      if (url.pathname === "/api/warnings") return route.fulfill({ json: { items: [warning] } });
+      if (url.pathname === "/api/news") {
+        if (stall) { await stalledNews.promise; return route.abort(); }
+        if (failRefresh) return route.fulfill({ status: 503, json: {} });
+        return route.fulfill({ json: { items: [newsItem] } });
+      }
+      return route.continue();
+    });
+    const page = await timeoutContext.newPage();
+    const errors = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.goto(origin, { waitUntil: "domcontentloaded" });
+    await page.locator("#newsList [data-source-load-error]").waitFor({ state: "attached" });
+    assert.ok(await page.locator("#mapStartup").isVisible());
+    assert.equal(await page.locator("#newsList").getAttribute("aria-busy"), "false");
+    assert.doesNotMatch(await page.locator("#newsList").textContent(), /sa načítavajú/);
+    stall = false; stalledNews.release();
+    await page.locator("#newsList [data-retry-source]").click();
+    await page.locator("#mapStartup").waitFor({ state: "hidden" });
+    assert.equal(await page.locator("#newsList .card").count(), 1);
+    failRefresh = true;
+    await page.evaluate(() => window.retryMapFeeds());
+    assert.ok(await page.locator("#mapStartup").isHidden(), "A failed refresh does not cover an already usable map");
+    assert.equal(await page.locator("#newsList .card").count(), 1, "Failed refresh preserves the existing news card");
+    assert.ok(await page.locator("#newsList [data-retry-source]").isVisible());
+    assert.deepEqual(errors, []);
+    console.log("Startup OK: stalled news times out, list retry recovers, failed refresh preserves content");
+  } finally { stalledNews.release(); await timeoutContext.close(); }
 
   const slowContext = await browser.newContext();
   const delayedScript = gate();

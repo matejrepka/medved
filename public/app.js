@@ -1511,7 +1511,7 @@ function hideLoadStatus() {
 }
 
 function syncLoadStatus() {
-  // The inline first-paint loader owns feedback until the basemap is usable.
+  // The first-paint loader covers the map until both feeds are rendered.
   if (!$("mapStartup").hidden) {
     hideLoadStatus();
     return;
@@ -1546,72 +1546,106 @@ window.addEventListener("mapstartupready", () => {
 async function fetchMapData(path) {
   const response = await fetch(path, {
     credentials: "omit",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(30000),
   });
   if (!response.ok) throw new Error("Dáta nie sú dostupné");
   return response.json();
 }
 
+function showSourceLoadError(source) {
+  const list = source === "news" ? elNews : elSightings;
+  const label = source === "news" ? "Správy" : "Hlásenia a varovania";
+  const error = document.createElement("div");
+  error.className = "empty";
+  error.dataset.sourceLoadError = source;
+  error.setAttribute("role", "alert");
+  error.innerHTML = `<p>${label} sa nepodarilo načítať. Skúste to znova.</p><button type="button" class="list-load-more" data-retry-source>Skúsiť znova</button>`;
+  error.querySelector("button").addEventListener("click", loadData);
+  if (!list.querySelector(".card")) {
+    list.replaceChildren(error);
+    setText(source === "news" ? "newsCount" : "sightingsCount", "—");
+  } else {
+    list.prepend(error);
+  }
+}
+
+$("mapStartupRetry").addEventListener("click", (event) => {
+  if (!state.dataFailures.length || state.tileError) return;
+  event.preventDefault();
+  loadData();
+});
+
 async function loadData() {
   if (state.dataLoading) return;
   state.dataLoading = true;
+  window.mapStartup?.pending("data");
+  for (const list of [elSightings, elNews]) {
+    list.setAttribute("aria-busy", "true");
+    list.querySelectorAll("[data-source-load-error]").forEach((error) => error.remove());
+    if (!list.querySelector(".card")) {
+      list.innerHTML = `<div class="empty">${list === elNews ? "Správy" : "Hlásenia a varovania"} sa načítavajú…</div>`;
+    }
+  }
   syncLoadStatus();
   // Serverový store sa po moderácii obnoví a ETag ho lacno revaliduje, takže
   // čerstvosť nevyžaduje nový databázový dotaz pri každom otvorení mapy.
-  // Každý zdroj spracujeme hneď po jeho doručení. Pomalší endpoint správ tak
-  // už neblokuje prvé hlásenia na mape. Zoznam pod mapou odložíme do ďalšej
-  // úlohy, aby prehliadač dostal príležitosť značky najprv vykresliť.
+  // Each list can finish independently; the map stays covered until both
+  // lists and the complete marker set have rendered successfully.
   const sourceFailed = { sightings: false, news: false };
-  const renderListAfterMarkers = (renderList) => setTimeout(renderList, 0);
 
   const sightingsRequest = fetchMapData(`/api/warnings?v=${API_VERSION}`)
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta hlásení");
       state.sightings = dedupeSightings(payload.items);
       state.sightingsUpdatedAt = payload.updatedAt;
+      renderSightings();
       state.loaded.sightings = true;
-      renderMarkers({ fit: false });
-      renderListAfterMarkers(renderSightings);
     })
     .catch(() => {
       sourceFailed.sightings = true;
-    });
+      showSourceLoadError("sightings");
+    })
+    .finally(() => elSightings.setAttribute("aria-busy", "false"));
 
   const newsRequest = fetchMapData(`/api/news?v=${API_VERSION}`)
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta správ");
       state.news = payload.items;
       state.newsUpdatedAt = payload.updatedAt;
+      renderNews();
       state.loaded.news = true;
-      renderMarkers({ fit: false });
-      renderListAfterMarkers(renderNews);
     })
     .catch(() => {
       sourceFailed.news = true;
-    });
+      showSourceLoadError("news");
+    })
+    .finally(() => elNews.setAttribute("aria-busy", "false"));
 
   await Promise.all([sightingsRequest, newsRequest]);
-
-  // Fit once using the complete response set. Rendering after each endpoint
-  // used to move the map repeatedly and trigger multiple tile grids.
-  renderMarkers();
 
   const failures = [];
   if (sourceFailed.sightings) failures.push("hlásenia");
   if (sourceFailed.news) failures.push("správy");
 
-  state.updatedAt = latestIso(
-    state.updatedAt,
-    state.sightingsUpdatedAt,
-    state.newsUpdatedAt
-  );
-  setUpdated(state.updatedAt);
-  syncDateFilterLimits();
-  syncFilterButton();
-
-  state.dataFailures = failures;
-  state.dataLoading = false;
-  syncLoadStatus();
+  try {
+    // Build and fit the complete marker set once, after both responses settle.
+    renderMarkers();
+    state.updatedAt = latestIso(state.updatedAt, state.sightingsUpdatedAt, state.newsUpdatedAt);
+    setUpdated(state.updatedAt);
+    syncDateFilterLimits();
+    syncFilterButton();
+    if (!failures.length) window.mapStartup?.ready("data");
+  } catch (error) {
+    failures.push("mapa");
+    console.error("[map] Zobrazenie dát zlyhalo:", error);
+  } finally {
+    state.dataFailures = failures;
+    state.dataLoading = false;
+    if (failures.length) {
+      window.mapStartup?.fail(`Nepodarilo sa načítať: ${failures.join(" a ")}. Skúste to znova. Dostupné zoznamy nájdete pod mapou.`, "data");
+    }
+    syncLoadStatus();
+  }
 }
 
 let searchDebounce = null;
@@ -1655,8 +1689,7 @@ window.addEventListener("resize", handleMapContainerResize);
 // --- Štart ---
 addLocationControl();
 addCenterMapControl();
-// Start the basemap immediately, independently of either data endpoint.
-// No data request can hold the entire map behind its response.
+// Tiles and feeds load in parallel behind the shared startup screen.
 setTiles(state.mapLayer);
 loadData();
 // Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).

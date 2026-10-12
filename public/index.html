@@ -93,7 +93,7 @@
       html:not([data-map-styles-ready]) .map-load-status,
       html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: hidden; }
       html:not([data-map-styles-ready]) .activity-section { padding: 32px 24px; }
-      .map-startup { --startup-bg: #fbfbf9; --startup-ink: #1a1a17; --startup-muted: #425346; --startup-accent: #1f4b30; --startup-land: #e6ece1; --startup-line: #91a58a; position: absolute; inset: 0; z-index: 850; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 76px 24px; background: var(--startup-bg); color: var(--startup-ink); text-align: center; }
+      .map-startup { --startup-bg: #fbfbf9; --startup-ink: #1a1a17; --startup-muted: #425346; --startup-accent: #1f4b30; --startup-land: #e6ece1; --startup-line: #91a58a; position: absolute; inset: 0; z-index: 1200; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 76px 24px; background: var(--startup-bg); color: var(--startup-ink); text-align: center; }
       [data-theme="dark"] .map-startup { --startup-bg: #1f201b; --startup-ink: #f1f0e8; --startup-muted: #b5c6b7; --startup-accent: #85c69a; --startup-land: #2c3a2c; --startup-line: #607e60; }
       .map-startup { transition: opacity 260ms ease; }
       .map-startup.is-leaving { opacity: 0; pointer-events: none; }
@@ -188,7 +188,7 @@
           </svg>
           <div role="status" aria-live="polite" aria-atomic="true">
             <p class="map-startup-title" id="mapStartupTitle">Načítavame mapu Slovenska…</p>
-            <p class="map-startup-detail" id="mapStartupDetail">Pripravujeme mapu a aktuálne hlásenia o medveďoch.</p>
+            <p class="map-startup-detail" id="mapStartupDetail">Pripravujeme mapu, aktuálne hlásenia a správy o medveďoch.</p>
           </div>
           <div class="map-startup-actions">
             <a href="#aktuality">Pozrieť hlásenia a správy</a>
@@ -202,16 +202,16 @@
             var detail = document.getElementById("mapStartupDetail");
             var retry = document.getElementById("mapStartupRetry");
             retry.href = location.pathname + location.search;
-            var ready = { styles: document.documentElement.hasAttribute("data-map-styles-ready"), tiles: false, leaflet: document.documentElement.hasAttribute("data-leaflet-styles-ready") };
+            var ready = { styles: document.documentElement.hasAttribute("data-map-styles-ready"), tiles: false, data: false, leaflet: document.documentElement.hasAttribute("data-leaflet-styles-ready") };
             var minimumVisibleMs = 2000;
             var visibleSince = null;
             var dismissTimer = null;
             var fadeTimer = null;
-            var failed = false;
+            var failures = {};
 
             function maybeDismiss() {
-              if (failed || loader.hidden || loader.classList.contains("is-leaving")) return;
-              if (visibleSince === null || !ready.styles || !ready.tiles || !ready.leaflet) return;
+              if (Object.keys(failures).length || loader.hidden || loader.classList.contains("is-leaving")) return;
+              if (visibleSince === null || !ready.styles || !ready.tiles || !ready.leaflet || !ready.data) return;
               clearTimeout(dismissTimer);
               dismissTimer = setTimeout(function () {
                 loader.classList.add("is-leaving");
@@ -254,13 +254,30 @@
               retry.hidden = false;
             }, 8000);
             window.mapStartup = {
+              pending: function (part) {
+                ready[part] = false;
+                delete failures[part];
+                if (loader.hidden) return;
+                clearTimeout(dismissTimer);
+                clearTimeout(fadeTimer);
+                loader.classList.remove("is-leaving");
+                if (!Object.keys(failures).length) {
+                  loader.classList.remove("is-error");
+                  title.textContent = "Načítavame mapu Slovenska…";
+                  detail.textContent = "Pripravujeme mapu, aktuálne hlásenia a správy o medveďoch.";
+                  retry.hidden = true;
+                  document.getElementById("map").setAttribute("aria-busy", "true");
+                }
+              },
               ready: function (part) {
                 ready[part] = true;
+                delete failures[part];
+                if (!Object.keys(failures).length) loader.classList.remove("is-error");
                 maybeDismiss();
               },
-              fail: function (message) {
+              fail: function (message, part) {
                 if (loader.hidden) return;
-                failed = true;
+                failures[part || "map"] = true;
                 clearTimeout(dismissTimer);
                 clearTimeout(fadeTimer);
                 clearTimeout(slowTimer);
@@ -536,7 +553,7 @@
       defer
       onerror="window.mapStartup?.fail('Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"
     ></script>
-    <script src="/app.js?v=20261005-startup1" defer
+    <script src="/app.js?v=20261012-data-loading1" defer
       onerror="window.mapStartup?.fail('Načítanie stránky prerušilo pripojenie. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"></script>
     <script src="/consent.js?v=20260714-footer2" defer></script>
   </body>
