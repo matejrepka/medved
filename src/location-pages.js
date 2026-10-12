@@ -1,3 +1,32 @@
+// Normalize each record once and narrow phrase searches by their first word.
+// Records stay in source order, and phrases never cross separate text fields.
+export function createLocationRecordMatcher(items, type, normalize) {
+  const byWord = new Map();
+  for (const item of items) {
+    const values = type === "warning" ? [item.location] : [
+      item.place,
+      ...(Array.isArray(item.locations) ? item.locations.map(location => location.place) : []),
+      item.title,
+      item.snippet,
+    ];
+    const texts = values.map(value => normalize(value)).filter(Boolean);
+    const entry = { item, texts: texts.map(text => ` ${text} `) };
+    const words = new Set(texts.flatMap(text => text.split(" ")));
+    for (const word of words) {
+      if (!byWord.has(word)) byWord.set(word, []);
+      byWord.get(word).push(entry);
+    }
+  }
+  return location => {
+    const name = normalize(location);
+    if (!name) return [];
+    const phrase = ` ${name} `;
+    return (byWord.get(name.split(" ")[0]) || [])
+      .filter(entry => entry.texts.some(text => text.includes(phrase)))
+      .map(entry => entry.item);
+  };
+}
+
 function recordIdentity(item, type) {
   const stableId =
     item?.id ||

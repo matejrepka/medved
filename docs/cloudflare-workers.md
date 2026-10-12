@@ -20,6 +20,12 @@ The production request logs identify the existing Worker as `medved`.
 the website connected to the same custom domain and secret bindings.
 Do not put this site's runtime secrets on a separate Worker named `kdejemedved`.
 
+The checked-in routes preserve both custom domains, `kdejemedved.sk` and
+`www.kdejemedved.sk`. `workers_dev: false` and `preview_urls: false` preserve
+the dashboard's disabled workers.dev access. This also avoids enabling that
+subdomain during deployment; an upstream timeout on that step can otherwise
+mark an already-uploaded Worker as a failed deployment.
+
 For a Git-connected Cloudflare Workers build, use the repository root, install
 dependencies including dev dependencies, and set the deploy command to
 `npm run deploy`. Wrangler runs `npm run build:worker` automatically. Commit and

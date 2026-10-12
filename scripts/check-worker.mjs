@@ -38,7 +38,7 @@ const seenMapKeys = new Set();
 const seenDatabaseKeys = new Set();
 const script = await readFile(path.join(root, config.main), "utf8");
 
-function createRuntime(bindings, simulateUpdates = false) {
+function createRuntime(bindings, simulateUpdates = false, dataset = null) {
   // Explicit fixture bindings: never load .env or contact production services.
   return new Miniflare(convertV4MiniflareOptions({
     name: "medved-test",
@@ -83,7 +83,8 @@ function createRuntime(bindings, simulateUpdates = false) {
         const key = request.headers.get("apikey");
         assert.ok([fixtures.SUPABASE_SERVICE_ROLE_KEY, rotated.SUPABASE_SERVICE_ROLE_KEY].includes(key));
         seenDatabaseKeys.add(key);
-        return Response.json(url.pathname.endsWith("/tumedved_logs") ? [sighting] : []);
+        const table = url.pathname.split("/").at(-1);
+        return Response.json(dataset ? dataset[table] || [] : table === "tumedved_logs" ? [sighting] : []);
       }
       if (url.hostname === "nominatim.openstreetmap.org") return Response.json([]);
       if (url.hostname === "overpass-api.de") return Response.json({ elements: [] });
@@ -153,6 +154,38 @@ try {
 } finally {
   await runtime.dispose();
 }
+
+// Exercise cold page/API requests with populated feeds rather than an empty
+// news fixture, which cannot reveal resource-heavy directory construction.
+const largeSightings = Array.from({length:650}, (_,i) => ({
+  ...sighting, id:`large-warning-${i}`, note:`Hlásenie číslo ${i}`,
+  reported_at:new Date(Date.UTC(2026,9,12-i,10)).toISOString(),
+}));
+const largeNews = Array.from({length:220}, (_,i) => ({
+  id:`large-news-${i}`, source:"Testovací spravodajský zdroj",
+  title:`Medveď pri Brezne: správa ${i}`, snippet:`Hlásenie z okolia Brezna číslo ${i}`,
+  article_url:`https://example.com/news/${i}`, published_at:"2026-10-07T10:00:00Z",
+  scraped_at:"2026-10-12T10:00:00Z", status:"approved", category:i%4===0?"warning":"article",
+  place:i%4===0?"Brezno":null, lat:i%4===0?48.805:null, lng:i%4===0?19.641:null,
+  has_coords:i%4===0, payload:{},
+}));
+const populated = createRuntime(fixtures, false, {tumedved_logs:largeSightings,news_logs:largeNews});
+try {
+  const routes=["/","/api/news?v=news-map-v9","/api/warnings?v=news-map-v9"];
+  await Promise.all(routes.map(async route => {
+    const response = await populated.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.status,200,route);
+    if(route==="/") assert.match(await response.text(),/<!doctype html>/i);
+    else {
+      assert.match(response.headers.get("content-type"),/application\/json/,route);
+      const data=await response.json();
+      assert.equal(data.items.length,route.startsWith("/api/news")?220:650,route);
+    }
+  }));
+  const response = await populated.dispatchFetch("https://www.kdejemedved.sk/");
+  assert.match(await response.text(),/Medveď pri Brezne/,"Populated news reaches the server-rendered map list");
+  console.log("Workers checks passed: simultaneous cold map, 220 news articles and 650 warnings");
+} finally { await populated.dispose(); }
 
 const unconfigured = createRuntime({ DISABLE_WEBSITE_LOGS: "true" });
 try {

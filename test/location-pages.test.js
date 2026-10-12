@@ -1,7 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { mergeLocationPages } from "../src/location-pages.js";
+import { createLocationRecordMatcher, mergeLocationPages } from "../src/location-pages.js";
+
+test("location indexing retains phrase boundaries, accents, fields and source order", () => {
+  const normalize = value => String(value || "").toLocaleLowerCase("sk").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const items = [
+    { id: "a", title: "Medveď v Banskej Bystrici", place: "Banská Bystrica" },
+    { id: "b", title: "Upozornenie", locations: [{place:"Banska Bystrica"}, {place:"Žiar nad Hronom"}] },
+    { id: "c", place: "Banská", title: "Bystrica" },
+    { id: "d", snippet: "Bystrica a Banská Bystrica" },
+    { id: "e", title: "Banská Bystrica2" },
+  ];
+  const match = createLocationRecordMatcher(items, "news", normalize);
+  assert.deepEqual(match("Banská Bystrica").map(item=>item.id), ["a","b","d"]);
+  assert.deepEqual(match("ziar nad hronom").map(item=>item.id), ["b"]);
+  assert.deepEqual(match(""), []);
+  const warning = createLocationRecordMatcher([{id:"w",location:"Žiar nad Hronom - okolie",note:"Banská Bystrica"}], "warning", normalize);
+  assert.deepEqual(warning("Žiar nad Hronom").map(item=>item.id), ["w"]);
+  assert.deepEqual(warning("Banská Bystrica"), []);
+});
 
 test("mergeLocationPages zlúči rovnaký slug, odstráni duplicitné záznamy a zachová diakritiku", () => {
   const sharedWarning = {

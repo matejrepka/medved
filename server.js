@@ -31,7 +31,7 @@ import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations, resolveSlovakLocation } from "./src/geo/search.js";
 import { buildStatsReport } from "./src/stats-report.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
-import { mergeLocationPages } from "./src/location-pages.js";
+import { createLocationRecordMatcher, mergeLocationPages } from "./src/location-pages.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import { readTelegramConfig } from "./src/telegram/config.js";
 import { TelegramService, webhookSecretMatches } from "./src/telegram/service.js";
@@ -855,24 +855,6 @@ function archiveState(req, items) {
   };
 }
 
-function includesLocation(value, locationName) {
-  const haystack = normalizeSearchText(value);
-  const needle = normalizeSearchText(locationName);
-  return Boolean(needle) && ` ${haystack} `.includes(` ${needle} `);
-}
-
-function itemBelongsToLocation(item, locationName, type) {
-  if (type === "warning") return includesLocation(item.location, locationName);
-  return [
-    item.place,
-    ...(Array.isArray(item.locations) ? item.locations.map((location) => location.place) : []),
-    item.title,
-    item.snippet,
-  ].some((value) =>
-    includesLocation(value, locationName)
-  );
-}
-
 const locationOverviewCache = {
   value: null,
   version: null,
@@ -910,7 +892,7 @@ function emptyLocationOverview() {
   };
 }
 
-async function loadLocationOverviewForRender() {
+async function loadLocationOverviewForRender({ includeLocations = true } = {}) {
   const version = latestContentDate();
   const cached = locationOverviewCache.value;
   const cacheIsFresh = cached &&
@@ -919,7 +901,13 @@ async function loadLocationOverviewForRender() {
 
   if (cacheIsFresh) return cached;
 
-  const pending = loadLocationOverview().catch((err) => {
+  // The map and news archives need the feeds, not the statistics and complete
+  // location directory. Building that directory on every cold map visit can
+  // exhaust the Worker's CPU while its API requests are waiting for the feeds.
+  const pending = (includeLocations ? loadLocationOverview() :
+    Promise.all([loadWarnings(), newsStore.get()]).then(([warnings, news]) => ({
+      ...emptyLocationOverview(), warnings, news,
+    }))).catch((err) => {
     console.error("[seo] public overview SSR failed:", err.message);
     return null;
   });
@@ -970,13 +958,11 @@ async function loadLocationOverview({ force = false } = {}) {
       gz,
       includeAllLocations: true,
     });
+    const matchWarnings = createLocationRecordMatcher(warnings, "warning", normalizeSearchText);
+    const matchNews = createLocationRecordMatcher(news, "news", normalizeSearchText);
     const locationCandidates = report.allLocations.map((location) => {
-      const warningItems = warnings.filter((item) =>
-        itemBelongsToLocation(item, location.name, "warning")
-      );
-      const newsItems = news.filter((item) =>
-        itemBelongsToLocation(item, location.name, "news")
-      );
+      const warningItems = matchWarnings(location.name);
+      const newsItems = matchNews(location.name);
       const latest = [
         ...warningItems.map((item) => item.reportedAt),
         ...newsItems.map((item) => item.date),
@@ -1801,7 +1787,7 @@ async function renderPublicPage(req, res, pathname, page) {
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
     if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
-      const overview = (await loadLocationOverviewForRender()) || emptyLocationOverview();
+      const overview = (await loadLocationOverviewForRender({ includeLocations: pathname === "/domov" })) || emptyLocationOverview();
       if (pathname === "/") {
         html = html
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))

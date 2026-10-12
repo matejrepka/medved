@@ -3,6 +3,22 @@ import assert from "node:assert/strict";
 
 import { areSimilarSightings, dedupeSightings } from "../src/sightings-dedupe.js";
 
+test("repeated merges do not reuse stale comparison facts after an edit", () => {
+  const left = item({ id: "a", source: "tumedved.sk", sourceKey:"tumedved", sourceLinks:[], url:"https://tumedved.sk/a" });
+  const right = item({ id: "b", source: "mapamedvedov.sk", sourceKey:"mapamedvedov", sourceLinks:[], url:"https://mapamedvedov.sk/b" });
+  assert.equal(dedupeSightings([left,right]).length, 1);
+  right.reportedAt = "2026-07-13T18:30:00.000Z";
+  assert.equal(dedupeSightings([left,right]).length, 2);
+});
+
+test("Slovak local-day grouping handles midnight and daylight-saving boundaries", () => {
+  const first=item({id:"a",sourceLinks:[],url:"https://tumedved.sk/a",reportedAt:"2026-10-24T22:30:00Z"});
+  const same=item({id:"b",source:"mapamedvedov.sk",sourceKey:"mapamedvedov",sourceLinks:[],url:"https://mapamedvedov.sk/b",reportedAt:"2026-10-25T00:30:00Z"});
+  assert.equal(dedupeSightings([first,same]).length, 1);
+  same.reportedAt="2026-10-25T23:30:00Z";
+  assert.equal(dedupeSightings([first,same]).length, 2);
+});
+
 function item(overrides = {}) {
   return {
     id: "tm-1",

@@ -1,6 +1,12 @@
 const DEDUPE_TIME_BUCKET_MS = 60 * 1000;
 const MAX_CLOSE_DISTANCE_KM = 2.5;
 const MAX_POSSIBLE_DISTANCE_KM = 5;
+const localDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Bratislava",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 const SOURCE_PRIORITY = {
   report: 40,
@@ -33,8 +39,8 @@ function tokens(value, { note = false } = {}) {
 }
 
 function jaccard(a, b) {
-  const left = new Set(a);
-  const right = new Set(b);
+  const left = a instanceof Set ? a : new Set(a);
+  const right = b instanceof Set ? b : new Set(b);
   if (!left.size || !right.size) return 0;
   let intersection = 0;
   for (const value of left) if (right.has(value)) intersection += 1;
@@ -52,12 +58,7 @@ function localDateKey(value) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Bratislava",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+  const parts = localDateFormatter.formatToParts(date);
   const get = (type) => parts.find((part) => part.type === type)?.value || "";
   return [get("year"), get("month"), get("day")].join("-");
 }
@@ -162,43 +163,49 @@ export function sightingDedupeKey(item) {
   return [location, note, reportedAt, lat, lng].join("|");
 }
 
-function notesAreGeneric(a, b) {
-  const left = tokens(a?.note, { note: true });
-  const right = tokens(b?.note, { note: true });
-  return left.length <= 2 || right.length <= 2;
-}
-
 function hasPreciseTime(item) {
   return item?.datePrecision !== "date" && /T\d{2}:\d{2}/.test(String(item?.reportedAt || ""));
 }
 
-export function areSimilarSightings(a, b) {
+function comparisonFacts(item, cache) {
+  if (cache.has(item)) return cache.get(item);
+  const location = normalizeText(item.location);
+  const linkIdentity = link => link.sourceId
+    ? `${link.key}|id:${link.sourceId}` : `${link.key}|url:${link.url}`;
+  const noteTokens = tokens(item.note, { note: true });
+  const facts = {
+    exact: sightingDedupeKey(item),
+    links: new Set(sightingSourceLinks(item).map(linkIdentity)),
+    date: localDateKey(item.reportedAt),
+    precise: hasPreciseTime(item),
+    time: new Date(item.reportedAt).getTime(),
+    location,
+    locationTokens: new Set(location.split(" ").filter(Boolean)),
+    noteTokens: new Set(noteTokens),
+    noteTokenCount: noteTokens.length,
+    source: sourceKey(item),
+  };
+  cache.set(item, facts);
+  return facts;
+}
+
+export function areSimilarSightings(a, b, cache = new Map()) {
   if (!a || !b) return false;
   if (a.id && b.id && String(a.id) === String(b.id)) return true;
 
-  const exactA = sightingDedupeKey(a);
-  const exactB = sightingDedupeKey(b);
-  if (exactA && exactA === exactB) return true;
+  const left = comparisonFacts(a, cache);
+  const right = comparisonFacts(b, cache);
+  if (left.exact && left.exact === right.exact) return true;
+  if ([...right.links].some(link => left.links.has(link))) return true;
+  if (!left.date || left.date !== right.date) return false;
 
-  const linkIdentity = (link) => link.sourceId
-    ? `${link.key}|id:${link.sourceId}`
-    : `${link.key}|url:${link.url}`;
-  const linksA = new Set(sightingSourceLinks(a).map(linkIdentity));
-  if (sightingSourceLinks(b).some((link) => linksA.has(linkIdentity(link)))) return true;
-
-  const dateA = localDateKey(a.reportedAt);
-  const dateB = localDateKey(b.reportedAt);
-  if (!dateA || dateA !== dateB) return false;
-
-  if (hasPreciseTime(a) && hasPreciseTime(b)) {
-    const timeDifference = Math.abs(new Date(a.reportedAt) - new Date(b.reportedAt));
+  if (left.precise && right.precise) {
+    const timeDifference = Math.abs(left.time - right.time);
     if (!Number.isFinite(timeDifference) || timeDifference > 6 * 60 * 60 * 1000) return false;
   }
 
-  const locationA = normalizeText(a.location);
-  const locationB = normalizeText(b.location);
-  const locationScore = jaccard(tokens(locationA), tokens(locationB));
-  const locationExact = Boolean(locationA && locationA === locationB);
+  const locationScore = jaccard(left.locationTokens, right.locationTokens);
+  const locationExact = Boolean(left.location && left.location === right.location);
   const distance = distanceKm(a, b);
   const closeCoordinates = distance !== null && distance <= MAX_CLOSE_DISTANCE_KM;
   const possibleCoordinates = distance !== null && distance <= MAX_POSSIBLE_DISTANCE_KM;
@@ -206,8 +213,8 @@ export function areSimilarSightings(a, b) {
   const possibleLocation = strongLocation || locationScore >= 0.4 || possibleCoordinates;
   if (!possibleLocation) return false;
 
-  const noteScore = jaccard(tokens(a.note, { note: true }), tokens(b.note, { note: true }));
-  const differentSources = sourceKey(a) !== sourceKey(b);
+  const noteScore = jaccard(left.noteTokens, right.noteTokens);
+  const differentSources = left.source !== right.source;
 
   // V rámci jedného zdroja zlučujeme iba prakticky totožné položky. Rovnaká obec
   // a deň môžu obsahovať viac samostatných pozorovaní.
@@ -217,7 +224,7 @@ export function areSimilarSightings(a, b) {
 
   if (strongLocation && closeCoordinates) return true;
   if (strongLocation && noteScore >= 0.25) return true;
-  if (locationExact && notesAreGeneric(a, b)) return true;
+  if (locationExact && (left.noteTokenCount <= 2 || right.noteTokenCount <= 2)) return true;
   return possibleLocation && possibleCoordinates && noteScore >= 0.15;
 }
 
@@ -260,10 +267,12 @@ function mergeCluster(items) {
 export function dedupeSightings(items) {
   const clustersByDate = new Map();
   const undated = [];
+  // Keep facts only for this merge. No cached state survives edits to records.
+  const comparisons = new Map();
 
   for (const item of items || []) {
     if (!item) continue;
-    const key = localDateKey(item.reportedAt);
+    const key = comparisonFacts(item, comparisons).date;
     if (!key) {
       undated.push([item]);
       continue;
@@ -271,7 +280,7 @@ export function dedupeSightings(items) {
 
     const clusters = clustersByDate.get(key) || [];
     const cluster = clusters.find((candidate) =>
-      candidate.some((existing) => areSimilarSightings(existing, item))
+      candidate.some((existing) => areSimilarSightings(existing, item, comparisons))
     );
     if (cluster) cluster.push(item);
     else clusters.push([item]);
