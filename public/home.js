@@ -1,4 +1,27 @@
+import { homeStats } from "./home-stats.js";
+
 (function () {
+  async function refreshHomeStats(endpoint, keys) {
+    try {
+      const response = await fetch(`/api/${endpoint}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!Array.isArray(data.items)) return;
+      const counts = homeStats({ [endpoint]: data.items });
+      for (const key of keys) {
+        const node = document.querySelector(`[data-home-stat="${key}"]`);
+        if (node) node.textContent = counts[key].toLocaleString("sk-SK");
+      }
+    } catch (error) {
+      // Preserve the server value (or unknown state) when a feed is unavailable.
+    }
+  }
+
+  if (document.querySelector("[data-home-stat]")) {
+    refreshHomeStats("warnings", ["todaySightings", "weekSightings"]);
+    refreshHomeStats("news", ["todayNews"]);
+  }
+
   const themeBtn = document.getElementById("themeBtn");
 
   function syncThemeButton(theme) {

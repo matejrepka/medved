@@ -16,6 +16,7 @@ import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { sightingSourceLinks } from "./src/sightings-dedupe.js";
 import { mergeWarnings } from "./src/warnings.js";
+import { homeStats } from "./public/home-stats.js";
 import {
   correctionMailto,
   newsRecordKind,
@@ -981,25 +982,17 @@ function renderSsrUpdated(value) {
 }
 
 function renderHomeStats(overview) {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const weekStart = todayStart - 6 * 86400000;
-  const sightings = Array.isArray(overview?.warnings) ? overview.warnings : [];
-  const news = Array.isArray(overview?.news) ? overview.news : [];
-  const countSince = (items, field, since) => items.filter((item) => {
-    const time = new Date(item?.[field] || 0).getTime();
-    return Number.isFinite(time) && time >= since;
-  }).length;
+  const counts = overview ? homeStats(overview) : {};
   const stats = [
-    [countSince(sightings, "reportedAt", todayStart), "hlásení dnes"],
-    [countSince(sightings, "reportedAt", weekStart), "hlásení za 7 dní"],
-    [countSince(news, "date", todayStart), "správ dnes"],
+    ["todaySightings", "hlásení dnes"],
+    ["weekSightings", "hlásení za 7 dní"],
+    ["todayNews", "správ dnes"],
   ];
 
   return stats
     .map(
-      ([value, label]) => `<div class="stat">
-        <span class="stat-num">${escapeHtml(value.toLocaleString("sk-SK"))}</span>
+      ([key, label]) => `<div class="stat">
+        <span class="stat-num" data-home-stat="${key}">${counts[key] == null ? "—" : escapeHtml(counts[key].toLocaleString("sk-SK"))}</span>
         <span class="stat-label">${escapeHtml(label)}</span>
       </div>`
     )
@@ -1752,7 +1745,8 @@ async function renderPublicPage(req, res, pathname, page) {
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
     if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
-      const overview = (await loadLocationOverviewForRender({ includeLocations: pathname === "/domov" })) || emptyLocationOverview();
+      const loadedOverview = await loadLocationOverviewForRender({ includeLocations: pathname === "/domov" });
+      const overview = loadedOverview || emptyLocationOverview();
       if (pathname === "/") {
         html = html
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
@@ -1762,7 +1756,7 @@ async function renderPublicPage(req, res, pathname, page) {
           .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
       } else if (pathname === "/domov") {
         html = html
-          .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(overview))
+          .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(loadedOverview))
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
