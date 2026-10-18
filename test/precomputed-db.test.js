@@ -14,6 +14,9 @@ test("snapshot publication and manual buckets are transactional and private", as
   }
   const migration = await readFile(new URL("../docs/migration-011-public-snapshots-buckets.sql", import.meta.url), "utf8");
   await db.exec(migration); // Safe to apply again without erasing links/history.
+  const optimization = await readFile(new URL("../supabase/migrations/20261018172624_cache_unchanged_sightings.sql", import.meta.url), "utf8");
+  await db.exec(optimization);
+  await db.exec(optimization);
   const scalar = async (sql, args = []) => Object.values((await db.query(sql, args)).rows[0])[0];
   const revision = () => scalar("select revision from public.public_snapshots where id = 'overview'");
   const publish = rev => scalar("select public.publish_public_snapshot($1, '2026-10-18', $2)",
@@ -24,6 +27,13 @@ test("snapshot publication and manual buckets are transactional and private", as
   await db.exec(`insert into public.tumedved_logs(id,location) values ('one','Brezno'),('two','Brezno');
     insert into public.bear_reports(id,location,status) values (42,'Brezno','approved'),(43,'Brezno','pending');`);
   const before = await revision();
+  const timestamp = await scalar("select updated_at::text from public.tumedved_logs where id = 'one'");
+  await db.exec("insert into public.tumedved_logs(id,location) values ('one','Brezno') on conflict(id) do update set location=excluded.location, scraped_at=now()+interval '1 day', updated_at=now()+interval '1 day'");
+  assert.equal(await revision(), before, "An identical import does not invalidate the snapshot");
+  assert.equal(await scalar("select updated_at::text from public.tumedved_logs where id = 'one'"), timestamp,
+    "Identical imports do not rewrite row timestamps");
+  await db.exec("delete from public.news_logs where id = 'not-present'");
+  assert.equal(await revision(), before, "An empty write does not invalidate the snapshot");
   assert.equal(await publish(before), true);
   assert.equal((await scalar("select public.read_public_snapshot()" )).report.totals.sightings, 2);
   await db.exec("update public.tumedved_logs set status = 'rejected' where id = 'two'");

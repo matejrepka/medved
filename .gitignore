@@ -12,3 +12,4 @@ npm-debug.log*
 .dev.vars*
 .wrangler/
 dist-worker/
+supabase/.temp/

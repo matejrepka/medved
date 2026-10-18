@@ -14,11 +14,14 @@ adresár bez tiel záznamov alebo jednu lokalitu.
    `docs/migration-011-public-snapshots-buckets.sql` po migráciách 001–010.
    Migrácia zachová pôvodné záznamy, existujúce incidenty aj históriu odosielania.
    Nové tabuľky a RPC sú dostupné len serverovej `service_role`.
-2. S premennými `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` správneho projektu
+2. Aplikujte aj `supabase/migrations/20261018172624_cache_unchanged_sightings.sql`.
+   Nezmenené hlásenia sa pri opakovanom importe fyzicky neprepíšu a prázdne
+   zápisy neinvalidujú snapshot. Migrácia nemení obsah existujúcich hlásení.
+3. S premennými `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` správneho projektu
    spustite `npm run precompute:public`. Overte úspešné uloženie prvého výsledku.
-3. Nasaďte Worker a pushnite workflow súbory do predvolenej vetvy GitHubu.
+4. Nasaďte Worker a pushnite workflow súbory do predvolenej vetvy GitHubu.
    GitHub secrets musia smerovať na ten istý projekt ako Worker.
-4. Overte `/api/stats`, `/domov` a existujúcu `/vyskyt-medveda/<slug>` stránku.
+5. Overte `/api/stats`, `/domov` a existujúcu `/vyskyt-medveda/<slug>` stránku.
    V Cloudflare skontrolujte, že Worker už nemá Cron Trigger. Nasadenie konfigurácie
    s `triggers.crons: []` odstráni predchádzajúci päťminútový plán.
 
@@ -27,6 +30,32 @@ po zmene revízie alebo po zmene dňa v časovom pásme Europe/Bratislava. Pri n
 dátach sa výpočet preskočí. Kontrola nepotrebuje Chromium ani AI.
 Workflow importu dát spustí predpočítanie aj po svojom behu. Plány GitHub Actions
 môžu mať oneskorenie a podliehajú dostupnosti a kvótam daného repozitára.
+
+### Cache verejných dát
+
+Worker kontroluje malé metadáta revízie najviac raz za 15 sekúnd v jednom
+izoláte. Dokumenty `stats`, `overview`, `news`, `warnings` a jednotlivé lokality
+uchováva do zmeny publikovanej revízie; používa ohraničenú LRU cache so 128
+dokumentmi. Rovnaká revízia nevyvolá nový prenos veľkého dokumentu. Verzia zahŕňa
+aj čas publikovania, takže denný prepočet bez zmeny zdrojových dát cache obnoví.
+Súbežné načítania metadát aj rovnakého dokumentu sa spájajú. Pri neplatnom snapshote
+sa staré dokumenty nevracajú a chyby sa neukladajú ako úspešný výsledok.
+
+Úspešné verejné GET odpovede pre mapu, domov, archívy, štatistiky a lokality sú
+uložené v Cloudflare Cache API na 60 sekúnd pod kľúčom obsahujúcim projekt,
+publikovanú revíziu a query parametre. Hlavička `X-Medved-Cache: HIT` znamená,
+že sa preskočil Express, renderovanie a serializácia. Browser TTL je 15 sekúnd.
+Zmena revízie vyradí staré kľúče pri najbližšej kontrole metadát; pri bežných
+požiadavkách je preto možná približne 30-sekundová latencia do zobrazenia zmeny
+(15 s metadáta + 15 s browser). Otvorená mapa má vlastný 15-minútový interval
+obnovy a nový obsah zobrazí až pri svojom ďalšom načítaní.
+
+Požiadavky s cookies, Authorization alebo Range, administračné trasy, mutácie,
+neznáme query parametre a chybové odpovede sa do zdieľanej cache nedávajú.
+Cache API sa zdieľa iba v rámci jedného dátového centra. Prvý request v novom
+izoláte alebo po evikcii môže stále načítať celý potrebný dokument; nejde o
+trvalú inkrementálnu repliku databázy. Statické súbory a mapové dlaždice si
+zachovávajú existujúce správanie.
 
 Databázové triggre iba zvýšia revíziu. Ak sa dáta zmenia počas výpočtu, uloženie sa
 odmietne a proces výpočet zopakuje. Starý JSON s už zamietnutými položkami sa po

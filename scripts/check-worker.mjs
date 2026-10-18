@@ -91,6 +91,11 @@ function createRuntime(bindings, simulateUpdates = false, dataset = null) {
         assert.ok([fixtures.SUPABASE_SERVICE_ROLE_KEY, rotated.SUPABASE_SERVICE_ROLE_KEY].includes(key));
         seenDatabaseKeys.add(key);
         const table = url.pathname.split("/").at(-1);
+        if (table === "public_snapshots") return Response.json({
+          revision: dataset?.revision || 1,
+          built_revision: dataset?.public_snapshot === null ? null : dataset?.revision || 1,
+          updated_at: storedSnapshot.updatedAt,
+        });
         if (url.pathname.includes("/rpc/")) {
           assert.equal(table, "read_public_snapshot", "Public requests never run computation or publish RPCs");
           if (dataset && Object.hasOwn(dataset, "public_snapshot")) return Response.json(dataset.public_snapshot);
@@ -205,6 +210,19 @@ try {
     assert.equal((await response.json()).items.length, count);
   }
   console.log("Workers checks passed: prepared feeds bypass all source-table and incident-link queries");
+  const beforeCachedRead = databaseRequests;
+  for (const route of ["/api/news", "/api/warnings"]) {
+    const response = await prepared.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.headers.get("x-medved-cache"), "HIT", "Public replies bypass Express on cache hits");
+    await response.arrayBuffer();
+  }
+  assert.equal(databaseRequests, beforeCachedRead, "Cached replies need no database transfer");
+  const privateResponse = await prepared.dispatchFetch("https://www.kdejemedved.sk/api/stats", {
+    headers: { cookie: "private=session" },
+  });
+  assert.equal(privateResponse.headers.get("x-medved-cache"), null, "Cookie requests bypass shared caching");
+  await privateResponse.arrayBuffer();
+  console.log("Workers checks passed: shared public response caching and private-request exclusion");
 } finally { await prepared.dispose(); }
 
 // Exercise cold page/API requests with populated feeds rather than an empty

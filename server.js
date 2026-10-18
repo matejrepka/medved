@@ -1470,6 +1470,7 @@ app.post("/api/telegram/webhook", async (req, res) => {
   try {
     const result = await telegramService.handleUpdate(req.body);
     if (result?.status) {
+      invalidatePublicSnapshotCache();
       await newsStore.loadFromDatabase().catch((err) => {
         console.error("[telegram moderation] news reload failed:", err.message);
       });
@@ -2409,6 +2410,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
       category: "article",
       actor: "admin",
     });
+    invalidatePublicSnapshotCache();
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news status] reload failed:", err.message);
     });
@@ -2449,6 +2451,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
 
     const incidentResult = await reviewIndependentNews(req.params.id, fields);
     // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
+    invalidatePublicSnapshotCache();
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
     });
@@ -2500,6 +2503,7 @@ app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
       fields.locations = [];
     }
     await updateNewsFields(req.params.id, fields);
+    invalidatePublicSnapshotCache();
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news edit] reload failed:", err.message);
     });
@@ -2584,6 +2588,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
         lng: primaryLocation?.lng ?? null,
       });
 
+      invalidatePublicSnapshotCache();
       await newsStore.loadFromDatabase().catch((err) => {
         console.error("[manual news] reload failed:", err.message);
       });
