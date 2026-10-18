@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>O projekte Kde je Medveď | Mapa výskytu medveďov</title>
+    <meta
+      name="description"
+      content="Prečo vznikol projekt Kde je Medveď, ako pomáha získať prehľad o výskyte medveďov, z akých zdrojov čerpá a ako nás kontaktovať."
+    />
+    <!-- SEO_HEAD -->
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link
+      href="/fonts.css?v=20260928-1"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="/vendor/phosphor/regular/style.css?v=2.1.1-display1"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260731-record-trust1" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/domov" aria-label="Kde je Medveď, domov">
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
+        </span>
+        <span class="brand-name">Kde je Medve&#271;</span>
+      </a>
+      <nav class="main-nav" aria-label="Hlavné menu">
+        <a href="/">Mapa</a>
+        <a href="/domov">Domov</a>
+        <a href="/bezpecnost">Bezpečnosť</a>
+        <a href="/o-mape" class="active">O projekte</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Prepnúť tmavý režim">
+          <i class="ph ph-moon" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="knowledge-page">
+      <div class="page-video-shell" aria-hidden="true">
+        <video
+          class="page-video"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          poster="/assets/mascot/bear-head-mark.png"
+        >
+          <source src="/assets/make_him_on_four_legs_and_bett-compressed.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <nav class="breadcrumbs" aria-label="Navigácia v hierarchii">
+        <a href="/">Mapa</a><span aria-hidden="true">/</span><span>O projekte</span>
+      </nav>
+
+      <article class="knowledge-article">
+        <header class="knowledge-hero">
+          <p class="section-kicker">O projekte</p>
+          <h1>Kde je Medveď</h1>
+          <p class="answer-lead">
+            Kde je Medveď vznikol ako pomôcka pre ľudí, ktorí chcú získať čo najlepší
+            dostupný prehľad o medveďoch a ich hlásenom výskyte na Slovensku. Údaje
+            z viacerých verejných zdrojov
+            <strong>automaticky zbierame, zjednocujeme, prepájame a moderujeme</strong>,
+            aby sa dali vyhľadávať podľa lokality, dátumu a pôvodu na jednej mape Slovenska.
+          </p>
+          <p class="review-note">Informácie o projekte naposledy aktualizované 31. júla 2026.</p>
+        </header>
+
+        <section aria-labelledby="purposeHeading">
+          <h2 id="purposeHeading">Prečo projekt vznikol</h2>
+          <p>
+            Informácie o výskyte medveďov sú rozdelené medzi používateľské hlásenia,
+            verejné mapy, obecné upozornenia, správy a oficiálne odporúčania. Nájsť ich,
+            porovnať a overiť ich aktuálnosť preto môže byť zdĺhavé.
+          </p>
+          <p>
+            Cieľom projektu je zhromaždiť tieto informácie na jednom mieste a ponúknuť
+            zrozumiteľnú pomôcku pri získavaní čo najlepšieho dostupného prehľadu. Pri každom
+            zázname sa snažíme zachovať lokalitu, čas a pôvodný zdroj, aby si používateľ mohol
+            informáciu ďalej overiť.
+          </p>
+          <p class="notice">
+            Projekt je orientačný informačný nástroj. Nie je živým GPS sledovaním medveďov,
+            oficiálnym varovným systémom ani náhradou za pokyny ŠOP SR, obcí a tiesňových zložiek.
+          </p>
+        </section>
+
+        <section aria-labelledby="sourcesHeading">
+          <h2 id="sourcesHeading">Aké zdroje mapa používa</h2>
+          <div class="source-grid">
+            <article>
+              <i class="ph ph-users" aria-hidden="true"></i>
+              <h3>Hlásenia používateľov</h3>
+              <p>
+                Pozorovanie odoslané cez náš formulár obsahuje používateľom zadanú lokalitu,
+                dátum, voliteľný opis a bod vybraný na mape.
+              </p>
+            </article>
+            <article>
+              <i class="ph ph-database" aria-hidden="true"></i>
+              <h3>Verejné databázy hlásení</h3>
+              <p>
+                Preberáme verejne dostupné záznamy z
+                <a href="https://tumedved.sk/" rel="noopener noreferrer">TuMedved.sk</a>,
+                <a href="https://mapamedvedov.sk/" rel="noopener noreferrer">MapaMedvedov.sk</a>
+                a <a href="https://www.sprejnamedveda.sk/medvede-na-mape/" rel="noopener noreferrer">SprejNaMedveda.sk</a>.
+                Pri každom zázname zachovávame označenie a odkaz na pôvodný zdroj.
+              </p>
+            </article>
+            <article>
+              <i class="ph ph-newspaper" aria-hidden="true"></i>
+              <h3>Slovenské správy a varovania</h3>
+              <p>
+                Sledujeme verejné upozornenia ŠOP SR cez
+                <a href="https://www.pozormedved.sk/" rel="noopener noreferrer">PozorMedved.sk</a>
+                a slovenské médiá cez Google News. Do mapy patria iba moderované správy
+                s konkrétnou relevantnou lokalitou.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section aria-labelledby="centralOverviewHeading">
+          <h2 id="centralOverviewHeading">Ako vytvárame spoločný prehľad</h2>
+          <p>
+            Jednotlivé mapy, obecné upozornenia a správy pokrývajú rozdielne udalosti a časové
+            obdobia. Kde je Medveď ich nezobrazuje ako jeden nový „oficiálny“ zdroj; vytvára
+            spoločný vyhľadateľný prehľad, v ktorom možno porovnať lokalitu, čas a pôvod
+            informácie. Ak rovnakú udalosť opisuje viac zdrojov, zjavné duplicity spájame
+            a zachovávame odkazy na pôvodné záznamy.
+          </p>
+        </section>
+
+        <section aria-labelledby="recordLabelsHeading">
+          <h2 id="recordLabelsHeading">Ako rozlišujeme pôvod záznamu</h2>
+          <p>
+            Moderácia, pôvod zdroja a aktuálnosť nie sú to isté. Preto ich pri každom
+            zázname uvádzame oddelene a nepoužívame jeden všeobecný štítok „overené“.
+          </p>
+          <div class="accuracy-table" role="table" aria-label="Význam štítkov pôvodu záznamu">
+            <div class="accuracy-row accuracy-head" role="row">
+              <span role="columnheader">Štítok</span><span role="columnheader">Čo presne znamená</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Oficiálne upozornenie</strong>
+              <span role="cell">Pôvodný zdroj je ŠOP SR alebo jej verejný informačný kanál.</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Verejný záznam</strong>
+              <span role="cell">Údaj sme prevzali z prepojenej verejnej mapy a zachovali odkaz na pôvodný záznam.</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Komunitné hlásenie</strong>
+              <span role="cell">Obsah prešiel moderáciou, ale projekt Kde je Medveď ho nepotvrdil odborným overením v teréne.</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Súvisiaca správa</strong>
+              <span role="cell">Článok dopĺňa kontext a nie je dôkazom aktuálnej polohy zvieraťa.</span>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="workflowHeading">
+          <h2 id="workflowHeading">Ako sa záznam dostane na mapu</h2>
+          <ol class="method-steps">
+            <li>
+              <span>1</span>
+              <div><h3>Zber</h3><p>Verejné zdroje kontrolujeme automaticky; používateľské hlásenia prijímame priebežne.</p></div>
+            </li>
+            <li>
+              <span>2</span>
+              <div><h3>Zjednotenie</h3><p>Zjednotíme názov lokality, čas, zdroj, opis a dostupné súradnice. Zjavné duplicity odstraňujeme.</p></div>
+            </li>
+            <li>
+              <span>3</span>
+              <div><h3>Moderovanie</h3><p>Kontrolujeme, či položka skutočne opisuje výskyt alebo relevantnú správu, či má použiteľný dátum a lokalitu.</p></div>
+            </li>
+            <li>
+              <span>4</span>
+              <div><h3>Zverejnenie</h3><p>Schválený záznam sa zobrazí v zozname a pri dostupnej polohe aj na mape a v štatistikách.</p></div>
+            </li>
+          </ol>
+        </section>
+
+        <section aria-labelledby="locationHeading">
+          <h2 id="locationHeading">Ako presná je poloha bodu?</h2>
+          <div class="accuracy-table" role="table" aria-label="Presnosť polohy podľa typu zdroja">
+            <div class="accuracy-row accuracy-head" role="row">
+              <span role="columnheader">Typ záznamu</span><span role="columnheader">Význam bodu</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Používateľské hlásenie</strong>
+              <span role="cell">Bod, ktorý oznamovateľ vybral na mape; jeho presnosť závisí od zadaných informácií.</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Verejné hlásenie</strong>
+              <span role="cell">Súradnice alebo lokalita publikovaná pôvodným zdrojom.</span>
+            </div>
+            <div class="accuracy-row" role="row">
+              <strong role="cell">Varovanie zo správy</strong>
+              <span role="cell">Približný stred uvedenej obce alebo lokality, nie presné miesto udalosti.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="limitations" aria-labelledby="limitsHeading">
+          <p class="section-kicker">Čítajte pred použitím</p>
+          <h2 id="limitsHeading">Čo z údajov nemožno vyvodiť</h2>
+          <ul>
+            <li>Bod nepotvrdzuje, že sa medveď na mieste stále nachádza.</li>
+            <li>Počet bodov nie je počet jedincov; rovnaký medveď môže byť nahlásený viackrát.</li>
+            <li>Mapa neukazuje úplné rozšírenie ani veľkosť populácie medveďa hnedého.</li>
+            <li>Miesto bez bodu nie je zárukou, že sa tam medveď nevyskytuje.</li>
+            <li>Moderovanie je kontrola záznamu, nie odborné terénne overenie každého hlásenia.</li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="openDataHeading">
+          <h2 id="openDataHeading">Aktuálnosť a strojovo čitateľné údaje</h2>
+          <p>
+            Čas poslednej aktualizácie zobrazujeme v hlavičke mapy. Rovnaké aktuálne dáta
+            sú dostupné aj v JSON rozhraniach, aby sa dali overiť a ďalej spracovať.
+          </p>
+          <div class="api-links">
+            <a href="/api/warnings">Aktuálne varovania (JSON)</a>
+            <a href="/api/stats">Štatistiky (JSON)</a>
+            <a href="/feed.xml">Najnovšie hlásenia (RSS)</a>
+          </div>
+        </section>
+
+        <section class="editorial-policy" aria-labelledby="policyHeading">
+          <h2 id="policyHeading">Redakčné zásady</h2>
+          <p>
+            Nezverejňujeme položky, ktoré nesúvisia s medveďom, nemajú použiteľnú lokalitu
+            alebo sú zjavnou duplicitou. Pri externom obsahu odkazujeme na pôvodný zdroj.
+            Bezpečnostné rady oddeľujeme od používateľských hlásení a opierame ich o oficiálne
+            odporúčania ŠOP SR. Opravy a spresnenia vykonávame cez moderáciu databázy;
+            podnety nám môžete poslať na
+            <a href="mailto:kontakt@kdejemedved.sk">kontakt@kdejemedved.sk</a>.
+          </p>
+        </section>
+
+        <section aria-labelledby="correctionsHeading">
+          <h2 id="correctionsHeading">Opravy a spresnenia</h2>
+          <p>
+            Pri každom zázname je odkaz „Nahlásiť chybu“, ktorý do správy doplní jeho ID.
+            Uveďte, čo je nesprávne, a ak je to možné, priložte pôvodný oznam, článok alebo iný
+            podklad. Podnet porovnáme s dostupnými zdrojmi a záznam podľa zistenia opravíme,
+            doplníme alebo odstránime.
+          </p>
+          <p class="notice">
+            Email s podnetom nie je tiesňové hlásenie. Pri bezprostrednom ohrození života alebo
+            zdravia volajte 112.
+          </p>
+        </section>
+
+        <section id="kontakt" class="project-contact" aria-labelledby="contactHeading">
+          <p class="section-kicker">Kontakt</p>
+          <h2 id="contactHeading">Máte otázku alebo podnet?</h2>
+          <p>
+            Ak ste našli nepresnosť, chcete navrhnúť nový zdroj informácií, máte otázku
+            k projektu alebo inú pripomienku, napíšte nám. Ozveme sa vám hneď, ako to bude možné.
+          </p>
+          <div class="source-actions">
+            <a class="btn" href="mailto:kontakt@kdejemedved.sk">
+              <i class="ph ph-envelope-simple" aria-hidden="true"></i>
+              kontakt@kdejemedved.sk
+            </a>
+          </div>
+        </section>
+
+        <div class="source-actions">
+          <a class="btn" href="/">Otvoriť aktuálnu mapu</a>
+          <a class="ghost-btn" href="/nahlas">Nahlásiť pozorovanie</a>
+        </div>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-main">
+          <div class="footer-brand">
+            <a class="footer-identity" href="/" aria-label="Kde je Medveď, domov">
+              <span class="footer-brand-mark">
+                <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Logo Kde je Medveď" />
+              </span>
+              <span class="footer-brand-copy">
+                <strong>Kde je Medveď</strong>
+                <small>Prehľad macka na Slovensku</small>
+              </span>
+            </a>
+            <p class="footer-description">
+              Transparentne odlišujeme hlásenie, verejný zdroj a odborné bezpečnostné odporúčanie.
+              Mapa slúži ako orientačný informačný nástroj.
+            </p>
+            <a class="footer-report-link" href="/nahlas">
+              <i class="ph ph-map-pin-plus" aria-hidden="true"></i>
+              Nahlásiť pozorovanie
+              <i class="ph ph-arrow-right" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          <div class="footer-nav">
+            <div class="footer-column">
+              <h2>Preskúmajte</h2>
+              <nav class="footer-links" aria-label="Hlavné odkazy v pätičke">
+                <a href="/">Aktuálna mapa</a>
+                <a href="/spravy">Správy</a>
+                <a href="/varovania">Varovania</a>
+                <a href="/stats">Štatistiky</a>
+                <a href="/bezpecnost">Bezpečnosť</a>
+                <a href="/nahlas">Nahlásiť výskyt</a>
+              </nav>
+            </div>
+            <div class="footer-column">
+              <h2>O projekte</h2>
+              <nav class="footer-links footer-legal-links" aria-label="Informácie o projekte">
+                <a href="/o-mape">O nás a ako to funguje</a>
+                <a href="/spomenuli-nas">Spomenuli nás</a>
+                <a href="/o-mape#kontakt">Kontakt</a>
+                <a href="/ochrana-sukromia">Ochrana súkromia</a>
+                <a href="/podmienky-pouzivania">Podmienky používania</a>
+              </nav>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© 2026 Kde je Medveď</p>
+          <p>Nezávislý informačný projekt pre Slovensko.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/page.js?v=20260731-map-first1" defer></script>
+    <script src="/consent.js?v=20261018-cloudflare1" defer></script>
+  </body>
+</html>

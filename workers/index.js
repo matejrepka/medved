@@ -2,7 +2,7 @@ import { httpServerHandler } from "cloudflare:node";
 import app, { invalidatePublicCaches } from "../server.js";
 import { withWorkerContext } from "./platform.js";
 import { getPublicSnapshotVersion } from "../src/db/public-snapshot.js";
-import { publicCacheUrl, clientCacheResponse, canStorePublicResponse } from "./public-cache.js";
+import { publicCacheUrl, publicCacheTtl, clientCacheResponse, canStorePublicResponse } from "./public-cache.js";
 
 app.listen(3000);
 const handler = httpServerHandler({ port: 3000 });
@@ -44,7 +44,7 @@ export default {
       }
       if (cacheRequest && canStorePublicResponse(response)) {
         const stored = new Response(response.clone().body, response);
-        stored.headers.set("Cache-Control", "public, max-age=60");
+        stored.headers.set("Cache-Control", `public, max-age=${publicCacheTtl(request)}`);
         ctx.waitUntil(caches.default.put(cacheRequest, stored).catch(error => {
           console.error("[public-cache] write failed:", error.message);
         }));

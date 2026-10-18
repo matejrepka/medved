@@ -7,6 +7,7 @@ import "./build-worker.mjs";
 import { buildPublicOverview } from "../src/public-overview.js";
 import { loadPlaces } from "../src/geo/geocode.js";
 import { buildRecordDocuments, recordToken } from "../src/record-documents.js";
+import { publicCacheUrl } from "../workers/public-cache.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const config = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
@@ -50,19 +51,30 @@ function createRuntime(bindings, simulateUpdates = false, dataset = null) {
   // Explicit fixture bindings: never load .env or contact production services.
   return new Miniflare(convertV4MiniflareOptions({
     name: "medved-test",
-    ...(simulateUpdates ? {
+    ...(simulateUpdates || dataset?.controlClock || dataset?.measureDateFormatters ? {
       // Test-only wrapper varies handler bindings without reloading the module,
       // reproducing Cloudflare's isolate reuse after a secret-only deployment.
       modules: [{
         type: "ESModule", path: path.join(root, "fixture-entry.js"),
         contents: `import worker from './fixture-app.js';
-          let calls = 0;
+          let calls = 0, dateFormatterCalls = 0;
+          const realNow = Date.now;
+          if (${Boolean(dataset?.measureDateFormatters)}) {
+            Intl.DateTimeFormat = new Proxy(Intl.DateTimeFormat, {
+              construct(target, args) { dateFormatterCalls++; return Reflect.construct(target, args); }
+            });
+          }
           const variants = ${JSON.stringify({ added: fixtures, rotated })};
           export default { ...worker, async fetch(request, env, ctx) {
+            if (${Boolean(dataset?.controlClock)}) {
+              const now = Number(request.headers.get('x-fixture-time')) || realNow();
+              Date.now = () => now;
+            }
             const update = variants[new URL(request.url).searchParams.get('fixtureBindings')];
             const response = await worker.fetch(request, update ? {...env, ...update} : env, ctx);
             const result = new Response(response.body, response);
             result.headers.set('x-fixture-calls', String(++calls));
+            result.headers.set('x-fixture-date-formatters', String(dateFormatterCalls));
             return result;
           }};`,
       }, { type: "ESModule", path: path.join(root, "fixture-app.js"), contents: script }],
@@ -234,7 +246,7 @@ try {
 const detailNews = { id: "small-detail-news", title: "Medveď pri Brezne", category: "article",
   date: sighting.reported_at, summary: "Saved news detail", source: "Test", place: "Brezno" };
 const detailData = { ...storedSnapshot, news: [detailNews] };
-const details = createRuntime(fixtures, false, { forbidRawReads: true, recordsOnly: true,
+const details = createRuntime(fixtures, false, { forbidRawReads: true, recordsOnly: true, measureDateFormatters: true,
   record_documents: buildRecordDocuments(detailData) });
 try {
   for (const route of [`/varovania/brezno-${recordToken("snapshot-1")}`,
@@ -242,11 +254,23 @@ try {
     const response = await details.dispatchFetch(`https://www.kdejemedved.sk${route}`);
     assert.equal(response.status, 200, route);
     assert.match(await response.text(), /Brezno/);
+    assert.ok(Number(response.headers.get("x-fixture-date-formatters")) <= 2,
+      "Distinct detail pages reuse at most two ICU date formatters");
     const before = databaseRequests;
     const cached = await details.dispatchFetch(`https://www.kdejemedved.sk${route}`);
     assert.equal(cached.headers.get("x-medved-cache"), "HIT");
     await cached.arrayBuffer();
     assert.equal(databaseRequests, before, "Detail HIT never touches the database");
+    const cache = await details.getCaches();
+    const key = publicCacheUrl(new Request(`https://www.kdejemedved.sk${route}`),
+      `${fixtures.SUPABASE_URL}:1:${storedSnapshot.updatedAt}`);
+    const stored = await cache.default.match(key);
+    assert.ok(stored, "Rendered HTML is stored in the runtime edge cache");
+    assert.equal(stored.headers.get("cache-control"), "public, max-age=3600",
+      "Detail pages retain their HTML for an hour at the edge");
+    await stored.arrayBuffer();
+    assert.equal(cached.headers.get("cache-control"), "public, max-age=15",
+      "Browsers still recheck within the moderation revision window");
   }
   const beforeMissing = databaseRequests;
   const missing = await details.dispatchFetch("https://www.kdejemedved.sk/varovania/missing-0000000000");
@@ -255,6 +279,45 @@ try {
   assert.equal(databaseRequests, beforeMissing + 1, "A missing token does not reload the full history");
   console.log("Workers checks passed: cold news/warning details use one small document and repeated requests hit cache");
 } finally { await details.dispose(); }
+
+const editedDetails = { forbidRawReads: true, recordsOnly: true, controlClock: true, revision: 1,
+  record_documents: buildRecordDocuments(detailData) };
+const revisions = createRuntime(fixtures, false, editedDetails);
+try {
+  const route = `/varovania/brezno-${recordToken("snapshot-1")}`;
+  const get = now => revisions.dispatchFetch(`https://www.kdejemedved.sk${route}`, {
+    headers: { "x-fixture-time": String(now) },
+  });
+  let response = await get(100_000);
+  assert.equal(response.headers.get("x-medved-cache"), "MISS");
+  await response.arrayBuffer();
+  const before = databaseRequests;
+  response = await get(170_000);
+  assert.equal(response.headers.get("x-medved-cache"), "HIT");
+  await response.arrayBuffer();
+  assert.equal(databaseRequests, before + 1, "Only expired revision metadata is rechecked");
+
+  editedDetails.revision = 2;
+  editedDetails.record_documents[`warning:${recordToken("snapshot-1")}`].record.note = "Updated warning detail";
+  response = await get(186_000);
+  assert.equal(response.headers.get("x-medved-cache"), "MISS", "Edits bypass the old hour-long cache entry");
+  assert.match(await response.text(), /Updated warning detail/);
+
+  editedDetails.revision = 3;
+  delete editedDetails.record_documents[`warning:${recordToken("snapshot-1")}`];
+  response = await get(202_000);
+  assert.equal(response.status, 404, "Removed warnings cannot return their cached public HTML");
+  assert.equal(response.headers.get("x-medved-cache"), null);
+  await response.arrayBuffer();
+
+  editedDetails.revision = 4;
+  editedDetails.public_snapshot = null;
+  response = await get(218_000);
+  assert.equal(response.status, 503, "An unpublished revision cannot use old public HTML");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  await response.arrayBuffer();
+  console.log("Workers checks passed: longer detail caching still retires edited, removed and unpublished revisions");
+} finally { await revisions.dispose(); }
 
 // Exercise cold page/API requests with populated feeds rather than an empty
 // news fixture, which cannot reveal resource-heavy directory construction.

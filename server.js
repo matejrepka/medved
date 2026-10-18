@@ -19,6 +19,7 @@ import { mergeWarnings } from "./src/warnings.js";
 import { homeStats } from "./public/home-stats.js";
 import {
   correctionMailto,
+  formatSlovakDate,
   newsRecordKind,
   recordFreshness,
   warningRecordKind,
@@ -635,18 +636,6 @@ function buildSeoHead(pathname, page, origin) {
     '<link rel="alternate" type="application/rss+xml" title="Aktuálne hlásenia: Kde je Medveď" href="/feed.xml" />',
     `<script type="application/ld+json">${schema}</script>`,
   ].join("\n    ");
-}
-
-function formatSlovakDate(value, withTime = false) {
-  const date = new Date(value || 0);
-  if (Number.isNaN(date.getTime())) return "Dátum neuvedený";
-  return new Intl.DateTimeFormat("sk-SK", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-    timeZone: "Europe/Bratislava",
-  }).format(date);
 }
 
 function safeHttpUrl(value) {

@@ -6,6 +6,26 @@ const OFFICIAL_SOURCE_PATTERNS = [
   /zásahov[ýy]\s+tím/i,
 ];
 
+// Each detail renders the main date and dates on four related cards. Reuse the
+// ICU formatters across cards/requests instead of constructing one per label.
+const dateFormatters = new Map();
+
+export function formatSlovakDate(value, withTime = false) {
+  const date = new Date(value || 0);
+  if (Number.isNaN(date.getTime())) return "Dátum neuvedený";
+  const key = Boolean(withTime);
+  if (!dateFormatters.has(key)) {
+    dateFormatters.set(key, new Intl.DateTimeFormat("sk-SK", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      ...(key ? { hour: "2-digit", minute: "2-digit" } : {}),
+      timeZone: "Europe/Bratislava",
+    }));
+  }
+  return dateFormatters.get(key).format(date);
+}
+
 function containsOfficialSource(value) {
   const text = String(value || "");
   return OFFICIAL_SOURCE_PATTERNS.some((pattern) => pattern.test(text));

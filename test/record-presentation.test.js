@@ -3,10 +3,19 @@ import assert from "node:assert/strict";
 
 import {
   correctionMailto,
+  formatSlovakDate,
   newsRecordKind,
   recordFreshness,
   warningRecordKind,
 } from "../src/record-presentation.js";
+
+test("Slovak record dates preserve Bratislava time and daylight-saving transitions", () => {
+  assert.equal(formatSlovakDate("2026-10-18T22:30:00Z"), "19. októbra 2026");
+  assert.equal(formatSlovakDate("2026-10-25T00:30:00Z", true), "25. októbra 2026 o 02:30");
+  assert.equal(formatSlovakDate("2026-10-25T01:30:00Z", true), "25. októbra 2026 o 02:30");
+  assert.equal(formatSlovakDate("2026-12-18T23:30:00Z", true), "19. decembra 2026 o 00:30");
+  assert.equal(formatSlovakDate("invalid"), "Dátum neuvedený");
+});
 
 test("community report is not presented as field-verified", () => {
   const kind = warningRecordKind({ sourceType: "report" });

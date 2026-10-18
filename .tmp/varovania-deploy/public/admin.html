@@ -1,0 +1,3780 @@
+<!DOCTYPE html>
+<html lang="sk" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Administrácia - Kde je Medveď</title>
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+
+    <script>
+      (function () {
+        try {
+          var override = new URLSearchParams(location.search).get("theme");
+          var t = override || localStorage.getItem("theme");
+          var dark =
+            t === "dark" ||
+            (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+        } catch (e) {}
+      })();
+    </script>
+
+    <link
+      href="/fonts.css?v=20260928-1"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="/vendor/phosphor/regular/style.css?v=2.1.1-display1"
+    />
+    <link
+      rel="stylesheet"
+      href="/vendor/leaflet/leaflet.css?v=1.9.4"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260718-mobile-spacing1" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
+    <style>
+      /* ---- Login ---- */
+      .login-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100dvh - 69px);
+        padding: 2rem 1rem;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
+      }
+      .login-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: transparent;
+        border: 0;
+        color: var(--accent-ink);
+        font-size: 28px;
+        margin-bottom: 1.25rem;
+        overflow: visible;
+      }
+      .login-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .login-card h1 {
+        font-family: var(--font-serif);
+        font-size: 1.6rem;
+        margin: 0 0 0.35rem;
+      }
+      .login-card .login-sub {
+        color: var(--ink-3);
+        font-size: 0.88rem;
+        margin: 0 0 1.75rem;
+      }
+      .login-field {
+        width: 100%;
+        margin-bottom: 0.75rem;
+      }
+      .login-field input {
+        width: 100%;
+        padding: 0.7rem 0.9rem;
+        font-family: var(--font-sans);
+        font-size: 0.92rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .login-field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .login-field input::placeholder { color: var(--ink-3); }
+      .login-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .login-btn:hover { background: var(--accent-hover); }
+      .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .login-error {
+        margin-top: 1rem;
+        padding: 0.7rem 0.9rem;
+        border-radius: var(--radius-sm);
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.18);
+        color: #b91c1c;
+        font-size: 0.85rem;
+        display: none;
+      }
+      [data-theme="dark"] .login-error {
+        color: #f87171;
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+      }
+
+      /* ---- Dashboard shell ---- */
+      .admin-dashboard { display: none; }
+
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 1.25rem clamp(16px, 4vw, 36px) 0;
+      }
+      .admin-toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .admin-toolbar-left h1 {
+        font-family: var(--font-serif);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      .toolbar-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        color: var(--ink-3);
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .logout-btn:hover {
+        color: var(--ink);
+        border-color: var(--ink-3);
+      }
+
+      /* ---- Tab navigation ---- */
+      .admin-tabs {
+        display: flex;
+        gap: 2px;
+        max-width: 1240px;
+        margin: 1.25rem auto 0;
+        padding: 0 clamp(16px, 4vw, 36px);
+        border-bottom: 1px solid var(--line);
+      }
+      .admin-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 16px 12px;
+        font-family: var(--font-sans);
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+        white-space: nowrap;
+      }
+      .admin-tab:hover { color: var(--ink-2); }
+      .admin-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .admin-tab .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: var(--radius-pill);
+        background: var(--line);
+        color: var(--ink-3);
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .admin-tab.active .tab-count {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .admin-tab .tab-count.has-items {
+        background: #d97706;
+        color: #fff;
+      }
+      .admin-tab.active .tab-count.has-items {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      /* ---- Tab panels ---- */
+      .admin-body {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 1.5rem clamp(16px, 4vw, 36px) 3rem;
+      }
+      .tab-panel {
+        display: none;
+        animation: fadePanel 0.2s ease;
+      }
+      .tab-panel.active { display: block; }
+      @keyframes fadePanel {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ---- Overview panel ---- */
+      .overview-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 1.25rem;
+      }
+      .overview-heading h2 {
+        margin: 0 0 4px;
+        font-family: var(--font-serif);
+        font-size: clamp(1.45rem, 2vw, 1.8rem);
+        font-weight: 600;
+      }
+      .overview-heading p { margin: 0; color: var(--ink-3); font-size: 0.88rem; }
+      .overview-updated {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink-3);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1px;
+        overflow: hidden;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        margin-bottom: 1.5rem;
+      }
+      .stat-card {
+        min-width: 0;
+        padding: 1rem 1.1rem;
+        background: var(--surface);
+        border: 0;
+        border-radius: 0;
+        transition: background 0.15s;
+      }
+      .stat-card:hover { background: var(--surface-hover); }
+      .stat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+      .stat-value {
+        display: block;
+        font-family: var(--font-serif);
+        font-variant-numeric: tabular-nums;
+        font-size: 1.75rem;
+        font-weight: 600;
+        line-height: 1.1;
+        color: var(--ink);
+      }
+      .stat-label {
+        display: block;
+        margin-top: 4px;
+        color: var(--ink-3);
+        font-size: 0.82rem;
+      }
+
+      .overview-meta {
+        font-size: 0.85rem;
+        color: var(--ink-3);
+        margin-bottom: 1.5rem;
+      }
+
+      .overview-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .overview-stack { display: grid; gap: 16px; }
+      .overview-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .overview-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        scrollbar-width: none;
+      }
+      .admin-tabs::-webkit-scrollbar { display: none; }
+      .overview-panel-head h3 { margin: 0; font-size: 0.94rem; font-weight: 700; }
+      .overview-panel-head span { color: var(--ink-3); font-size: 0.76rem; }
+      .queue-list, .health-list, .recent-list { display: grid; }
+      .queue-row, .health-row, .recent-row {
+        display: grid;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .queue-row:last-child, .health-row:last-child, .recent-row:last-child { border-bottom: 0; }
+      .queue-row { grid-template-columns: 36px minmax(0, 1fr) auto; }
+      .queue-icon, .recent-icon {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 1rem;
+      }
+      .queue-copy strong, .recent-copy strong { display: block; color: var(--ink); font-size: 0.86rem; }
+      .queue-copy span { display: block; margin-top: 2px; color: var(--ink-3); font-size: 0.76rem; }
+      .recent-copy small { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--ink-3); font-size: 0.76rem; }
+      .recent-copy .status-badge { display: inline-flex; padding: 1px 6px; }
+      .queue-action, .quick-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 38px;
+        padding: 7px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        color: var(--ink-2);
+        font: 600 0.78rem var(--font-sans);
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+        white-space: nowrap;
+      }
+      .queue-action:hover, .quick-action:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+      .queue-action:active, .quick-action:active, .btn-primary:active, .row-edit-btn:active { transform: translateY(1px); }
+      .recent-row {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        width: 100%;
+        text-align: left;
+        color: inherit;
+        background: transparent;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        cursor: pointer;
+        font-family: var(--font-sans);
+      }
+      .recent-row:hover { background: var(--surface-hover); }
+      .recent-row time { color: var(--ink-3); font-size: 0.74rem; white-space: nowrap; }
+      .health-row { grid-template-columns: minmax(0, 1fr) auto; }
+      .health-copy strong { display: block; font-size: 0.84rem; color: var(--ink); }
+      .health-copy span { display: block; margin-top: 2px; color: var(--ink-3); font-size: 0.74rem; line-height: 1.4; }
+      .health-state { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 700; }
+      .health-state i { font-size: 0.72rem; }
+      .health-state.ok { color: #15803d; }
+      .health-state.warn { color: #b45309; }
+      .health-state.error { color: #b91c1c; }
+      [data-theme="dark"] .health-state.ok { color: #4ade80; }
+      [data-theme="dark"] .health-state.warn { color: #fbbf24; }
+      [data-theme="dark"] .health-state.error { color: #f87171; }
+      .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+      .quick-action { justify-content: flex-start; min-height: 44px; background: var(--surface); }
+      .overview-refresh { margin: 12px; }
+      .overview-empty { padding: 24px 16px; color: var(--ink-3); font-size: 0.84rem; text-align: center; }
+      .overview-loading { display: grid; gap: 10px; padding: 14px 16px; }
+      .skeleton-block { display: block; width: 100%; height: 42px; border-radius: 8px; background: var(--line); }
+      .skeleton-line {
+        display: inline-block;
+        width: 48px;
+        height: 1em;
+        border-radius: 4px;
+        background: var(--line-strong);
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .skeleton-line, .skeleton-block { animation: adminPulse 1.4s ease-in-out infinite; }
+      }
+      @keyframes adminPulse { 50% { opacity: 0.45; } }
+
+      .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        padding: 10px 20px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-primary:hover { background: var(--accent-hover); }
+      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      .btn-primary i { font-size: 1.1em; }
+
+      .status-msg {
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 0.88rem;
+        line-height: 1.55;
+        white-space: pre-line;
+        display: none;
+      }
+      .status-msg.success {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(34, 197, 94, 0.1);
+        color: #15803d;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      .status-msg.error {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+      [data-theme="dark"] .status-msg.success { color: #4ade80; }
+      [data-theme="dark"] .status-msg.error { color: #f87171; }
+
+      /* ---- Section header ---- */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 1rem;
+      }
+      .section-header h2 {
+        font-family: var(--font-serif);
+        font-size: 1.3rem;
+        font-weight: 500;
+        margin: 0;
+      }
+      .section-header .section-count {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+      .section-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn-approve-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+      }
+      .btn-approve-all:hover { background: var(--accent-hover); }
+      .btn-approve-all:disabled { opacity: 0.5; cursor: not-allowed; }
+      .section-lede {
+        color: var(--ink-3);
+        font-size: 0.85rem;
+        margin: -0.5rem 0 1.2rem;
+      }
+
+      /* ---- Review cards ---- */
+      .review-card {
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        margin-bottom: 10px;
+        background: var(--surface);
+        transition: border-color 0.15s, opacity 0.3s, transform 0.3s;
+      }
+      .review-card:hover { border-color: var(--line-strong); }
+      .review-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .review-card-head > div {
+        min-width: 0;
+      }
+      .review-card-title {
+        font-family: var(--font-serif);
+        font-weight: 600;
+        font-size: 1rem;
+        line-height: 1.35;
+        margin: 0;
+        color: var(--ink);
+        overflow-wrap: anywhere;
+      }
+      .review-card-meta {
+        font-size: 0.78rem;
+        color: var(--ink-3);
+        margin: 4px 0 0;
+        overflow-wrap: anywhere;
+      }
+      .review-card-meta a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .review-card-body {
+        margin: 10px 0 0;
+        font-size: 0.88rem;
+        color: var(--ink-2);
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+      .review-card-contact {
+        margin: 8px 0 0;
+        font-size: 0.78rem;
+        color: var(--ink-3);
+        overflow-wrap: anywhere;
+      }
+      .review-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .review-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.15s;
+        background: var(--surface);
+        color: var(--ink-2);
+      }
+      .review-btn:hover { background: var(--surface-hover); }
+      .review-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .review-btn.approve {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: transparent;
+      }
+      .review-btn.approve:hover { opacity: 0.9; }
+      .review-btn.reject {
+        color: #b91c1c;
+        border-color: rgba(239,68,68,0.25);
+      }
+      .review-btn.reject:hover { background: rgba(239,68,68,0.06); }
+      [data-theme="dark"] .review-btn.reject { color: #f87171; }
+
+      .review-coords {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 10px 0 0;
+        font-size: 0.78rem;
+        color: var(--ink-3);
+      }
+      .review-coords i { color: var(--accent); }
+      .review-coords.no-coords i { color: #d97706; }
+      .review-coords a { color: var(--accent); }
+      .review-map {
+        height: 160px;
+        width: 100%;
+        margin-top: 8px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        z-index: 0;
+      }
+
+      /* ---- News review controls (category + location) ---- */
+      .review-cat {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .review-cat-opt {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+      }
+      .review-cat-opt:hover { background: var(--surface-hover); }
+      .review-cat-opt:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .review-cat-opt input { accent-color: var(--accent); margin: 0; }
+      .review-cat-opt i { font-size: 1.05em; }
+
+      .review-loc { margin: 12px 0 0; }
+      .review-loc[hidden] { display: none; }
+      .review-loc-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 5px;
+      }
+      .review-loc-label i { color: var(--accent); }
+      .review-loc-input {
+        width: 100%;
+        min-height: 44px;
+        padding: 0.55rem 0.8rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .review-loc-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .place-search-row {
+        display: flex;
+        align-items: stretch;
+        gap: 7px;
+        width: 100%;
+        max-width: 560px;
+      }
+      .place-search-row .review-loc-input,
+      .place-search-row .add-input { min-width: 0; }
+      .place-search-btn {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 44px;
+        padding: 0.55rem 0.8rem;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        font: 600 0.82rem var(--font-sans);
+        cursor: pointer;
+      }
+      .place-search-btn:hover { filter: brightness(0.96); }
+      .place-search-btn:disabled { opacity: 0.6; cursor: wait; }
+      .place-search-results {
+        display: grid;
+        gap: 5px;
+        width: 100%;
+        max-width: 560px;
+        margin-top: 7px;
+      }
+      .place-search-results[hidden] { display: none; }
+      .place-search-result {
+        width: 100%;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink-2);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        font: 500 0.78rem/1.35 var(--font-sans);
+        text-align: left;
+        cursor: pointer;
+      }
+      .place-search-result:hover,
+      .place-search-result:focus-visible {
+        color: var(--ink);
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        outline: none;
+      }
+      .place-search-result strong {
+        display: block;
+        margin-bottom: 1px;
+        color: var(--ink);
+        font-size: 0.84rem;
+      }
+      .place-search-status {
+        margin: 0;
+        padding: 0.55rem 0.7rem;
+        color: var(--ink-3);
+        border: 1px dashed var(--line);
+        border-radius: var(--radius-sm);
+        font-size: 0.78rem;
+      }
+      .review-loc-hint {
+        margin: 5px 0 0;
+        font-size: 0.75rem;
+        color: var(--ink-3);
+      }
+      .review-loc-hint.selected { color: var(--accent); }
+      .warning-location-list {
+        display: grid;
+        gap: 8px;
+      }
+      .warning-location-item {
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+      }
+      .warning-location-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .warning-location-number {
+        color: var(--ink-3);
+        font-size: 0.74rem;
+        font-weight: 700;
+      }
+      .warning-location-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0 10px;
+        color: var(--ink-3);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+      }
+      .warning-location-remove:hover,
+      .warning-location-remove:focus-visible {
+        color: #b91c1c;
+        border-color: rgba(239, 68, 68, 0.45);
+        outline: none;
+      }
+      .warning-location-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 44px;
+        margin-top: 8px;
+        padding: 8px 12px;
+        color: var(--accent);
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius-sm);
+        font: 650 0.82rem var(--font-sans);
+        cursor: pointer;
+      }
+      .warning-location-add:disabled { opacity: 0.5; cursor: not-allowed; }
+      .edit-warning-location-list { display: grid; gap: 8px; }
+      .edit-warning-location-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(100px, 0.45fr) minmax(100px, 0.45fr) auto;
+        gap: 7px;
+        align-items: end;
+      }
+      .edit-warning-location-grid label {
+        display: grid;
+        gap: 4px;
+        margin: 0;
+      }
+      .edit-warning-location-grid label span {
+        color: var(--ink-3);
+        font-size: 0.72rem;
+      }
+      .review-msg {
+        margin: 10px 0 0;
+        font-size: 0.82rem;
+        color: #b91c1c;
+        min-height: 0;
+      }
+      .review-msg:empty { display: none; }
+      [data-theme="dark"] .review-msg { color: #f87171; }
+
+      .incident-auto-note {
+        display: flex;
+        gap: 10px;
+        margin: 14px 0 0;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        color: var(--ink-2);
+        background: var(--accent-soft);
+      }
+      .incident-auto-note > i { flex: 0 0 auto; margin-top: 2px; color: var(--accent); font-size: 1.1rem; }
+      .incident-auto-note strong { color: var(--ink); font-size: 0.84rem; }
+      .incident-auto-note p { margin: 3px 0 0; color: var(--ink-3); font-size: 0.76rem; line-height: 1.45; }
+
+      /* ---- Manual add form ---- */
+      .add-form {
+        max-width: 560px;
+      }
+      .add-field {
+        margin-bottom: 1.1rem;
+      }
+      .add-field[hidden] { display: none; }
+      .add-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 6px;
+      }
+      .add-label i { color: var(--accent); }
+      .add-input {
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        resize: vertical;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .add-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .add-input::placeholder { color: var(--ink-3); }
+      .add-input-date { max-width: 260px; }
+      .add-hint {
+        margin: 5px 0 0;
+        font-size: 0.75rem;
+        color: var(--ink-3);
+      }
+      .add-type { margin: 0; padding-top: 0; border-top: 0; }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: var(--ink-3);
+      }
+      .empty-state-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 22px;
+        margin-bottom: 12px;
+      }
+      .empty-state p {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+
+      /* ---- Subscriptions table ---- */
+      #subscriptionsList {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sub-table {
+        width: 100%;
+        min-width: 460px;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+      }
+      .sub-table th {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 2px solid var(--line-strong);
+        color: var(--ink-3);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .sub-table td {
+        padding: 12px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      .sub-table tr:last-child td { border-bottom: 0; }
+      .sub-table tbody tr { transition: background 0.12s; }
+      .sub-table tbody tr:hover { background: var(--surface-hover); }
+      .sub-type-badge {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: var(--radius-pill);
+        font-size: 0.74rem;
+        font-weight: 600;
+      }
+      .sub-type-badge.all {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .sub-type-badge.area {
+        background: rgba(43, 123, 185, 0.1);
+        color: #2b7bb9;
+      }
+      .sub-delete {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-3);
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.15s;
+      }
+      .sub-delete:hover {
+        color: #b91c1c;
+        border-color: rgba(239,68,68,0.4);
+        background: rgba(239,68,68,0.05);
+      }
+
+      /* ---- Feedback and poll responses ---- */
+      .feedback-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .feedback-summary-card {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .feedback-summary-card strong { display: block; color: var(--ink); font-size: 1.3rem; }
+      .feedback-summary-card span { display: block; margin-top: 3px; color: var(--ink-3); font-size: 0.76rem; }
+      .feedback-list { display: grid; gap: 10px; }
+      .feedback-card {
+        padding: 15px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .feedback-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 9px;
+      }
+      .feedback-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .feedback-kind, .feedback-mail-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: var(--radius-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .feedback-kind.message { background: var(--accent-soft); color: var(--accent); }
+      .feedback-kind.poll { background: rgba(43, 123, 185, 0.1); color: #2b7bb9; }
+      .feedback-mail-state { background: var(--bg); color: var(--ink-3); border: 1px solid var(--line); }
+      .feedback-card time { color: var(--ink-3); font-size: 0.74rem; white-space: nowrap; }
+      .feedback-card-message { margin: 0; color: var(--ink); font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .feedback-card-contact { margin: 9px 0 0; color: var(--ink-3); font-size: 0.78rem; }
+      .feedback-card-contact a { color: var(--accent); }
+      @media (max-width: 640px) {
+        .feedback-summary { grid-template-columns: 1fr; }
+        .feedback-card-head { align-items: flex-start; }
+      }
+
+      /* ---- Content management ---- */
+      .content-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .content-toolbar-main { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: wrap; }
+      .content-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+      .tool-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 40px;
+        padding: 7px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-2);
+        font: 600 0.8rem var(--font-sans);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tool-btn:hover { color: var(--accent); border-color: var(--accent); }
+      .content-settings {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      .content-settings > summary {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 42px;
+        padding: 8px 12px;
+        color: var(--ink-2);
+        font-size: 0.82rem;
+        font-weight: 650;
+        cursor: pointer;
+        list-style: none;
+      }
+      .content-settings > summary::-webkit-details-marker { display: none; }
+      .content-settings > summary .ph-caret-down { margin-left: auto; transition: transform 0.2s; }
+      .content-settings[open] > summary .ph-caret-down { transform: rotate(180deg); }
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+        gap: 12px;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .setting-field { display: grid; gap: 5px; min-width: 0; }
+      .setting-field[hidden] { display: none; }
+      .setting-field > label, .setting-label { color: var(--ink-3); font-size: 0.72rem; font-weight: 700; }
+      .setting-field select { width: 100%; min-height: 40px; }
+      .column-settings { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .column-option { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 9px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-2); font-size: 0.76rem; cursor: pointer; }
+      .column-option input { accent-color: var(--accent); }
+      .content-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        color: var(--ink-3);
+        font-size: 0.78rem;
+      }
+      .active-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .filter-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 8px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent); font-size: 0.72rem; font-weight: 650; }
+      .table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+      .table-range { color: var(--ink-3); font-size: 0.78rem; }
+      .pagination { display: flex; align-items: center; gap: 6px; }
+      .page-btn { display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg); color: var(--ink-2); font: 600 0.78rem var(--font-sans); cursor: pointer; }
+      .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+      .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .page-current { min-width: 62px; text-align: center; color: var(--ink-3); font-size: 0.76rem; }
+      #contentTableWrap.compact .data-table td { padding-top: 6px; padding-bottom: 6px; }
+      #contentTableWrap.compact .data-table th { padding-top: 8px; padding-bottom: 8px; }
+      .seg-toggle {
+        display: inline-flex;
+        padding: 3px;
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+      }
+      .seg-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: none;
+        background: none;
+        border-radius: calc(var(--radius-sm) - 2px);
+        font-family: var(--font-sans);
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+      .seg-btn:hover { color: var(--ink); }
+      .seg-btn.active {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .seg-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: var(--radius-pill);
+        background: var(--line);
+        color: var(--ink-3);
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .seg-btn.active .seg-count { background: rgba(255,255,255,0.25); color: var(--accent-ink); }
+
+      .content-search {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        align-items: center;
+      }
+      .content-search i {
+        position: absolute;
+        left: 11px;
+        color: var(--ink-3);
+        font-size: 1rem;
+        pointer-events: none;
+      }
+      .content-search input {
+        width: 100%;
+        padding: 0.55rem 0.8rem 0.55rem 2.1rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .content-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .content-filter {
+        padding: 0.55rem 0.7rem;
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        cursor: pointer;
+      }
+      .content-filter[hidden] { display: none; }
+
+      #contentTableWrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+      }
+      .data-table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .data-table th {
+        text-align: left;
+        padding: 10px 12px;
+        background: var(--surface);
+        border-bottom: 2px solid var(--line-strong);
+        color: var(--ink-3);
+        font-weight: 600;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .sort-button { display: inline-flex; align-items: center; gap: 3px; margin: -8px -10px; padding: 8px 10px; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+      .sort-button:hover { color: var(--ink); }
+      .sort-button:focus-visible { border-radius: 5px; outline: 2px solid var(--accent); outline-offset: -2px; }
+      .data-table th .sort-arrow { margin-left: 4px; opacity: 0.9; }
+      .data-table th.actions-col { text-align: right; }
+      .data-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        color: var(--ink-2);
+      }
+      .data-table tbody tr.data-row { transition: background 0.12s; }
+      .data-table tbody tr.data-row:hover { background: var(--surface-hover); }
+      .data-table td strong { color: var(--ink); font-weight: 600; }
+      .cell-truncate {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 320px;
+      }
+      .row-edit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 11px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink-2);
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .row-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .actions-cell { text-align: right; white-space: nowrap; }
+
+      .status-badge, .cat-badge {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: var(--radius-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .status-badge.pending { background: rgba(217,119,6,0.12); color: #b45309; }
+      .status-badge.approved { background: rgba(34,197,94,0.12); color: #15803d; }
+      .status-badge.rejected { background: rgba(239,68,68,0.12); color: #b91c1c; }
+      [data-theme="dark"] .status-badge.pending { color: #fbbf24; }
+      [data-theme="dark"] .status-badge.approved { color: #4ade80; }
+      [data-theme="dark"] .status-badge.rejected { color: #f87171; }
+      .cat-badge.warning { background: var(--accent-soft); color: var(--accent); }
+      .cat-badge.article { background: var(--line); color: var(--ink-3); }
+      .coord-no { color: #b45309; }
+      [data-theme="dark"] .coord-no { color: #fbbf24; }
+
+      /* Inline editor */
+      .edit-row > td { background: var(--bg); padding: 0; border-bottom: 1px solid var(--line-strong); }
+      .edit-form { padding: 1.1rem 1.25rem; }
+      .edit-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+      }
+      .edit-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+      .edit-field.full { grid-column: 1 / -1; }
+      .edit-field label {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .edit-field input,
+      .edit-field select,
+      .edit-field textarea {
+        width: 100%;
+        padding: 0.5rem 0.7rem;
+        font-family: var(--font-sans);
+        font-size: 0.88rem;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .edit-field textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
+      .edit-field input:focus,
+      .edit-field select:focus,
+      .edit-field textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .edit-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+      .edit-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .edit-save:hover { background: var(--accent-hover); }
+      .edit-save:disabled { opacity: 0.5; cursor: not-allowed; }
+      .edit-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--surface);
+        color: var(--ink-2);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 0.86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .edit-cancel:hover { color: var(--ink); border-color: var(--ink-3); }
+      .edit-msg { font-size: 0.82rem; color: #b91c1c; }
+      .edit-msg.ok { color: #15803d; }
+      [data-theme="dark"] .edit-msg { color: #f87171; }
+      [data-theme="dark"] .edit-msg.ok { color: #4ade80; }
+      .edit-id { margin-left: auto; font-size: 0.74rem; color: var(--ink-3); font-family: monospace; }
+
+      .content-empty {
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: var(--ink-3);
+        font-size: 0.9rem;
+      }
+
+      /* ---- Responsive ---- */
+      @media (max-width: 640px) {
+        .admin-toolbar { padding-top: 1rem; }
+        .admin-toolbar-left h1 { font-size: 1.25rem; }
+        .admin-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .admin-tab { padding: 10px 12px 12px; font-size: 0.82rem; }
+        .admin-body { padding: 1.25rem clamp(12px, 4vw, 36px) 2rem; }
+        .review-loc-input,
+        .edit-warning-location-grid input { font-size: 16px; }
+        .overview-heading { flex-direction: column; }
+        .overview-grid { grid-template-columns: 1fr; }
+        .settings-grid { grid-template-columns: 1fr 1fr; }
+        .content-tools { margin-left: 0; width: 100%; }
+        .content-tools .tool-btn { flex: 1; }
+      }
+      @media (max-width: 560px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .review-card-head { flex-direction: column; }
+        .review-actions { width: 100%; }
+        .review-btn { flex: 1; justify-content: center; padding: 10px 14px; }
+        .edit-grid { grid-template-columns: 1fr; }
+        .content-toolbar-main > .seg-toggle { order: 0; }
+        .content-search { order: 1; width: 100%; flex-basis: 100%; }
+        #contentStatusFilter { order: 2; }
+        .content-tools { order: 3; }
+        .edit-warning-location-grid { grid-template-columns: 1fr 1fr; }
+        .edit-warning-location-grid label:first-child { grid-column: 1 / -1; }
+        .queue-row { grid-template-columns: 36px minmax(0, 1fr); }
+        .queue-action { grid-column: 1 / -1; }
+        .recent-row { grid-template-columns: 32px minmax(0, 1fr); }
+        .recent-row time { grid-column: 2; }
+        .settings-grid { grid-template-columns: 1fr; }
+        .content-summary, .table-footer { align-items: flex-start; flex-direction: column; }
+      }
+      @media (max-width: 400px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .stat-card { padding: 0.9rem; }
+        .stat-value { font-size: 1.5rem; }
+        .toolbar-badge { display: none; }
+        .admin-toolbar { gap: 8px; }
+        .logout-btn { padding-inline: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#adminMain">Preskočiť na obsah</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Kde je Medveď, domov">
+        <span class="brand-mark">
+          <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
+        </span>
+        <span class="brand-name">Kde je Medve&#271;</span>
+      </a>
+    </header>
+
+    <main id="adminMain">
+      <!-- Login -->
+      <div class="login-wrapper" id="loginScreen">
+        <div class="login-card">
+          <div class="login-icon">
+            <img src="/assets/mascot/bear-head-mark.png?v=20260713-1" alt="Kde je Medveď" />
+          </div>
+          <h1>Administrácia</h1>
+          <p class="login-sub">Prihláste sa pre prístup k správe obsahu.</p>
+          <form id="loginForm" autocomplete="on">
+            <div class="login-field">
+              <input type="text" id="loginUser" name="username" placeholder="Meno" autocomplete="username" required />
+            </div>
+            <div class="login-field">
+              <input type="password" id="loginPass" name="password" placeholder="Heslo" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="login-btn" id="loginBtn">
+              <i class="ph ph-sign-in"></i> Prihlásiť sa
+            </button>
+          </form>
+          <div class="login-error" id="loginError"></div>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="admin-dashboard" id="adminDashboard">
+
+        <div class="admin-toolbar">
+          <div class="admin-toolbar-left">
+            <h1>Administrácia</h1>
+            <span class="toolbar-badge">Admin</span>
+          </div>
+          <button class="logout-btn" id="logoutBtn">
+            <i class="ph ph-sign-out"></i> Odhlásiť
+          </button>
+        </div>
+
+        <nav class="admin-tabs" id="adminTabs">
+          <button class="admin-tab active" data-tab="overview">
+            <i class="ph ph-chart-bar"></i> Prehľad
+          </button>
+          <button class="admin-tab" data-tab="reports">
+            <i class="ph ph-paw-print"></i> Hlásenia
+            <span class="tab-count" id="tabReportsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="news">
+            <i class="ph ph-newspaper"></i> Správy
+            <span class="tab-count" id="tabNewsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="add">
+            <i class="ph ph-plus-circle"></i> Pridať
+          </button>
+          <button class="admin-tab" data-tab="content">
+            <i class="ph ph-table"></i> Databáza
+          </button>
+          <button class="admin-tab" data-tab="subscriptions">
+            <i class="ph ph-bell-ringing"></i> Odbery
+            <span class="tab-count" id="tabSubsCount">0</span>
+          </button>
+          <button class="admin-tab" data-tab="feedback">
+            <i class="ph ph-chat-centered-text"></i> Nápady
+            <span class="tab-count" id="tabFeedbackCount">0</span>
+          </button>
+        </nav>
+
+        <div class="admin-body">
+
+          <!-- Overview -->
+          <div class="tab-panel active" id="panel-overview">
+            <div class="overview-heading">
+              <div>
+                <h2>Dnes v administrácii</h2>
+                <p>Moderovanie, kvalita dát a stav služieb na jednom mieste.</p>
+              </div>
+              <span class="overview-updated" id="overviewUpdatedAt"><i class="ph ph-clock"></i> Načítavam dáta</span>
+            </div>
+            <div class="stats-grid" id="adminStats">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-hourglass-medium"></i></div>
+                <span class="stat-value" id="overviewPendingTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Čaká na kontrolu</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-check-circle"></i></div>
+                <span class="stat-value" id="overviewPublishedTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Schválených záznamov</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-calendar-check"></i></div>
+                <span class="stat-value" id="overviewRecentTotal"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Nových za 7 dní</span>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="ph ph-map-pin-line"></i></div>
+                <span class="stat-value" id="overviewMissingCoords"><span class="skeleton-line"></span></span>
+                <span class="stat-label">Chýbajúce súradnice</span>
+              </div>
+            </div>
+
+            <div class="overview-grid">
+              <div class="overview-stack">
+                <section class="overview-panel" aria-labelledby="queueTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="queueTitle">Vyžaduje pozornosť</h3>
+                    <span id="overviewQueueLabel">Načítavam</span>
+                  </div>
+                  <div class="queue-list" id="overviewQueue"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                </section>
+                <section class="overview-panel" aria-labelledby="recentTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="recentTitle">Najnovšie záznamy</h3>
+                    <span>Správy a hlásenia</span>
+                  </div>
+                  <div class="recent-list" id="overviewRecent"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                </section>
+              </div>
+              <aside class="overview-stack">
+                <section class="overview-panel" aria-labelledby="healthTitle">
+                  <div class="overview-panel-head">
+                    <h3 id="healthTitle">Stav systému</h3>
+                    <span id="overviewHealthLabel">Kontrola</span>
+                  </div>
+                  <div class="health-list" id="overviewHealth"><div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span><span class="skeleton-block"></span></div></div>
+                  <form id="adminForm" class="overview-refresh">
+                    <button type="submit" class="btn-primary" id="runBtn">
+                      <i class="ph ph-arrows-clockwise"></i>
+                      <span>Spustiť sťahovanie</span>
+                    </button>
+                  </form>
+                  <div id="statusMessage" class="status-msg overview-refresh"></div>
+                </section>
+                <section class="overview-panel" aria-labelledby="quickTitle">
+                  <div class="overview-panel-head"><h3 id="quickTitle">Rýchle akcie</h3></div>
+                  <div class="quick-actions">
+                    <button class="quick-action" type="button" data-go-tab="reports"><i class="ph ph-paw-print"></i> Hlásenia</button>
+                    <button class="quick-action" type="button" data-go-tab="news"><i class="ph ph-newspaper"></i> Správy</button>
+                    <button class="quick-action" type="button" data-go-tab="add"><i class="ph ph-plus-circle"></i> Pridať</button>
+                    <button class="quick-action" type="button" data-go-tab="content"><i class="ph ph-database"></i> Databáza</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </div>
+
+          <!-- Reports -->
+          <div class="tab-panel" id="panel-reports">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Hlásenia na kontrolu</h2>
+                <span class="section-count" id="pendingReportsCount">0</span>
+              </div>
+              <button class="btn-approve-all" id="approveAllReports" style="display:none">
+                <i class="ph ph-checks"></i> Schváliť všetky
+              </button>
+            </div>
+            <p class="section-lede">Používateľské hlásenia, ktoré AI označila ako spam alebo ich nedokázala spoľahlivo vyhodnotiť. Správy sa moderujú samostatne.</p>
+            <div id="pendingReportsList"></div>
+          </div>
+
+          <!-- News -->
+          <div class="tab-panel" id="panel-news">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Správy na schválenie</h2>
+                <span class="section-count" id="pendingNewsCount">0</span>
+              </div>
+              <button class="btn-approve-all" id="approveAllNews" style="display:none">
+                <i class="ph ph-checks"></i> Schváliť ako články
+              </button>
+            </div>
+            <p class="section-lede">Nové správy zo scrapera čakajúce na overenie pred zobrazením.</p>
+            <div id="pendingNewsList"></div>
+          </div>
+
+          <!-- Manual add -->
+          <div class="tab-panel" id="panel-add">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Pridať položku manuálne</h2>
+              </div>
+            </div>
+            <p class="section-lede">
+              Manuálne pridaná položka sa uloží ako schválená a hneď sa zobrazí na webe.
+            </p>
+
+            <form id="addForm" class="add-form" novalidate>
+              <div class="add-field">
+                <span class="add-label"><i class="ph ph-tag"></i> Typ položky</span>
+                <div class="review-cat add-type">
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="warning" checked />
+                    <i class="ph ph-warning-circle"></i> Varovanie
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="tumedved" />
+                    <i class="ph ph-paw-print"></i> Hlásenie (tumedved.sk)
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="news-warning" />
+                    <i class="ph ph-megaphone"></i> Medvedie varovanie zo správ
+                  </label>
+                  <label class="review-cat-opt">
+                    <input type="radio" name="addType" value="news" />
+                    <i class="ph ph-newspaper"></i> Správa / článok
+                  </label>
+                </div>
+              </div>
+
+              <div class="add-field" data-field="title" hidden>
+                <label class="add-label" for="addTitle"><i class="ph ph-text-t"></i> Titulok *</label>
+                <input class="add-input" id="addTitle" type="text" placeholder="Titulok správy / články" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="location">
+                <label class="add-label" for="addLocation"><i class="ph ph-map-pin"></i> Lokalita *</label>
+                <input class="add-input" id="addLocation" type="text" placeholder="napr. Ružomberok - Čutkovská dolina" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="place">
+                <label class="add-label" for="addPlace"><i class="ph ph-map-trifold"></i> Lokalita (pre mapu)</label>
+                <div class="place-search-row">
+                  <input class="add-input" id="addPlace" type="text" placeholder="napr. Morské oko alebo Ružomberok" autocomplete="off" />
+                  <button class="place-search-btn" id="addPlaceSearch" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>
+                </div>
+                <div class="place-search-results" id="addPlaceResults" hidden></div>
+                <p class="add-hint" id="addPlaceHint"></p>
+                <div class="warning-location-list" id="addExtraLocations"></div>
+                <button class="warning-location-add" id="addExtraLocationButton" type="button" hidden>
+                  <i class="ph ph-plus"></i> Pridať ďalšiu lokalitu
+                </button>
+              </div>
+
+              <div class="add-field" data-field="description">
+                <label class="add-label" for="addDescription"><i class="ph ph-note"></i> Popis / poznámka</label>
+                <textarea class="add-input" id="addDescription" rows="3" placeholder="Krátky popis…"></textarea>
+              </div>
+
+              <div class="add-field" data-field="source" hidden>
+                <label class="add-label" for="addSource"><i class="ph ph-newspaper-clipping"></i> Zdroj (názov média)</label>
+                <input class="add-input" id="addSource" type="text" placeholder="napr. TASR, Aktuality.sk" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="link" hidden>
+                <label class="add-label" for="addLink"><i class="ph ph-link"></i> Odkaz (URL)</label>
+                <input class="add-input" id="addLink" type="url" placeholder="https://…" autocomplete="off" />
+              </div>
+
+              <div class="add-field" data-field="date">
+                <label class="add-label" for="addDate"><i class="ph ph-calendar-blank"></i> Dátum a čas</label>
+                <input class="add-input add-input-date" id="addDate" type="datetime-local" />
+                <p class="add-hint">Ak necháte prázdne, použije sa aktuálny čas.</p>
+              </div>
+
+              <div class="action-bar">
+                <button type="submit" class="btn-primary" id="addBtn">
+                  <i class="ph ph-plus-circle"></i>
+                  <span>Pridať položku</span>
+                </button>
+                <div id="addMsg" class="status-msg"></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Content management -->
+          <div class="tab-panel" id="panel-content">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Správa obsahu</h2>
+                <span class="section-count" id="contentCount">0</span>
+              </div>
+              <button class="logout-btn" id="contentReload" type="button">
+                <i class="ph ph-arrows-clockwise"></i> Obnoviť
+              </button>
+            </div>
+            <p class="section-lede">Všetky uložené správy a hlásenia môžeš vyhľadávať, zoraďovať a upravovať. Kliknutím na hlavičku stĺpca obsah zoradíš, tlačidlom upravíš ktorýkoľvek záznam.</p>
+
+            <div class="content-toolbar">
+              <div class="content-toolbar-main">
+                <div class="seg-toggle" id="contentTypeToggle" aria-label="Typ záznamov">
+                  <button class="seg-btn active" type="button" data-type="news">
+                    <i class="ph ph-newspaper"></i> Správy <span class="seg-count" id="segNewsCount">0</span>
+                  </button>
+                  <button class="seg-btn" type="button" data-type="sightings">
+                    <i class="ph ph-paw-print"></i> Hlásenia <span class="seg-count" id="segSightingsCount">0</span>
+                  </button>
+                </div>
+                <div class="content-search">
+                  <i class="ph ph-magnifying-glass"></i>
+                  <input type="search" id="contentSearch" aria-label="Hľadať v databáze" placeholder="Hľadať v texte, lokalite, zdroji..." autocomplete="off" />
+                </div>
+                <select class="content-filter" id="contentStatusFilter" aria-label="Filtrovať podľa stavu">
+                  <option value="">Všetky stavy</option>
+                  <option value="pending">Čakajúce</option>
+                  <option value="approved">Schválené</option>
+                  <option value="rejected">Zamietnuté</option>
+                </select>
+                <div class="content-tools">
+                  <button class="tool-btn" id="contentExport" type="button"><i class="ph ph-download-simple"></i> CSV</button>
+                  <button class="tool-btn" id="contentReset" type="button"><i class="ph ph-funnel-x"></i> Zrušiť filtre</button>
+                </div>
+              </div>
+
+              <details class="content-settings" id="contentSettings">
+                <summary><i class="ph ph-sliders-horizontal"></i> Filtre a zobrazenie <i class="ph ph-caret-down"></i></summary>
+                <div class="settings-grid">
+                  <div class="setting-field">
+                    <label for="contentSourceFilter">Zdroj</label>
+                    <select class="content-filter" id="contentSourceFilter"><option value="">Všetky zdroje</option></select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentDateFilter">Obdobie</label>
+                    <select class="content-filter" id="contentDateFilter">
+                      <option value="">Celé obdobie</option>
+                      <option value="1">Dnes</option>
+                      <option value="7">Posledných 7 dní</option>
+                      <option value="30">Posledných 30 dní</option>
+                      <option value="90">Posledných 90 dní</option>
+                    </select>
+                  </div>
+                  <div class="setting-field" id="categorySetting">
+                    <label for="contentCategoryFilter">Kategória</label>
+                    <select class="content-filter" id="contentCategoryFilter">
+                      <option value="">Všetky kategórie</option>
+                      <option value="article">Články</option>
+                      <option value="warning">Varovania</option>
+                    </select>
+                  </div>
+                  <div class="setting-field" id="originSetting" hidden>
+                    <label for="contentOriginFilter">Pôvod hlásenia</label>
+                    <select class="content-filter" id="contentOriginFilter">
+                      <option value="">Všetky pôvody</option>
+                      <option value="community">Komunitné hlásenia</option>
+                      <option value="imported">Importované zdroje</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentCoordsFilter">Súradnice</label>
+                    <select class="content-filter" id="contentCoordsFilter">
+                      <option value="">Bez filtra</option>
+                      <option value="yes">So súradnicami</option>
+                      <option value="no">Bez súradníc</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentPageSize">Riadkov na stránku</label>
+                    <select class="content-filter" id="contentPageSize">
+                      <option value="10">10</option>
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                  <div class="setting-field">
+                    <label for="contentDensity">Hustota tabuľky</label>
+                    <select class="content-filter" id="contentDensity">
+                      <option value="comfortable">Pohodlná</option>
+                      <option value="compact">Kompaktná</option>
+                    </select>
+                  </div>
+                  <div class="column-settings" id="contentColumnSettings" aria-label="Viditeľné stĺpce"></div>
+                </div>
+              </details>
+              <div class="content-summary">
+                <div class="active-filters" id="activeFilters"><span>Bez aktívnych filtrov</span></div>
+                <span id="contentResultSummary">0 záznamov</span>
+              </div>
+            </div>
+
+            <div id="contentTableWrap"></div>
+          </div>
+
+          <!-- Subscriptions -->
+          <div class="tab-panel" id="panel-subscriptions">
+            <div class="section-header">
+              <h2>Emailové odbery</h2>
+              <span class="section-count" id="subscriptionsCount">0</span>
+            </div>
+            <p class="section-lede">Registrované emailové adresy na upozornenia o výskyte medveďov.</p>
+            <div id="subscriptionsList"></div>
+          </div>
+
+          <!-- Feedback and poll responses -->
+          <div class="tab-panel" id="panel-feedback">
+            <div class="section-header">
+              <div class="section-header-left">
+                <h2>Nápady a anketa</h2>
+                <span class="section-count" id="feedbackCount">0</span>
+              </div>
+              <button class="logout-btn" id="feedbackReload" type="button">
+                <i class="ph ph-arrows-clockwise"></i> Obnoviť
+              </button>
+            </div>
+            <p class="section-lede">Správy z „Máte nápad?“ a odpovede z ankety sú uložené v Supabase aj vtedy, keď e-mail zlyhá.</p>
+            <div class="feedback-summary" id="feedbackSummary"></div>
+            <div class="feedback-list" id="feedbackList"></div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <script
+      src="/vendor/leaflet/leaflet.js?v=1.9.4"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      // --- Tabs ---
+      const tabs = document.querySelectorAll('.admin-tab');
+      const panels = document.querySelectorAll('.tab-panel');
+      let feedbackLoaded = false;
+
+      function switchTab(tabName) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+        panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabName));
+        const activeTab = document.querySelector('.admin-tab[data-tab="' + tabName + '"]');
+        if (activeTab && window.matchMedia('(max-width: 640px)').matches) {
+          activeTab.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'nearest',
+            inline: 'center',
+          });
+        }
+        if (tabName === 'content' && !contentState.loaded && !contentState.loading) loadContent();
+        if (tabName === 'feedback' && !feedbackLoaded) loadFeedback();
+        if (tabName === 'reports') scheduleReviewMapsRefresh();
+      }
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      });
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-go-tab]');
+        if (trigger) switchTab(trigger.dataset.goTab);
+      });
+
+      // --- Auth ---
+      const loginScreen = document.getElementById('loginScreen');
+      const dashboard = document.getElementById('adminDashboard');
+      const loginForm = document.getElementById('loginForm');
+      const loginError = document.getElementById('loginError');
+      const loginBtn = document.getElementById('loginBtn');
+
+      let authHeader = sessionStorage.getItem('adminAuth') || '';
+
+      function authFetch(url, opts = {}) {
+        opts.headers = Object.assign({ 'Authorization': authHeader }, opts.headers || {});
+        return fetch(url, opts);
+      }
+
+      function showDashboard() {
+        loginScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        loadStats();
+        loadPending();
+        loadSubscriptions();
+        loadFeedback();
+        loadContent();
+      }
+
+      function showLogin(msg) {
+        loginScreen.style.display = '';
+        dashboard.style.display = 'none';
+        if (msg) {
+          loginError.textContent = msg;
+          loginError.style.display = 'block';
+        }
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        authHeader = '';
+        sessionStorage.removeItem('adminAuth');
+        showLogin();
+      });
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = document.getElementById('loginUser').value;
+        const pass = document.getElementById('loginPass').value;
+        loginBtn.disabled = true;
+        loginError.style.display = 'none';
+
+        try {
+          const bytes = new TextEncoder().encode(user + ':' + pass);
+          authHeader = 'Basic ' + btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
+          const res = await authFetch('/api/admin/pending');
+          if (res.ok) {
+            sessionStorage.setItem('adminAuth', authHeader);
+            showDashboard();
+          } else {
+            authHeader = '';
+            sessionStorage.removeItem('adminAuth');
+            showLogin('Nesprávne meno alebo heslo.');
+          }
+        } catch (err) {
+          authHeader = '';
+          showLogin('Chyba pripojenia: ' + err.message);
+        } finally {
+          loginBtn.disabled = false;
+        }
+      });
+
+      (async () => {
+        if (!authHeader) return;
+        try {
+          const res = await authFetch('/api/admin/pending');
+          if (res.ok) {
+            showDashboard();
+          } else {
+            sessionStorage.removeItem('adminAuth');
+            authHeader = '';
+          }
+        } catch (_) {}
+      })();
+
+      // --- Helpers ---
+      const form = document.getElementById('adminForm');
+      const runBtn = document.getElementById('runBtn');
+      const statusMsg = document.getElementById('statusMessage');
+
+      const formatDateTime = (value) => {
+        if (!value) return 'Neuvedené';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Neuvedené';
+        return new Intl.DateTimeFormat('sk-SK', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+      };
+
+      const formatCount = (value) => {
+        if (!Number.isFinite(value)) return 'Neuvedené';
+        return value.toLocaleString('sk-SK');
+      };
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      const overviewState = {
+        status: null,
+        pending: null,
+        subscriptions: null,
+      };
+
+      function recordHasCoordinates(record) {
+        const lat = Number(record?.lat);
+        const lng = Number(record?.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+      }
+
+      function recordDate(type, record) {
+        return type === 'news' ? record.published_at : record.reported_at;
+      }
+
+      function renderOverview() {
+        const contentReady = contentState?.loaded;
+        const pendingReports = overviewState.pending?.reports || [];
+        const pendingNews = overviewState.pending?.news || [];
+        const pendingTotal = pendingReports.length + pendingNews.length;
+        const allNews = contentReady ? contentState.news : [];
+        const allSightings = contentReady ? contentState.sightings : [];
+        const allRecords = [
+          ...allNews.map(record => ({ type: 'news', record })),
+          ...allSightings.map(record => ({ type: 'sightings', record })),
+        ];
+        const approvedTotal = allRecords.filter(({ record }) => (record.status || 'approved') === 'approved').length;
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const recentTotal = allRecords.filter(({ type, record }) => {
+          const time = new Date(recordDate(type, record) || 0).getTime();
+          return Number.isFinite(time) && time >= sevenDaysAgo;
+        }).length;
+        const missingCoords = [
+          ...allSightings,
+          ...allNews.filter(record => record.category === 'warning'),
+        ].filter(record => (record.status || 'approved') !== 'rejected' && !recordHasCoordinates(record)).length;
+
+        if (overviewState.pending) setText('overviewPendingTotal', formatCount(pendingTotal));
+        if (contentReady) {
+          setText('overviewPublishedTotal', formatCount(approvedTotal));
+          setText('overviewRecentTotal', formatCount(recentTotal));
+          setText('overviewMissingCoords', formatCount(missingCoords));
+        }
+
+        const queue = document.getElementById('overviewQueue');
+        if (overviewState.pending && queue) {
+          setText('overviewQueueLabel', pendingTotal ? pendingTotal + ' položiek' : 'Všetko vybavené');
+          queue.innerHTML =
+            '<div class="queue-row">' +
+              '<div class="queue-icon"><i class="ph ph-paw-print"></i></div>' +
+              '<div class="queue-copy"><strong>Používateľské hlásenia</strong><span>' + pendingReports.length + ' čaká na rozhodnutie</span></div>' +
+              '<button class="queue-action" type="button" data-go-tab="reports">Skontrolovať</button>' +
+            '</div>' +
+            '<div class="queue-row">' +
+              '<div class="queue-icon"><i class="ph ph-newspaper"></i></div>' +
+              '<div class="queue-copy"><strong>Importované správy</strong><span>' + pendingNews.length + ' čaká na kategorizáciu</span></div>' +
+              '<button class="queue-action" type="button" data-go-tab="news">Skontrolovať</button>' +
+            '</div>';
+        }
+
+        const recent = document.getElementById('overviewRecent');
+        if (contentReady && recent) {
+          const rows = allRecords
+            .sort((a, b) => new Date(recordDate(b.type, b.record) || 0) - new Date(recordDate(a.type, a.record) || 0))
+            .slice(0, 6);
+          recent.innerHTML = rows.length ? rows.map(({ type, record }) => {
+            const isNews = type === 'news';
+            const title = isNews ? (record.title || 'Správa bez titulku') : (record.location || 'Hlásenie bez lokality');
+            const meta = isNews ? (record.source || 'Neznámy zdroj') : (record.source || 'Hlásenie');
+            return '<button class="recent-row" type="button" data-open-type="' + type + '" data-open-id="' + esc(String(record.id)) + '">' +
+              '<span class="recent-icon"><i class="ph ph-' + (isNews ? 'newspaper' : 'paw-print') + '"></i></span>' +
+              '<span class="recent-copy"><strong>' + esc(title) + '</strong><small>' + esc(meta) + ' · ' + statusBadge(record.status || 'approved') + '</small></span>' +
+              '<time>' + formatDateTime(recordDate(type, record)) + '</time>' +
+            '</button>';
+          }).join('') : '<div class="overview-empty">Databáza zatiaľ neobsahuje záznamy.</div>';
+        }
+
+        const status = overviewState.status;
+        const health = document.getElementById('overviewHealth');
+        if (status && health) {
+          const sightings = status.sightings || {};
+          const news = status.news || {};
+          const sightingOk = !sightings.error && !sightings.refreshing;
+          const newsOk = !news.error && !news.refreshing;
+          const activeSubs = (overviewState.subscriptions || []).filter(sub => sub.active && sub.confirmed_at).length;
+          const healthItems = [
+            ['Databáza', status.supabaseConfigured ? 'Pripojená' : 'Nepripojená', status.supabaseConfigured ? 'ok' : 'error', status.supabaseConfigured ? 'Supabase je dostupný' : 'Chýba konfigurácia databázy'],
+            ['Hlásenia', sightings.refreshing ? 'Obnovuje sa' : sightingOk ? 'V poriadku' : 'Chyba', sightings.refreshing ? 'warn' : sightingOk ? 'ok' : 'error', 'Posledné dáta: ' + formatDateTime(sightings.fetchedAt)],
+            ['Správy', news.refreshing ? 'Obnovuje sa' : newsOk ? 'V poriadku' : 'Chyba', news.refreshing ? 'warn' : newsOk ? 'ok' : 'error', 'Posledné dáta: ' + formatDateTime(news.fetchedAt)],
+            ['Emailové upozornenia', status.emailNotificationsEnabled ? 'Aktívne' : 'Vypnuté', status.emailNotificationsEnabled ? 'ok' : 'warn', activeSubs + ' aktívnych odberov'],
+          ];
+          const problemCount = healthItems.filter(item => item[2] === 'error').length;
+          setText('overviewHealthLabel', problemCount ? problemCount + ' problémov' : 'Bez kritických chýb');
+          health.innerHTML = healthItems.map(item =>
+            '<div class="health-row"><div class="health-copy"><strong>' + esc(item[0]) + '</strong><span>' + esc(item[3]) + '</span></div>' +
+            '<span class="health-state ' + item[2] + '"><i class="ph ph-circle"></i>' + esc(item[1]) + '</span></div>'
+          ).join('');
+        }
+
+        const latest = status
+          ? [status.sightings?.fetchedAt, status.news?.fetchedAt].filter(Boolean).sort().pop()
+          : null;
+        setText('overviewUpdatedAt', latest ? 'Dáta aktualizované ' + formatDateTime(latest) : 'Čakám na stav zdrojov');
+      }
+
+      document.getElementById('overviewRecent').addEventListener('click', (event) => {
+        const row = event.target.closest('[data-open-id]');
+        if (!row) return;
+        openContentRecord(row.dataset.openType, row.dataset.openId);
+      });
+
+      const esc = (str) => {
+        if (!str) return '';
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+      };
+
+      const safeHttpHref = (value) => {
+        if (!value) return '';
+        try {
+          const url = new URL(value, window.location.origin);
+          return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+        } catch (_) {
+          return '';
+        }
+      };
+
+      function updateTabCount(id, count) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = count;
+        el.classList.toggle('has-items', count > 0);
+      }
+
+      function refreshSourceFailed(source) {
+        if (!source?.ok) return true;
+        return source.children
+          ? Object.values(source.children).some(child => !child.ok)
+          : false;
+      }
+
+      // --- Stats ---
+      const renderStats = (status) => {
+        overviewState.status = status;
+        renderOverview();
+      };
+
+      const loadStats = async () => {
+        try {
+          const res = await fetch('/api/status');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          renderStats(await res.json());
+        } catch (err) {
+          setText('overviewUpdatedAt', 'Stav zdrojov sa nepodarilo načítať');
+        }
+      };
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        runBtn.disabled = true;
+        runBtn.querySelector('i').classList.add('spin');
+        runBtn.querySelector('span').textContent = 'Sťahujem…';
+        statusMsg.className = 'status-msg';
+        statusMsg.style.display = 'none';
+
+        try {
+          const res = await authFetch('/api/admin/refresh', { method: 'POST' });
+          const data = await res.json();
+
+          const failed = data.sources
+            ? Object.values(data.sources).some(refreshSourceFailed)
+            : Boolean(data.errors);
+          statusMsg.textContent = data.message || data.error || 'Neznámy výsledok sťahovania.';
+          statusMsg.className = res.ok && data.ok && !failed
+            ? 'status-msg success'
+            : 'status-msg error';
+
+          if (data.sightings || data.news) {
+            renderStats(data);
+          }
+          if (data.ok) {
+            loadPending();
+          }
+        } catch (err) {
+          statusMsg.textContent = 'Chyba siete: ' + err.message;
+          statusMsg.className = 'status-msg error';
+        } finally {
+          runBtn.disabled = false;
+          runBtn.querySelector('i').classList.remove('spin');
+          runBtn.querySelector('span').textContent = 'Spustiť sťahovanie';
+        }
+      });
+
+      // --- Pending items ---
+      async function updateStatus(type, id, status, cardEl) {
+        const btns = cardEl.querySelectorAll('.review-btn');
+        btns.forEach(b => b.disabled = true);
+
+        try {
+          const res = await authFetch('/api/admin/' + type + '/' + encodeURIComponent(id) + '/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            cardEl.style.opacity = '0';
+            cardEl.style.transform = 'translateY(-4px)';
+            setTimeout(() => {
+              cardEl.remove();
+              updateCounts();
+            }, 300);
+          } else {
+            alert('Chyba: ' + (data.error || 'Neznáma chyba'));
+            btns.forEach(b => b.disabled = false);
+          }
+        } catch (err) {
+          alert('Chyba siete: ' + err.message);
+          btns.forEach(b => b.disabled = false);
+        }
+      }
+
+      function updateCounts() {
+        const rc = document.querySelectorAll('#pendingReportsList .review-card').length;
+        const nc = document.querySelectorAll('#pendingNewsList .review-card').length;
+        setText('pendingReportsCount', rc);
+        setText('pendingNewsCount', nc);
+        updateTabCount('tabReportsCount', rc);
+        updateTabCount('tabNewsCount', nc);
+        if (overviewState.pending) {
+          const reportIds = new Set(Array.from(document.querySelectorAll('#pendingReportsList .review-card')).map(card => String(card.dataset.itemId)));
+          const newsIds = new Set(Array.from(document.querySelectorAll('#pendingNewsList .review-card')).map(card => String(card.dataset.itemId)));
+          overviewState.pending.reports = overviewState.pending.reports.filter(item => reportIds.has(String(item.id)));
+          overviewState.pending.news = overviewState.pending.news.filter(item => newsIds.has(String(item.id)));
+          renderOverview();
+        }
+        toggleApproveAllButtons();
+      }
+
+      function renderReportCard(report) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.dataset.itemId = report.id;
+        card.dataset.kind = 'reports';
+
+        const lat = Number(report.lat);
+        const lng = Number(report.lng);
+        const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+        const coordsHtml = hasCoords
+          ? '<p class="review-card-meta review-coords">' +
+              '<i class="ph ph-map-pin"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5) +
+              ' · <a href="https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=14/' + lat + '/' + lng + '" target="_blank" rel="noopener">OpenStreetMap</a>' +
+            '</p>' +
+            '<div class="review-map" data-lat="' + lat + '" data-lng="' + lng + '"></div>'
+          : '<p class="review-card-meta review-coords no-coords"><i class="ph ph-warning"></i> Hlásenie bez súradníc.</p>';
+
+        card.innerHTML =
+          '<div class="review-card-head">' +
+            '<div>' +
+              '<p class="review-card-title">' + esc(report.location) + '</p>' +
+              '<p class="review-card-meta">' + formatDateTime(report.reported_date || report.created_at) + '</p>' +
+            '</div>' +
+            '<div class="review-actions">' +
+              '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
+              '<button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>' +
+            '</div>' +
+          '</div>' +
+          (report.description ? '<p class="review-card-body">' + esc(report.description) + '</p>' : '') +
+          (report.reporter_name || report.reporter_email
+            ? '<p class="review-card-contact"><i class="ph ph-user"></i> ' + esc(report.reporter_name || '') + (report.reporter_email ? ' (' + esc(report.reporter_email) + ')' : '') + '</p>'
+            : '') +
+          coordsHtml;
+
+        card.querySelectorAll('.review-btn').forEach(btn => {
+          btn.addEventListener('click', () => updateStatus('reports', report.id, btn.dataset.action, card));
+        });
+
+        return card;
+      }
+
+      // --- Mini maps ---
+      const ADMIN_TILE_URLS = {
+        light: '/api/map-tiles/light_all/{z}/{x}/{y}.png?v=20260928-1',
+        dark: '/api/map-tiles/dark_all/{z}/{x}/{y}.png?v=20260928-1',
+      };
+      const ADMIN_TILE_OPTS = {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      };
+      const adminPinIcon = L.divIcon({
+        className: '',
+        html: '<div class="pin"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+
+      const reviewMaps = new Map();
+      let reviewMapsFrame = 0;
+
+      function scheduleReviewMapsRefresh() {
+        if (reviewMapsFrame) cancelAnimationFrame(reviewMapsFrame);
+        reviewMapsFrame = requestAnimationFrame(() => {
+          reviewMapsFrame = requestAnimationFrame(() => {
+            reviewMapsFrame = 0;
+            initReviewMaps();
+          });
+        });
+      }
+
+      function initReviewMaps() {
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        reviewMaps.forEach((map, el) => {
+          if (!el.isConnected) {
+            map.remove();
+            reviewMaps.delete(el);
+          }
+        });
+
+        document.querySelectorAll('.review-map').forEach(el => {
+          // Leaflet nesmie vzniknúť v skrytej záložke: dostal by nulovú šírku
+          // a po otvorení by vykreslil iba úzky pás dlaždíc.
+          if (el.offsetParent === null || el.getBoundingClientRect().width < 1) return;
+
+          const existing = reviewMaps.get(el);
+          if (existing) {
+            existing.invalidateSize({ animate: false, pan: false });
+            return;
+          }
+
+          const lat = parseFloat(el.dataset.lat);
+          const lng = parseFloat(el.dataset.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          el.setAttribute('data-init', '1');
+          const m = L.map(el, { scrollWheelZoom: false, attributionControl: true }).setView([lat, lng], 12);
+          L.tileLayer(dark ? ADMIN_TILE_URLS.dark : ADMIN_TILE_URLS.light, ADMIN_TILE_OPTS).addTo(m);
+          L.marker([lat, lng], { icon: adminPinIcon }).addTo(m);
+          reviewMaps.set(el, m);
+        });
+      }
+
+      window.addEventListener('resize', scheduleReviewMapsRefresh);
+
+      // Schválenie správy s kategóriou + lokalitou. 'warning' = medvedie varovanie
+      // (na verejnej mape vlastnou hranatou značkou), 'article' = bežný článok.
+      async function reviewNews(id, payload, cardEl) {
+        const btns = cardEl.querySelectorAll('.review-btn');
+        const msg = cardEl.querySelector('.review-msg');
+        btns.forEach(b => b.disabled = true);
+        if (msg) msg.textContent = '';
+
+        try {
+          const res = await authFetch('/api/admin/news/' + encodeURIComponent(id) + '/review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            cardEl.style.opacity = '0';
+            cardEl.style.transform = 'translateY(-4px)';
+            setTimeout(() => { cardEl.remove(); updateCounts(); }, 300);
+          } else {
+            if (msg) msg.textContent = data.error || 'Neznáma chyba';
+            btns.forEach(b => b.disabled = false);
+          }
+        } catch (err) {
+          if (msg) msg.textContent = 'Chyba siete: ' + err.message;
+          btns.forEach(b => b.disabled = false);
+        }
+      }
+
+      // Explicitné vyhľadanie chráni externú mapovú službu pred dopytom po
+      // každom stlačení klávesu. Admin vyhľadá názov a zvolí správny bod.
+      function wireLocationSearch(input, button, resultsEl, hintEl, initialValue) {
+        let selected = initialValue || null;
+        if (!hintEl.dataset.defaultHint) hintEl.dataset.defaultHint = hintEl.textContent;
+        const defaultHint = () => hintEl.dataset.defaultHint;
+
+        function closeResults() {
+          resultsEl.innerHTML = '';
+          resultsEl.hidden = true;
+        }
+
+        function setSelected(hit) {
+          selected = hit;
+          input.value = hit.name;
+          closeResults();
+          hintEl.textContent = 'Vybraté: ' + hit.label;
+          hintEl.classList.add('selected');
+        }
+
+        async function search() {
+          const query = input.value.trim();
+          if (query.length < 2) {
+            resultsEl.innerHTML = '<p class="place-search-status">Zadajte aspoň 2 znaky.</p>';
+            resultsEl.hidden = false;
+            return;
+          }
+
+          button.disabled = true;
+          button.innerHTML = '<i class="ph ph-spinner spin"></i> Hľadám';
+          resultsEl.innerHTML = '<p class="place-search-status">Vyhľadávam lokality na Slovensku…</p>';
+          resultsEl.hidden = false;
+
+          try {
+            const res = await authFetch('/api/admin/locations?q=' + encodeURIComponent(query));
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'Vyhľadávanie zlyhalo.');
+
+            resultsEl.innerHTML = '';
+            const results = data.results || [];
+            if (!results.length) {
+              resultsEl.innerHTML = '<p class="place-search-status">Nenašla sa žiadna lokalita na Slovensku.</p>';
+              return;
+            }
+
+            results.forEach(hit => {
+              const option = document.createElement('button');
+              option.type = 'button';
+              option.className = 'place-search-result';
+              const name = document.createElement('strong');
+              name.textContent = hit.name;
+              const label = document.createElement('span');
+              label.textContent = hit.label;
+              option.append(name, label);
+              option.addEventListener('click', () => setSelected(hit));
+              resultsEl.appendChild(option);
+            });
+          } catch (err) {
+            resultsEl.innerHTML = '';
+            const status = document.createElement('p');
+            status.className = 'place-search-status';
+            status.textContent = err.message;
+            resultsEl.appendChild(status);
+          } finally {
+            button.disabled = false;
+            button.innerHTML = '<i class="ph ph-magnifying-glass"></i> Hľadať';
+          }
+        }
+
+        input.addEventListener('input', () => {
+          if (!selected || input.value.trim() !== selected.name) selected = null;
+          hintEl.textContent = defaultHint();
+          hintEl.classList.remove('selected');
+          closeResults();
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          search();
+        });
+        button.addEventListener('click', search);
+
+        return {
+          getSelected: () => selected,
+          reset() {
+            selected = null;
+            hintEl.textContent = defaultHint();
+            hintEl.classList.remove('selected');
+            closeResults();
+          },
+        };
+      }
+
+      let newsCardSeq = 0;
+
+      function renderNewsCard(item) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.dataset.itemId = item.id;
+
+        const groupName = 'cat-' + (++newsCardSeq);
+        const isWarning = item.category === 'warning';
+        const articleHref = safeHttpHref(item.article_url || item.google_news_url || item.link);
+
+        card.innerHTML =
+          '<div class="review-card-head">' +
+            '<div>' +
+              '<p class="review-card-title">' + esc(item.title) + '</p>' +
+              '<p class="review-card-meta">' +
+                esc(item.source || 'Zdroj neuvedený') + ', publikované ' + formatDateTime(item.published_at) +
+              '</p>' +
+              '<p class="review-card-meta">Importované ' + formatDateTime(item.scraped_at) + '</p>' +
+            '</div>' +
+            '<div class="review-actions">' +
+              '<button class="review-btn approve" data-action="approved"><i class="ph ph-check"></i> Schváliť</button>' +
+              '<button class="review-btn reject" data-action="rejected"><i class="ph ph-x"></i> Zamietnuť</button>' +
+            '</div>' +
+          '</div>' +
+          (item.snippet ? '<p class="review-card-body">' + esc(item.snippet) + '</p>' : '') +
+          (articleHref ? '<p class="review-card-meta"><a href="' + esc(articleHref) + '" target="_blank" rel="noopener">' + esc(articleHref) + '</a></p>' : '') +
+          '<div class="review-cat">' +
+            '<label class="review-cat-opt">' +
+              '<input type="radio" name="' + groupName + '" value="article"' + (isWarning ? '' : ' checked') + '>' +
+              '<i class="ph ph-newspaper"></i> Správa / článok' +
+            '</label>' +
+            '<label class="review-cat-opt">' +
+              '<input type="radio" name="' + groupName + '" value="warning"' + (isWarning ? ' checked' : '') + '>' +
+              '<i class="ph ph-paw-print"></i> Medvedie varovanie' +
+            '</label>' +
+          '</div>' +
+          '<div class="review-loc"' + (isWarning ? '' : ' hidden') + '>' +
+            '<div class="review-loc-label"><i class="ph ph-map-pin"></i> Lokality na mape</div>' +
+            '<div class="warning-location-list"></div>' +
+            '<button class="warning-location-add" type="button"><i class="ph ph-plus"></i> Pridať ďalšiu lokalitu</button>' +
+            '<p class="review-loc-hint">Každá lokalita vytvorí samostatnú značku na mape. Prvú lokalitu zachovávame aj pre staršie časti systému.</p>' +
+          '</div>' +
+          '<div class="incident-auto-note">' +
+            '<i class="ph ph-git-merge" aria-hidden="true"></i>' +
+            '<div><strong>Samostatné schválenie záznamu</strong>' +
+            '<p>Schválený záznam zostane samostatný. Zoskupovanie udalostí sa vykonáva samostatne po kontrole.</p></div>' +
+          '</div>' +
+          '<p class="review-msg" role="alert"></p>';
+
+        const locWrap = card.querySelector('.review-loc');
+        const warningLocationList = card.querySelector('.warning-location-list');
+        const warningLocationAdd = card.querySelector('.warning-location-add');
+        const msg = card.querySelector('.review-msg');
+        const initialLat = Number(item.lat);
+        const initialLng = Number(item.lng);
+        const initialLocations = Array.isArray(item.locations) && item.locations.length
+          ? item.locations
+          : item.place
+            ? [{ place: item.place, lat: initialLat, lng: initialLng }]
+            : [];
+        const warningLocationEditors = [];
+
+        function renumberWarningLocations() {
+          const active = warningLocationEditors.filter(editor => editor.row.isConnected);
+          active.forEach((editor, index) => {
+            editor.number.textContent = 'Lokalita ' + (index + 1);
+            editor.remove.setAttribute('aria-label', 'Odstrániť lokalitu ' + (index + 1));
+          });
+          warningLocationAdd.disabled = active.length >= 12;
+        }
+
+        function addWarningLocation(initial = null, focus = false) {
+          const index = warningLocationEditors.length;
+          const place = initial?.place || initial?.name || '';
+          const lat = Number(initial?.lat);
+          const lng = Number(initial?.lng);
+          const selected = place && Number.isFinite(lat) && Number.isFinite(lng)
+            ? { name: place, label: place, lat, lng }
+            : null;
+          const row = document.createElement('div');
+          row.className = 'warning-location-item';
+          row.innerHTML =
+            '<div class="warning-location-head">' +
+              '<span class="warning-location-number"></span>' +
+              '<button class="warning-location-remove" type="button"><i class="ph ph-trash" aria-hidden="true"></i></button>' +
+            '</div>' +
+            '<div class="place-search-row">' +
+              '<input class="review-loc-input warning-location-input" id="warning-location-' + groupName + '-' + index + '" type="text" value="' + esc(place) + '" placeholder="napr. Važec" autocomplete="off">' +
+              '<button class="place-search-btn warning-location-search" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
+            '</div>' +
+            '<div class="place-search-results" hidden></div>' +
+            '<p class="review-loc-hint">Vyhľadajte a vyberte presný bod na Slovensku.</p>';
+          warningLocationList.appendChild(row);
+
+          const input = row.querySelector('.warning-location-input');
+          const remove = row.querySelector('.warning-location-remove');
+          const picker = wireLocationSearch(
+            input,
+            row.querySelector('.warning-location-search'),
+            row.querySelector('.place-search-results'),
+            row.querySelector('.review-loc-hint'),
+            selected
+          );
+          const editor = {
+            row,
+            input,
+            picker,
+            remove,
+            number: row.querySelector('.warning-location-number'),
+          };
+          warningLocationEditors.push(editor);
+          remove.addEventListener('click', () => {
+            row.remove();
+            if (!warningLocationEditors.some(candidate => candidate.row.isConnected)) {
+              addWarningLocation(null, true);
+            }
+            renumberWarningLocations();
+          });
+          renumberWarningLocations();
+          if (focus) input.focus();
+          return editor;
+        }
+
+        initialLocations.forEach(location => addWarningLocation(location));
+        if (!initialLocations.length) addWarningLocation();
+        warningLocationAdd.addEventListener('click', () => addWarningLocation(null, true));
+
+        card.querySelectorAll('.review-cat input[type="radio"]').forEach(r => {
+          r.addEventListener('change', () => {
+            const warn = card.querySelector('.review-cat input[type="radio"]:checked').value === 'warning';
+            locWrap.hidden = !warn;
+            if (warn) warningLocationEditors.find(editor => editor.row.isConnected)?.input.focus();
+          });
+        });
+
+        card.querySelector('.review-btn.reject').addEventListener('click', () => {
+          reviewNews(item.id, { status: 'rejected' }, card);
+        });
+
+        card.querySelector('.review-btn.approve').addEventListener('click', () => {
+          const category = card.querySelector('.review-cat input[type="radio"]:checked').value;
+          const locations = warningLocationEditors
+            .filter(editor => editor.row.isConnected)
+            .map(editor => {
+              const place = editor.input.value.trim();
+              const selected = editor.picker.getSelected();
+              return place
+                ? { place, lat: selected ? selected.lat : null, lng: selected ? selected.lng : null }
+                : null;
+            })
+            .filter(Boolean);
+          if (category === 'warning' && !locations.length) {
+            msg.textContent = 'Zadajte aspoň jednu lokalitu pre medvedie varovanie.';
+            warningLocationEditors.find(editor => editor.row.isConnected)?.input.focus();
+            return;
+          }
+          const primaryLocation = locations[0] || null;
+          reviewNews(item.id, {
+            status: 'approved',
+            category,
+            locations: category === 'warning' ? locations : [],
+            place: primaryLocation?.place || null,
+            lat: primaryLocation?.lat ?? null,
+            lng: primaryLocation?.lng ?? null,
+          }, card);
+        });
+
+        return card;
+      }
+
+      function renderEmptyState(icon, text) {
+        return '<div class="empty-state"><div class="empty-state-icon"><i class="ph ph-' + icon + '"></i></div><p>' + text + '</p></div>';
+      }
+
+      async function loadPending() {
+        try {
+          const res = await authFetch('/api/admin/pending');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          overviewState.pending = {
+            reports: data.reports || [],
+            news: data.news || [],
+          };
+
+          const reportsList = document.getElementById('pendingReportsList');
+          const newsList = document.getElementById('pendingNewsList');
+          reportsList.innerHTML = '';
+          newsList.innerHTML = '';
+
+          const reports = data.reports || [];
+
+          if (reports.length) {
+            reports.forEach(r => reportsList.appendChild(renderReportCard(r)));
+            scheduleReviewMapsRefresh();
+          } else {
+            reportsList.innerHTML = renderEmptyState('check-circle', 'Žiadne používateľské hlásenia na kontrolu.');
+          }
+
+          if (data.news && data.news.length) {
+            data.news.forEach(n => newsList.appendChild(renderNewsCard(n)));
+          } else {
+            newsList.innerHTML = renderEmptyState('check-circle', 'Žiadne správy na schválenie.');
+          }
+
+          const rc = reports.length;
+          const nc = (data.news || []).length;
+          setText('pendingReportsCount', rc);
+          setText('pendingNewsCount', nc);
+          updateTabCount('tabReportsCount', rc);
+          updateTabCount('tabNewsCount', nc);
+          toggleApproveAllButtons();
+          renderOverview();
+        } catch (err) {
+          console.error('Failed to load pending items:', err);
+          setText('overviewPendingTotal', 'N/A');
+          setText('overviewQueueLabel', 'Nedostupné');
+          document.getElementById('overviewQueue').innerHTML =
+            '<div class="overview-empty">Front moderácie sa nepodarilo načítať. Skúste stránku obnoviť.</div>';
+        }
+      }
+
+      // --- Approve all ---
+      function toggleApproveAllButtons() {
+        const rc = document.querySelectorAll('#pendingReportsList .review-card').length;
+        const nc = document.querySelectorAll('#pendingNewsList .review-card').length;
+        document.getElementById('approveAllReports').style.display = rc > 1 ? '' : 'none';
+        document.getElementById('approveAllNews').style.display = nc > 1 ? '' : 'none';
+      }
+
+      async function approveAll(type, listId, btn) {
+        const cards = Array.from(document.querySelectorAll('#' + listId + ' .review-card'));
+        if (!cards.length) return;
+        const confirmation = type === 'news'
+          ? 'Schváliť ' + cards.length + ' správ ako bežné články? Záznamy zostanú samostatné.'
+          : 'Schváliť ' + cards.length + ' položiek?';
+        if (!confirm(confirmation)) return;
+
+        btn.disabled = true;
+        const origText = btn.innerHTML;
+        let approved = 0;
+
+        for (const card of cards) {
+          const itemId = card.dataset.itemId;
+          if (!itemId) continue;
+
+          const cardBtns = card.querySelectorAll('.review-btn');
+          cardBtns.forEach(b => b.disabled = true);
+
+          try {
+            // Používateľské hlásenia používajú endpoint reports; správy majú
+            // vlastnú samostatnú moderáciu.
+            // Hromadné schválenie správ ich uloží ako bežné články (bez mapy);
+            // varovania s lokalitou sa schvaľujú jednotlivo cez kartu.
+            const kind = card.dataset.kind || type;
+            const url = kind === 'news'
+              ? '/api/admin/news/' + encodeURIComponent(itemId) + '/review'
+              : '/api/admin/' + kind + '/' + encodeURIComponent(itemId) + '/status';
+            const body = kind === 'news'
+              ? { status: 'approved', category: 'article' }
+              : { status: 'approved' };
+            const res = await authFetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+              approved++;
+              card.style.opacity = '0';
+              card.style.transform = 'translateY(-4px)';
+              await new Promise(r => setTimeout(r, 150));
+              card.remove();
+            }
+          } catch (_) {}
+
+          btn.innerHTML = '<i class="ph ph-spinner spin"></i> ' + approved + '/' + cards.length;
+        }
+
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        updateCounts();
+        toggleApproveAllButtons();
+      }
+
+      document.getElementById('approveAllReports').addEventListener('click', function() {
+        approveAll('reports', 'pendingReportsList', this);
+      });
+      document.getElementById('approveAllNews').addEventListener('click', function() {
+        approveAll('news', 'pendingNewsList', this);
+      });
+
+      // --- Manuálne pridanie položky ---
+      // Ktoré polia formulára platia pre ktorý typ. 'warning' ide do bear_reports
+      // (bez URL stĺpca), preto pri ňom odkaz skrývame.
+      const ADD_FIELD_VISIBILITY = {
+        'warning':      { title: false, location: true,  place: true,  description: true, source: false, link: false, date: true },
+        'tumedved':     { title: false, location: true,  place: true,  description: true, source: false, link: true,  date: true },
+        'news-warning': { title: true,  location: false, place: true,  description: true, source: true,  link: true,  date: true },
+        'news':         { title: true,  location: false, place: false, description: true, source: true,  link: true,  date: true },
+      };
+
+      const addForm = document.getElementById('addForm');
+      const addBtn = document.getElementById('addBtn');
+      const addMsg = document.getElementById('addMsg');
+      const addPlaceHint = document.getElementById('addPlaceHint');
+
+      function syncAddForm() {
+        const type = addForm.addType.value;
+        const vis = ADD_FIELD_VISIBILITY[type];
+        addForm.querySelectorAll('[data-field]').forEach(el => {
+          el.hidden = !vis[el.dataset.field];
+        });
+        const hint = type === 'news-warning'
+          ? 'Povinné: vyhľadajte obec alebo inú lokalitu; varovanie sa zobrazí na mape.'
+          : 'Voliteľné: vyhľadajte obec alebo inú lokalitu, aby sa položka zobrazila na mape.';
+        addPlaceHint.dataset.defaultHint = hint;
+        addPlaceHint.textContent = hint;
+        addPlaceHint.classList.remove('selected');
+        document.getElementById('addExtraLocationButton').hidden = type !== 'news-warning';
+        document.getElementById('addExtraLocations').hidden = type !== 'news-warning';
+      }
+
+      addForm.querySelectorAll('input[name="addType"]').forEach(r => {
+        r.addEventListener('change', () => {
+          addLocationPicker.reset();
+          clearExtraLocations();
+          syncAddForm();
+        });
+      });
+      syncAddForm();
+
+      const addLocationPicker = wireLocationSearch(
+        document.getElementById('addPlace'),
+        document.getElementById('addPlaceSearch'),
+        document.getElementById('addPlaceResults'),
+        addPlaceHint,
+        null
+      );
+      const addExtraLocations = document.getElementById('addExtraLocations');
+      const addExtraLocationButton = document.getElementById('addExtraLocationButton');
+      const addExtraLocationEditors = [];
+
+      function activeExtraLocations() {
+        return addExtraLocationEditors.filter(editor => editor.row.isConnected);
+      }
+
+      function clearExtraLocations() {
+        addExtraLocations.innerHTML = '';
+        addExtraLocationButton.disabled = false;
+      }
+
+      function addExtraLocation() {
+        const row = document.createElement('div');
+        row.className = 'warning-location-item';
+        row.innerHTML =
+          '<div class="warning-location-head"><span class="warning-location-number">Ďalšia lokalita</span>' +
+            '<button class="warning-location-remove" type="button" aria-label="Odstrániť lokalitu"><i class="ph ph-trash" aria-hidden="true"></i></button></div>' +
+          '<div class="place-search-row">' +
+            '<input class="review-loc-input" type="text" placeholder="napr. Važec" autocomplete="off">' +
+            '<button class="place-search-btn" type="button"><i class="ph ph-magnifying-glass"></i> Hľadať</button>' +
+          '</div>' +
+          '<div class="place-search-results" hidden></div>' +
+          '<p class="review-loc-hint">Vyhľadajte a vyberte presný bod na Slovensku.</p>';
+        addExtraLocations.appendChild(row);
+        const input = row.querySelector('input');
+        const editor = {
+          row,
+          input,
+          picker: wireLocationSearch(
+            input,
+            row.querySelector('.place-search-btn'),
+            row.querySelector('.place-search-results'),
+            row.querySelector('.review-loc-hint'),
+            null
+          ),
+        };
+        addExtraLocationEditors.push(editor);
+        row.querySelector('.warning-location-remove').addEventListener('click', () => {
+          row.remove();
+          addExtraLocationButton.disabled = activeExtraLocations().length >= 11;
+        });
+        addExtraLocationButton.disabled = activeExtraLocations().length >= 11;
+        input.focus();
+      }
+
+      addExtraLocationButton.addEventListener('click', addExtraLocation);
+
+      function showAddMessage(text, ok) {
+        addMsg.textContent = text;
+        addMsg.className = 'status-msg ' + (ok ? 'success' : 'error');
+      }
+
+      addForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        addMsg.className = 'status-msg';
+        addMsg.textContent = '';
+
+        const type = addForm.addType.value;
+        const vis = ADD_FIELD_VISIBILITY[type];
+        const val = (id) => document.getElementById(id).value.trim();
+
+        if (vis.title && !val('addTitle')) {
+          showAddMessage('Titulok je povinný.', false);
+          document.getElementById('addTitle').focus();
+          return;
+        }
+        if (vis.location && !val('addLocation')) {
+          showAddMessage('Lokalita je povinná.', false);
+          document.getElementById('addLocation').focus();
+          return;
+        }
+        if (type === 'news-warning' && !val('addPlace')) {
+          showAddMessage('Pri varovaní zo správ zadajte lokalitu.', false);
+          document.getElementById('addPlace').focus();
+          return;
+        }
+
+        const selectedPlace = addLocationPicker.getSelected();
+        const extraLocations = activeExtraLocations().map(editor => {
+          const selected = editor.picker.getSelected();
+          const place = editor.input.value.trim();
+          return place
+            ? { place, lat: selected ? selected.lat : null, lng: selected ? selected.lng : null }
+            : null;
+        }).filter(Boolean);
+        const locations = type === 'news-warning'
+          ? [{
+              place: val('addPlace'),
+              lat: selectedPlace ? selectedPlace.lat : null,
+              lng: selectedPlace ? selectedPlace.lng : null,
+            }, ...extraLocations]
+          : [];
+
+        const payload = {
+          type,
+          title: vis.title ? val('addTitle') : null,
+          location: vis.location ? val('addLocation') : null,
+          place: vis.place ? val('addPlace') : null,
+          locations,
+          description: vis.description ? val('addDescription') : null,
+          source: vis.source ? val('addSource') : null,
+          link: vis.link ? val('addLink') : null,
+          lat: selectedPlace ? selectedPlace.lat : null,
+          lng: selectedPlace ? selectedPlace.lng : null,
+          date: val('addDate') || null,
+        };
+
+        addBtn.disabled = true;
+        addBtn.querySelector('span').textContent = 'Ukladám…';
+
+        try {
+          const res = await authFetch('/api/admin/warnings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (res.ok && data.ok) {
+            showAddMessage('Položka bola pridaná a je hneď viditeľná na webe.', true);
+            addForm.reset();
+            addLocationPicker.reset();
+            clearExtraLocations();
+            syncAddForm();
+            loadStats();
+          } else {
+            showAddMessage('Chyba: ' + (data.error || 'Neznáma chyba'), false);
+          }
+        } catch (err) {
+          showAddMessage('Chyba siete: ' + err.message, false);
+        } finally {
+          addBtn.disabled = false;
+          addBtn.querySelector('span').textContent = 'Pridať položku';
+        }
+      });
+
+      // --- Subscriptions ---
+      async function deleteSub(id, row) {
+        if (!confirm('Naozaj chcete odstrániť tento odber?')) return;
+        try {
+          const res = await authFetch('/api/admin/subscriptions/' + id, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            row.remove();
+            const rows = document.querySelectorAll('#subscriptionsList tbody tr');
+            const count = rows.length;
+            setText('subscriptionsCount', count);
+            updateTabCount('tabSubsCount', count);
+            overviewState.subscriptions = (overviewState.subscriptions || []).filter(sub => String(sub.id) !== String(id));
+            renderOverview();
+            if (!count) loadSubscriptions();
+          } else {
+            alert('Chyba: ' + (data.error || 'Neznáma chyba'));
+          }
+        } catch (err) {
+          alert('Chyba siete: ' + err.message);
+        }
+      }
+
+      async function loadSubscriptions() {
+        const container = document.getElementById('subscriptionsList');
+        try {
+          const res = await authFetch('/api/admin/subscriptions');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const subs = data.subscriptions || [];
+          overviewState.subscriptions = subs;
+
+          setText('subscriptionsCount', subs.length);
+          updateTabCount('tabSubsCount', subs.length);
+          renderOverview();
+
+          if (!subs.length) {
+            container.innerHTML = renderEmptyState('bell-slash', 'Žiadne registrované odbery.');
+            return;
+          }
+
+          const table = document.createElement('table');
+          table.className = 'sub-table';
+          table.innerHTML =
+            '<thead><tr>' +
+              '<th>Email</th><th>Typ</th><th>Oblasť</th><th>Stav</th><th>Dátum</th><th></th>' +
+            '</tr></thead><tbody></tbody>';
+
+          const tbody = table.querySelector('tbody');
+          subs.forEach(sub => {
+            const tr = document.createElement('tr');
+            const typeBadge = sub.notify_type === 'area'
+              ? '<span class="sub-type-badge area">oblasť</span>'
+              : '<span class="sub-type-badge all">všetko</span>';
+            const subscriptionStatus = sub.active && sub.confirmed_at
+              ? 'aktívny'
+              : sub.confirmation_sent_at && !sub.unsubscribed_at
+                ? 'čaká na potvrdenie'
+                : 'neaktívny';
+            tr.innerHTML =
+              '<td>' + esc(sub.email) + '</td>' +
+              '<td>' + typeBadge + '</td>' +
+              '<td>' + esc(sub.area_name || 'Všetky oblasti') + '</td>' +
+              '<td>' + esc(subscriptionStatus) + '</td>' +
+              '<td>' + formatDateTime(sub.created_at) + '</td>' +
+              '<td><button class="sub-delete" title="Odstrániť"><i class="ph ph-trash"></i></button></td>';
+            tr.querySelector('.sub-delete').addEventListener('click', () => deleteSub(sub.id, tr));
+            tbody.appendChild(tr);
+          });
+
+          container.innerHTML = '';
+          container.appendChild(table);
+        } catch (err) {
+          console.error('Failed to load subscriptions:', err);
+        }
+      }
+
+      // --- Feedback and newsletter poll ---
+      function feedbackEmailStatus(status) {
+        return {
+          sent: 'Email odoslaný',
+          failed: 'Email zlyhal',
+          disabled: 'Bez emailu',
+          pending: 'Email čaká',
+        }[status] || 'Neznámy stav';
+      }
+
+      async function loadFeedback() {
+        const list = document.getElementById('feedbackList');
+        const summary = document.getElementById('feedbackSummary');
+        try {
+          list.innerHTML = '<div class="overview-loading" aria-hidden="true"><span class="skeleton-block"></span><span class="skeleton-block"></span></div>';
+          const res = await authFetch('/api/admin/feedback');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const rows = data.feedback || [];
+          const messages = rows.filter(row => row.kind === 'message');
+          const votes = rows.filter(row => row.kind === 'newsletter_poll');
+          const voteCounts = votes.reduce((counts, row) => {
+            counts[row.choice] = (counts[row.choice] || 0) + 1;
+            return counts;
+          }, {});
+
+          feedbackLoaded = true;
+          setText('feedbackCount', rows.length);
+          updateTabCount('tabFeedbackCount', messages.length);
+          summary.innerHTML = [
+            ['Správy', messages.length],
+            ['Áno / možno', (voteCounts['Áno, určite'] || 0) + (voteCounts['Možno, podľa obsahu'] || 0)],
+            ['Nie', voteCounts['Nie, stačí mi web'] || 0],
+          ].map(item => '<div class="feedback-summary-card"><strong>' + formatCount(item[1]) + '</strong><span>' + esc(item[0]) + '</span></div>').join('');
+
+          if (!rows.length) {
+            list.innerHTML = renderEmptyState('chat-centered-dots', 'Zatiaľ neprišli žiadne správy ani odpovede z ankety.');
+            return;
+          }
+
+          list.innerHTML = rows.map(row => {
+            const isMessage = row.kind === 'message';
+            const content = isMessage ? row.message : row.choice;
+            const contact = isMessage && row.email
+              ? '<p class="feedback-card-contact">Kontakt: <a href="mailto:' + encodeURIComponent(row.email) + '">' + esc(row.email) + '</a></p>'
+              : '';
+            return '<article class="feedback-card">' +
+              '<div class="feedback-card-head">' +
+                '<div class="feedback-card-meta">' +
+                  '<span class="feedback-kind ' + (isMessage ? 'message' : 'poll') + '"><i class="ph ph-' + (isMessage ? 'chat-centered-text' : 'chart-bar') + '"></i>' + (isMessage ? 'Nápad' : 'Anketa') + '</span>' +
+                  '<span class="feedback-mail-state">' + esc(feedbackEmailStatus(row.email_status)) + '</span>' +
+                '</div>' +
+                '<time datetime="' + esc(row.created_at || '') + '">' + formatDateTime(row.created_at) + '</time>' +
+              '</div>' +
+              '<p class="feedback-card-message">' + esc(content || 'Bez obsahu') + '</p>' +
+              contact +
+            '</article>';
+          }).join('');
+        } catch (err) {
+          feedbackLoaded = false;
+          summary.innerHTML = '';
+          list.innerHTML = renderEmptyState('warning-circle', 'Spätnú väzbu sa nepodarilo načítať.');
+          console.error('Failed to load feedback:', err);
+        }
+      }
+
+      document.getElementById('feedbackReload').addEventListener('click', loadFeedback);
+
+      // --- Content management (všetky správy + hlásenia: hľadanie, zoradenie, editácia) ---
+      const savedContentPreferences = (() => {
+        try { return JSON.parse(localStorage.getItem('adminContentPreferences') || '{}'); }
+        catch (_) { return {}; }
+      })();
+      const contentState = {
+        type: 'news',
+        news: [],
+        sightings: [],
+        search: '',
+        status: '',
+        source: '',
+        dateRange: '',
+        category: '',
+        origin: '',
+        coords: '',
+        page: 1,
+        perPage: Number(savedContentPreferences.perPage) || 25,
+        density: savedContentPreferences.density === 'compact' ? 'compact' : 'comfortable',
+        columns: savedContentPreferences.columns || { news: {}, sightings: {} },
+        sort: {
+          news: { key: 'published_at', dir: 'desc' },
+          sightings: { key: 'reported_at', dir: 'desc' },
+        },
+        loaded: false,
+        loading: false,
+        openId: null,
+      };
+
+      function saveContentPreferences() {
+        try {
+          localStorage.setItem('adminContentPreferences', JSON.stringify({
+            perPage: contentState.perPage,
+            density: contentState.density,
+            columns: contentState.columns,
+          }));
+        } catch (_) {}
+      }
+
+      function contentNewsLocations(record) {
+        if (Array.isArray(record.locations) && record.locations.length) return record.locations;
+        return record.place ? [{ place: record.place, lat: record.lat, lng: record.lng }] : [];
+      }
+
+      const COLUMNS = {
+        news: [
+          { key: 'title', label: 'Titulok', render: (r) => '<strong>' + esc(r.title || 'Bez titulku') + '</strong>' },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
+          { key: 'published_at', label: 'Publikované', render: (r) => formatDateTime(r.published_at) },
+          { key: 'scraped_at', label: 'Importované', render: (r) => formatDateTime(r.scraped_at) },
+          { key: 'place', label: 'Lokality', render: (r) => {
+            const names = contentNewsLocations(r).map(location => location.place || location.name).filter(Boolean);
+            return esc(names.length ? names.join(', ') : 'Bez lokality');
+          } },
+          { key: 'category', label: 'Kategória', render: (r) => catBadge(r.category) },
+          { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status) },
+          { key: 'incident_id', label: 'Udalosť', render: (r) => r.incident_id
+            ? '<span class="status-badge approved" title="' + esc(r.incident_id) + '">Priradená</span>'
+            : '<span class="coord-no">Bez spojenia</span>' },
+        ],
+        sightings: [
+          { key: 'location', label: 'Lokalita', render: (r) => '<strong>' + esc(r.location || 'Bez lokality') + '</strong>' },
+          { key: 'note', label: 'Poznámka', render: (r) => '<span class="cell-truncate">' + esc(r.note || 'Bez poznámky') + '</span>' },
+          { key: 'reported_at', label: 'Dátum', render: (r) => formatDateTime(r.reported_at) },
+          { key: 'has_coords', label: 'Súradnice', render: (r) => coordsCell(r) },
+          { key: 'status', label: 'Stav', render: (r) => statusBadge(r.status || 'approved') },
+          { key: 'source', label: 'Zdroj', render: (r) => esc(r.source || 'Neuvedený') },
+        ],
+      };
+
+      function statusBadge(status) {
+        const map = { pending: 'Čaká', approved: 'Schválené', rejected: 'Zamietnuté' };
+        const s = map[status] ? status : 'pending';
+        return '<span class="status-badge ' + s + '">' + (map[s] || s) + '</span>';
+      }
+      function catBadge(category) {
+        return category === 'warning'
+          ? '<span class="cat-badge warning">Varovanie</span>'
+          : '<span class="cat-badge article">Článok</span>';
+      }
+      function coordsCell(r) {
+        const lat = Number(r.lat), lng = Number(r.lng);
+        const has = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+        return has
+          ? lat.toFixed(4) + ', ' + lng.toFixed(4)
+          : '<span class="coord-no">bez súradníc</span>';
+      }
+
+      function visibleColumns(type = contentState.type) {
+        const hidden = contentState.columns[type] || {};
+        return COLUMNS[type].filter(column => hidden[column.key] !== false);
+      }
+
+      function updateContentSettings() {
+        const type = contentState.type;
+        const records = type === 'news' ? contentState.news : contentState.sightings;
+        const sourceSelect = document.getElementById('contentSourceFilter');
+        const sourceMap = new Map();
+        records.map(record => record.source).filter(Boolean).forEach(source => {
+          const key = source.toLocaleLowerCase('sk');
+          if (!sourceMap.has(key)) sourceMap.set(key, source);
+        });
+        const sources = [...sourceMap.values()].sort((a, b) => a.localeCompare(b, 'sk'));
+        sourceSelect.innerHTML = '<option value="">Všetky zdroje</option>' + sources.map(source =>
+          '<option value="' + esc(source) + '">' + esc(source) + '</option>'
+        ).join('');
+        sourceSelect.value = sources.includes(contentState.source) ? contentState.source : '';
+        if (contentState.source && !sourceSelect.value) contentState.source = '';
+
+        document.getElementById('categorySetting').hidden = type !== 'news';
+        document.getElementById('originSetting').hidden = type !== 'sightings';
+        document.getElementById('contentCategoryFilter').value = contentState.category;
+        document.getElementById('contentOriginFilter').value = contentState.origin;
+        document.getElementById('contentDateFilter').value = contentState.dateRange;
+        document.getElementById('contentCoordsFilter').value = contentState.coords;
+        document.getElementById('contentPageSize').value = String(contentState.perPage);
+        document.getElementById('contentDensity').value = contentState.density;
+
+        const columnWrap = document.getElementById('contentColumnSettings');
+        columnWrap.innerHTML = '<span class="setting-label">Viditeľné stĺpce</span>' + COLUMNS[type].map(column => {
+          const checked = (contentState.columns[type] || {})[column.key] !== false;
+          return '<label class="column-option"><input type="checkbox" data-column-key="' + column.key + '"' + (checked ? ' checked' : '') + '> ' + esc(column.label) + '</label>';
+        }).join('');
+      }
+
+      function contentFilterLabels() {
+        const statusLabels = { pending: 'Čakajúce', approved: 'Schválené', rejected: 'Zamietnuté' };
+        const dateLabels = { '1': 'Dnes', '7': '7 dní', '30': '30 dní', '90': '90 dní' };
+        const chips = [];
+        if (contentState.search) chips.push('Hľadanie: ' + contentState.search);
+        if (contentState.status) chips.push(statusLabels[contentState.status]);
+        if (contentState.source) chips.push('Zdroj: ' + contentState.source);
+        if (contentState.dateRange) chips.push(dateLabels[contentState.dateRange]);
+        if (contentState.type === 'news' && contentState.category) chips.push(contentState.category === 'warning' ? 'Varovania' : 'Články');
+        if (contentState.type === 'sightings' && contentState.origin) chips.push(contentState.origin === 'community' ? 'Komunitné' : 'Importované');
+        if (contentState.coords) chips.push(contentState.coords === 'yes' ? 'So súradnicami' : 'Bez súradníc');
+        return chips;
+      }
+
+      function toLocalInputValue(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        const p = (n) => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+          'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+      }
+      function fromLocalInputValue(val) {
+        if (!val) return null;
+        const d = new Date(val);
+        return Number.isNaN(d.getTime()) ? null : d.toISOString();
+      }
+
+      function searchableText(type, r) {
+        const parts = type === 'news'
+          ? [r.title, r.source, r.snippet, r.place, ...contentNewsLocations(r).map(location => location.place), r.link, r.id]
+          : [r.location, r.note, r.source, r.url, r.id];
+        return parts.filter(Boolean).join(' ').toLowerCase();
+      }
+
+      function sortValue(type, key, r) {
+        if (key === 'published_at' || key === 'reported_at' || key === 'scraped_at') {
+          const t = new Date(r[key] || 0).getTime();
+          return Number.isFinite(t) ? t : 0;
+        }
+        if (key === 'has_coords') return r.has_coords ? 1 : 0;
+        return String(r[key] == null ? '' : r[key]).toLowerCase();
+      }
+
+      function filteredSortedList() {
+        const type = contentState.type;
+        let list = (type === 'news' ? contentState.news : contentState.sightings).slice();
+        const q = contentState.search.trim().toLowerCase();
+        if (q) list = list.filter((r) => searchableText(type, r).includes(q));
+        if (contentState.status) {
+          list = list.filter((r) => (r.status || 'approved') === contentState.status);
+        }
+        if (contentState.source) {
+          const selectedSource = contentState.source.toLocaleLowerCase('sk');
+          list = list.filter(record => String(record.source || '').toLocaleLowerCase('sk') === selectedSource);
+        }
+        if (contentState.category && type === 'news') list = list.filter(record => (record.category || 'article') === contentState.category);
+        if (contentState.origin && type === 'sightings') {
+          list = list.filter(record => contentState.origin === 'community'
+            ? record.entity_type === 'bear_report'
+            : record.entity_type !== 'bear_report');
+        }
+        if (contentState.coords) {
+          list = list.filter(record => recordHasCoordinates(record) === (contentState.coords === 'yes'));
+        }
+        if (contentState.dateRange) {
+          const cutoffDate = new Date();
+          if (contentState.dateRange === '1') cutoffDate.setHours(0, 0, 0, 0);
+          else cutoffDate.setTime(Date.now() - (Number(contentState.dateRange) * 24 * 60 * 60 * 1000));
+          const cutoff = cutoffDate.getTime();
+          list = list.filter(record => {
+            const time = new Date(recordDate(type, record) || 0).getTime();
+            return Number.isFinite(time) && time >= cutoff;
+          });
+        }
+        const sort = contentState.sort[type];
+        const dir = sort.dir === 'asc' ? 1 : -1;
+        list.sort((a, b) => {
+          const av = sortValue(type, sort.key, a);
+          const bv = sortValue(type, sort.key, b);
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av).localeCompare(String(bv), 'sk') * dir;
+        });
+        return list;
+      }
+
+      function renderContentTable() {
+        const wrap = document.getElementById('contentTableWrap');
+        const type = contentState.type;
+        const cols = visibleColumns(type);
+        const list = filteredSortedList();
+        const total = (type === 'news' ? contentState.news : contentState.sightings).length;
+        const pageCount = Math.max(1, Math.ceil(list.length / contentState.perPage));
+        contentState.page = Math.min(Math.max(1, contentState.page), pageCount);
+        const pageStart = (contentState.page - 1) * contentState.perPage;
+        const pageItems = list.slice(pageStart, pageStart + contentState.perPage);
+
+        setText('contentCount', list.length + (list.length !== total ? ' / ' + total : ''));
+        setText('contentResultSummary', list.length + ' z ' + total + ' záznamov');
+        const chips = contentFilterLabels();
+        document.getElementById('activeFilters').innerHTML = chips.length
+          ? chips.map(label => '<span class="filter-chip">' + esc(label) + '</span>').join('')
+          : '<span>Bez aktívnych filtrov</span>';
+        wrap.classList.toggle('compact', contentState.density === 'compact');
+
+        if (!list.length) {
+          wrap.innerHTML = '<div class="content-empty">' +
+            (total ? 'Nič nezodpovedá filtru.' : 'Žiadne záznamy v databáze.') + '</div>';
+          return;
+        }
+
+        const sort = contentState.sort[type];
+        const headCells = cols.map((c) => {
+          const active = sort.key === c.key;
+          const arrow = active ? '<i class="ph ph-caret-' + (sort.dir === 'asc' ? 'up' : 'down') + ' sort-arrow"></i>' : '';
+          const ariaSort = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+          return '<th aria-sort="' + ariaSort + '"><button class="sort-button" type="button" data-key="' + c.key + '">' + c.label + arrow + '</button></th>';
+        }).join('');
+
+        const bodyRows = pageItems.map((r) => {
+          const cells = cols.map((c) => '<td>' + c.render(r) + '</td>').join('');
+          return '<tr class="data-row" data-id="' + esc(String(r.id)) + '">' + cells +
+            '<td class="actions-cell"><button class="row-edit-btn" type="button"><i class="ph ph-pencil-simple"></i> Upraviť</button></td></tr>';
+        }).join('');
+
+        const table = document.createElement('table');
+        table.className = 'data-table';
+        table.innerHTML =
+          '<thead><tr>' + headCells + '<th class="actions-col">Akcie</th></tr></thead>' +
+          '<tbody>' + bodyRows + '</tbody>';
+
+        // Zoradenie kliknutím na hlavičku.
+        table.querySelectorAll('.sort-button').forEach((button) => {
+          button.addEventListener('click', () => {
+            const key = button.dataset.key;
+            const s = contentState.sort[type];
+            if (s.key === key) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+            else { s.key = key; s.dir = 'desc'; }
+            contentState.page = 1;
+            contentState.openId = null;
+            renderContentTable();
+          });
+        });
+
+        // Editácia.
+        table.querySelectorAll('tr.data-row').forEach((tr) => {
+          const id = tr.dataset.id;
+          tr.querySelector('.row-edit-btn').addEventListener('click', () => openEditor(tr, id));
+        });
+
+        wrap.innerHTML = '';
+        wrap.appendChild(table);
+
+        const footer = document.createElement('div');
+        footer.className = 'table-footer';
+        const rangeStart = list.length ? pageStart + 1 : 0;
+        const rangeEnd = Math.min(pageStart + contentState.perPage, list.length);
+        footer.innerHTML =
+          '<span class="table-range">Zobrazené ' + rangeStart + '-' + rangeEnd + ' z ' + list.length + '</span>' +
+          '<div class="pagination">' +
+            '<button class="page-btn" type="button" data-page="prev" aria-label="Predchádzajúca stránka"' + (contentState.page <= 1 ? ' disabled' : '') + '><i class="ph ph-caret-left"></i></button>' +
+            '<span class="page-current">' + contentState.page + ' / ' + pageCount + '</span>' +
+            '<button class="page-btn" type="button" data-page="next" aria-label="Nasledujúca stránka"' + (contentState.page >= pageCount ? ' disabled' : '') + '><i class="ph ph-caret-right"></i></button>' +
+          '</div>';
+        footer.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => {
+          contentState.page += button.dataset.page === 'next' ? 1 : -1;
+          contentState.openId = null;
+          renderContentTable();
+        }));
+        wrap.appendChild(footer);
+      }
+
+      function findRecord(type, id) {
+        const list = type === 'news' ? contentState.news : contentState.sightings;
+        return list.find((r) => String(r.id) === String(id));
+      }
+
+      function openEditor(rowTr, id) {
+        const tbody = rowTr.parentElement;
+        const existing = tbody.querySelector('tr.edit-row');
+        const wasOpenHere = existing && existing.previousElementSibling === rowTr;
+        if (existing) existing.remove();
+        if (wasOpenHere) { contentState.openId = null; return; }
+
+        const type = contentState.type;
+        const rec = findRecord(type, id);
+        if (!rec) return;
+        contentState.openId = id;
+
+        const colCount = visibleColumns(type).length + 1;
+        const editTr = document.createElement('tr');
+        editTr.className = 'edit-row';
+        const td = document.createElement('td');
+        td.colSpan = colCount;
+        td.innerHTML = type === 'news' ? newsEditForm(rec) : sightingEditForm(rec);
+        editTr.appendChild(td);
+        rowTr.after(editTr);
+
+        wireEditor(editTr, type, rec);
+      }
+
+      function field(label, inner, full) {
+        return '<div class="edit-field' + (full ? ' full' : '') + '"><label>' + label + '</label>' + inner + '</div>';
+      }
+
+      function newsEditForm(r) {
+        const sel = (v, opts) => opts.map((o) =>
+          '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+        return '<div class="edit-form">' +
+          '<div class="edit-grid">' +
+            field('Titulok', '<input data-f="title" type="text" value="' + esc(r.title || '') + '">', true) +
+            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '">') +
+            field('Dátum publikovania', '<input data-f="publishedAt" type="datetime-local" value="' + toLocalInputValue(r.published_at) + '">') +
+            field('Importované', '<input type="datetime-local" value="' + toLocalInputValue(r.scraped_at) + '" disabled>') +
+            field('Stav', '<select data-f="status">' + sel(r.status, [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
+            field('Kategória', '<select data-f="category">' + sel(r.category === 'warning' ? 'warning' : 'article', [['article','Článok'],['warning','Medvedie varovanie']]) + '</select>') +
+            '<div class="edit-field full edit-warning-locations"><label>Lokality varovania</label>' +
+              '<div class="edit-warning-location-list"></div>' +
+              '<button class="warning-location-add edit-warning-location-add" type="button"><i class="ph ph-plus"></i> Pridať lokalitu</button>' +
+              '<p class="add-hint">Názov je povinný. Ak súradnice chýbajú, server lokalitu vyhľadá pri uložení.</p>' +
+            '</div>' +
+            field('Odkaz', '<input data-f="link" type="url" value="' + esc(r.link || '') + '">', true) +
+            field('Pôvodná adresa článku', '<input type="url" value="' + esc(r.article_url || r.google_news_url || r.link || '') + '" disabled>', true) +
+            field('Krátky popis', '<textarea data-f="snippet">' + esc(r.snippet || '') + '</textarea>', true) +
+          '</div>' +
+          '<div class="edit-actions">' +
+            '<button class="edit-save" type="button"><i class="ph ph-check"></i> Uložiť</button>' +
+            '<button class="edit-cancel" type="button">Zrušiť</button>' +
+            '<span class="edit-msg" role="alert"></span>' +
+            '<span class="edit-id">' + esc(String(r.id)) + '</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function sightingEditForm(r) {
+        const sel = (v, opts) => opts.map((o) =>
+          '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+        const isUserReport = r.entity_type === 'bear_report';
+        return '<div class="edit-form">' +
+          '<div class="edit-grid">' +
+            field('Lokalita', '<input data-f="location" type="text" value="' + esc(r.location || '') + '">', true) +
+            field('Dátum nahlásenia', '<input data-f="reportedAt" type="datetime-local" value="' + toLocalInputValue(r.reported_at) + '">') +
+            field('Stav', '<select data-f="status">' + sel(r.status || 'approved', [['pending','Čaká'],['approved','Schválené'],['rejected','Zamietnuté']]) + '</select>') +
+            field('Zdroj', '<input data-f="source" type="text" value="' + esc(r.source || '') + '"' + (isUserReport ? ' disabled' : '') + '>') +
+            field('Lat', '<input data-f="lat" type="number" step="any" value="' + (r.lat == null ? '' : r.lat) + '">') +
+            field('Lng', '<input data-f="lng" type="number" step="any" value="' + (r.lng == null ? '' : r.lng) + '">') +
+            field('URL', '<input data-f="url" type="url" value="' + esc(r.url || '') + '"' + (isUserReport ? ' disabled' : '') + '>', true) +
+            field('Poznámka', '<textarea data-f="note">' + esc(r.note || '') + '</textarea>', true) +
+          '</div>' +
+          '<div class="edit-actions">' +
+            '<button class="edit-save" type="button"><i class="ph ph-check"></i> Uložiť</button>' +
+            '<button class="edit-cancel" type="button">Zrušiť</button>' +
+            '<span class="edit-msg" role="alert"></span>' +
+            '<span class="edit-id">' + esc(String(r.id)) + '</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function wireEditor(editTr, type, rec) {
+        const get = (f) => {
+          const el = editTr.querySelector('[data-f="' + f + '"]');
+          return el ? el.value : undefined;
+        };
+        const msg = editTr.querySelector('.edit-msg');
+        const saveBtn = editTr.querySelector('.edit-save');
+        const editLocationEditors = [];
+
+        if (type === 'news') {
+          const wrap = editTr.querySelector('.edit-warning-locations');
+          const list = editTr.querySelector('.edit-warning-location-list');
+          const add = editTr.querySelector('.edit-warning-location-add');
+          const category = editTr.querySelector('[data-f="category"]');
+
+          function activeEditLocations() {
+            return editLocationEditors.filter(editor => editor.row.isConnected);
+          }
+
+          function addEditLocation(location = null, focus = false) {
+            const row = document.createElement('div');
+            row.className = 'warning-location-item edit-warning-location-grid';
+            row.innerHTML =
+              '<label><span>Názov lokality</span><input data-location-place type="text" value="' + esc(location?.place || location?.name || '') + '" placeholder="napr. Východná"></label>' +
+              '<label><span>Lat</span><input data-location-lat type="number" step="any" value="' + (location?.lat == null ? '' : esc(location.lat)) + '"></label>' +
+              '<label><span>Lng</span><input data-location-lng type="number" step="any" value="' + (location?.lng == null ? '' : esc(location.lng)) + '"></label>' +
+              '<button class="warning-location-remove" type="button" aria-label="Odstrániť lokalitu"><i class="ph ph-trash" aria-hidden="true"></i></button>';
+            list.appendChild(row);
+            const editor = {
+              row,
+              place: row.querySelector('[data-location-place]'),
+              lat: row.querySelector('[data-location-lat]'),
+              lng: row.querySelector('[data-location-lng]'),
+            };
+            editLocationEditors.push(editor);
+            row.querySelector('.warning-location-remove').addEventListener('click', () => {
+              row.remove();
+              if (category.value === 'warning' && !activeEditLocations().length) addEditLocation(null, true);
+              add.disabled = activeEditLocations().length >= 12;
+            });
+            add.disabled = activeEditLocations().length >= 12;
+            if (focus) editor.place.focus();
+          }
+
+          contentNewsLocations(rec).forEach(location => addEditLocation(location));
+          if (category.value === 'warning' && !activeEditLocations().length) addEditLocation();
+          add.addEventListener('click', () => addEditLocation(null, true));
+          category.addEventListener('change', () => {
+            wrap.hidden = category.value !== 'warning';
+            if (category.value === 'warning' && !activeEditLocations().length) addEditLocation(null, true);
+          });
+          wrap.hidden = category.value !== 'warning';
+        }
+
+        editTr.querySelector('.edit-cancel').addEventListener('click', () => {
+          editTr.remove();
+          contentState.openId = null;
+        });
+
+        saveBtn.addEventListener('click', async () => {
+          const payload = type === 'news'
+            ? {
+                title: get('title'), source: get('source'),
+                publishedAt: fromLocalInputValue(get('publishedAt')),
+                status: get('status'), category: get('category'),
+                locations: get('category') === 'warning'
+                  ? editLocationEditors.filter(editor => editor.row.isConnected).map(editor => ({
+                      place: editor.place.value.trim(),
+                      lat: editor.lat.value,
+                      lng: editor.lng.value,
+                    })).filter(location => location.place)
+                  : [],
+                link: get('link'), snippet: get('snippet'),
+              }
+            : {
+                location: get('location'),
+                reportedAt: fromLocalInputValue(get('reportedAt')),
+                status: get('status'),
+                source: get('source'), lat: get('lat'), lng: get('lng'),
+                url: get('url'), note: get('note'),
+              };
+
+          saveBtn.disabled = true;
+          msg.className = 'edit-msg';
+          msg.textContent = '';
+
+          try {
+            const url = '/api/admin/' + (type === 'news' ? 'news' : 'sightings') + '/' +
+              encodeURIComponent(rec.id) + '/edit';
+            const res = await authFetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+              applyEdit(type, rec, payload);
+              msg.className = 'edit-msg ok';
+              msg.textContent = 'Uložené ✓';
+              setTimeout(() => { contentState.openId = null; renderContentTable(); }, 600);
+            } else {
+              msg.textContent = data.error || 'Neznáma chyba pri ukladaní.';
+              saveBtn.disabled = false;
+            }
+          } catch (err) {
+            msg.textContent = 'Chyba siete: ' + err.message;
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
+      function numOrNull(v) {
+        if (v === '' || v == null) return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      // Premietne uložené hodnoty späť do pamäte, nech tabuľka hneď sedí.
+      function applyEdit(type, rec, p) {
+        const lat = numOrNull(p.lat), lng = numOrNull(p.lng);
+        const hasCoords = lat != null && lng != null;
+        if (type === 'news') {
+          const locations = Array.isArray(p.locations) ? p.locations.map(location => ({
+            place: location.place,
+            lat: numOrNull(location.lat),
+            lng: numOrNull(location.lng),
+          })) : [];
+          const primary = locations[0] || null;
+          Object.assign(rec, {
+            title: p.title || null, source: p.source || null,
+            published_at: p.publishedAt, status: p.status, category: p.category,
+            locations,
+            place: primary?.place || null,
+            lat: primary?.lat ?? null,
+            lng: primary?.lng ?? null,
+            has_coords: primary?.lat != null && primary?.lng != null,
+            link: p.link || null, snippet: p.snippet || null,
+          });
+        } else {
+          Object.assign(rec, {
+            location: p.location || null, reported_at: p.reportedAt,
+            status: p.status || rec.status,
+            source: p.source || null, lat, lng, has_coords: hasCoords,
+            url: p.url || null, note: p.note || null,
+          });
+        }
+      }
+
+      async function loadContent() {
+        if (contentState.loading) return;
+        contentState.loading = true;
+        const wrap = document.getElementById('contentTableWrap');
+        wrap.innerHTML = '<div class="content-empty">Načítavam…</div>';
+        try {
+          const res = await authFetch('/api/admin/content');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          contentState.news = data.news || [];
+          contentState.sightings = data.sightings || [];
+          contentState.loaded = true;
+          contentState.openId = null;
+          setText('segNewsCount', contentState.news.length);
+          setText('segSightingsCount', contentState.sightings.length);
+          updateContentSettings();
+          renderContentTable();
+          renderOverview();
+        } catch (err) {
+          wrap.innerHTML = '<div class="content-empty">Nepodarilo sa načítať obsah: ' + esc(err.message) + '</div>';
+          setText('overviewPublishedTotal', 'N/A');
+          setText('overviewRecentTotal', 'N/A');
+          setText('overviewMissingCoords', 'N/A');
+          document.getElementById('overviewRecent').innerHTML =
+            '<div class="overview-empty">Záznamy sa nepodarilo načítať. Skúste databázu obnoviť.</div>';
+        } finally {
+          contentState.loading = false;
+        }
+      }
+
+      function setContentType(type) {
+        contentState.type = type;
+        contentState.page = 1;
+        contentState.openId = null;
+        document.querySelectorAll('#contentTypeToggle .seg-btn')
+          .forEach(button => button.classList.toggle('active', button.dataset.type === type));
+        updateContentSettings();
+        renderContentTable();
+      }
+
+      function openContentRecord(type, id) {
+        setContentType(type);
+        contentState.search = String(id);
+        document.getElementById('contentSearch').value = contentState.search;
+        switchTab('content');
+        renderContentTable();
+      }
+
+      function resetContentFilters() {
+        Object.assign(contentState, {
+          search: '', status: '', source: '', dateRange: '', category: '', origin: '', coords: '', page: 1,
+        });
+        document.getElementById('contentSearch').value = '';
+        document.getElementById('contentStatusFilter').value = '';
+        updateContentSettings();
+        renderContentTable();
+      }
+
+      function csvCell(value) {
+        const text = String(value == null ? '' : value);
+        return '"' + text.replaceAll('"', '""') + '"';
+      }
+
+      function exportContentCsv() {
+        const type = contentState.type;
+        const rows = filteredSortedList();
+        const columns = visibleColumns(type);
+        const lines = [columns.map(column => csvCell(column.label)).join(',')];
+        rows.forEach(record => {
+          lines.push(columns.map(column => {
+            if (column.key === 'place') return csvCell(contentNewsLocations(record).map(location => location.place).filter(Boolean).join('; '));
+            if (column.key === 'has_coords') return csvCell(recordHasCoordinates(record) ? 'áno' : 'nie');
+            return csvCell(record[column.key]);
+          }).join(','));
+        });
+        const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'kde-je-medved-' + (type === 'news' ? 'spravy' : 'hlasenia') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 0);
+      }
+
+      // Toolbar wiring
+      document.getElementById('contentTypeToggle').addEventListener('click', (e) => {
+        const btn = e.target.closest('.seg-btn');
+        if (!btn) return;
+        setContentType(btn.dataset.type);
+      });
+      document.getElementById('contentSearch').addEventListener('input', (e) => {
+        contentState.search = e.target.value;
+        contentState.page = 1;
+        contentState.openId = null;
+        renderContentTable();
+      });
+      document.getElementById('contentStatusFilter').addEventListener('change', (e) => {
+        contentState.status = e.target.value;
+        contentState.page = 1;
+        contentState.openId = null;
+        renderContentTable();
+      });
+      const filterBindings = [
+        ['contentSourceFilter', 'source'],
+        ['contentDateFilter', 'dateRange'],
+        ['contentCategoryFilter', 'category'],
+        ['contentOriginFilter', 'origin'],
+        ['contentCoordsFilter', 'coords'],
+      ];
+      filterBindings.forEach(([id, key]) => document.getElementById(id).addEventListener('change', event => {
+        contentState[key] = event.target.value;
+        contentState.page = 1;
+        contentState.openId = null;
+        renderContentTable();
+      }));
+      document.getElementById('contentPageSize').addEventListener('change', event => {
+        contentState.perPage = Number(event.target.value) || 25;
+        contentState.page = 1;
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentDensity').addEventListener('change', event => {
+        contentState.density = event.target.value === 'compact' ? 'compact' : 'comfortable';
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentColumnSettings').addEventListener('change', event => {
+        const checkbox = event.target.closest('[data-column-key]');
+        if (!checkbox) return;
+        const type = contentState.type;
+        const currentlyVisible = visibleColumns(type).length;
+        if (!checkbox.checked && currentlyVisible <= 1) {
+          checkbox.checked = true;
+          return;
+        }
+        contentState.columns[type] = contentState.columns[type] || {};
+        contentState.columns[type][checkbox.dataset.columnKey] = checkbox.checked;
+        contentState.openId = null;
+        saveContentPreferences();
+        renderContentTable();
+      });
+      document.getElementById('contentReset').addEventListener('click', resetContentFilters);
+      document.getElementById('contentExport').addEventListener('click', exportContentCsv);
+      document.getElementById('contentReload').addEventListener('click', loadContent);
+    </script>
+  </body>
+</html>

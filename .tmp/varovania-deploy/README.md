@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "medved" generated at 2026-10-18T22:15:18.746Z.
