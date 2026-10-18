@@ -8,7 +8,6 @@ import "dotenv/config";
 import express from "express";
 import compression from "compression";
 import path from "node:path";
-import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { projectDirectory, isWorker, readText, serveAssets, defer, getEnvironment } from "#platform";
 
@@ -29,7 +28,8 @@ import {
 } from "./src/ai/report-spam-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations, resolveSlovakLocation } from "./src/geo/search.js";
-import { loadPublicSnapshot, invalidatePublicSnapshotCache } from "./src/db/public-snapshot.js";
+import { loadPublicSnapshot, getPublicSnapshotVersion, invalidatePublicSnapshotCache } from "./src/db/public-snapshot.js";
+import { recordToken } from "./src/record-documents.js";
 import { loadSightingBuckets } from "./src/db/sighting-buckets.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
@@ -254,10 +254,6 @@ function locationSlug(value) {
 
 function locationPath(value) {
   return `${LOCATION_ROUTE_PREFIX}${encodeURIComponent(locationSlug(value))}`;
-}
-
-function recordToken(id) {
-  return createHash("sha256").update(String(id || "record")).digest("hex").slice(0, 10);
 }
 
 function recordSlug(value, fallback = "zaznam") {
@@ -1808,7 +1804,10 @@ async function renderPublicPage(req, res, pathname, page) {
 
 async function renderLocationPage(req, res) {
   try {
-    const overview = await loadLocationOverview();
+    const snapshot = isWorker ? await loadPublicSnapshot() : null;
+    const overview = isWorker
+      ? { ...emptyLocationOverview(), ...(snapshot || {}), snapshotReady: Boolean(snapshot) }
+      : await loadLocationOverview();
     if (!overview.snapshotReady) {
       return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
         .type("text").send("Prehľady lokalít sa aktualizujú. Skúste to o chvíľu.");
@@ -1956,15 +1955,30 @@ function renderDetailSources(source) {
 
 async function renderRecordPage(req, res, requestedKind) {
   try {
-    let overview = await loadLocationOverview();
     const token = findRecordToken(req.params.slug);
-    let { record, recordType } = findOverviewRecord(overview, token, requestedKind);
+    if (!token) return res.status(404).set("X-Robots-Tag", "noindex, follow").type("text")
+      .send("Tento záznam sa nenašiel alebo už nie je verejne dostupný.");
+    let overview, record, recordType, savedRelated;
+    if (isWorker) {
+      if (!await getPublicSnapshotVersion()) {
+        return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+          .type("text").send("Podrobnosti sa aktualizujú. Skúste to o chvíľu.");
+      }
+      const saved = token ? await loadPublicSnapshot({ kind: "record", slug: `${requestedKind}:${token}` }) : null;
+      overview = { ...emptyLocationOverview(), locations: saved?.locations || [] };
+      record = saved?.record || null;
+      recordType = saved?.recordType || requestedKind;
+      savedRelated = saved?.related || [];
+    } else {
+      overview = await loadLocationOverview();
+      ({ record, recordType } = findOverviewRecord(overview, token, requestedKind));
+    }
 
     // /api/warnings reads approved community reports directly from the database,
     // while the SEO overview is cached. A newly approved report can therefore be
     // visible in a card a few minutes before its detail exists in that cache.
     // Refresh once before returning a false 404.
-    if (!record && token) {
+    if (!isWorker && !record && token) {
       overview = await loadLocationOverview({ force: true });
       ({ record, recordType } = findOverviewRecord(overview, token, requestedKind));
     }
@@ -1998,7 +2012,7 @@ async function renderRecordPage(req, res, requestedKind) {
       record: { ...record, summary },
     };
     const relatedPool = requestedKind === "news" ? overview.news : warningArchiveItems(overview);
-    const related = relatedPool.filter((item) => String(item.id) !== String(record.id)).slice(0, 4);
+    const related = savedRelated ?? relatedPool.filter((item) => String(item.id) !== String(record.id)).slice(0, 4);
     const correction = correctionMailto(record, isWarningPage ? "varovanie" : "správa");
     let html = await getPageTemplate("zaznam.html");
     html = html
@@ -2661,8 +2675,6 @@ app.post("/api/admin/refresh", adminAuth, async (req, res) => {
   });
 });
 
-// Servíruje @vercel/analytics ako ES modul priamo z node_modules, nech ho
-// vieme importovať v prehliadači bez bundlera (public/ je čistý HTML/JS).
 const immutableVendorHeaders = (res) => {
   res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
 };
@@ -2733,15 +2745,6 @@ app.use(
     etag: true,
     lastModified: true,
     setHeaders: immutableVendorHeaders,
-  })
-);
-
-app.use(
-  "/vendor/analytics",
-  express.static(path.join(__dirname, "node_modules", "@vercel", "analytics", "dist"), {
-    setHeaders(res) {
-      res.setHeader("Cache-Control", "public, max-age=3600");
-    },
   })
 );
 

@@ -12,6 +12,9 @@ test("shared public caching excludes credentials, mutations, arbitrary queries a
     assert.equal(publicCacheUrl(request("/api/news", init), "one"), null);
   }
   const first = publicCacheUrl(request("/api/news?v=site"), "one");
+  for (const route of ["/varovania/ilava-75acb52874", "/spravy/article-75acb52874"]) {
+    assert.ok(publicCacheUrl(request(route), "one"), "Both detail types use the shared response cache");
+  }
   assert.notEqual(first, publicCacheUrl(request("/api/news?v=site"), "two"));
   assert.notEqual(publicCacheUrl(request("/spravy?q=Brezno"), "one"), publicCacheUrl(request("/spravy?q=Poprad"), "one"));
   assert.equal(canStorePublicResponse(new Response("ok", { headers: { "cache-control": "public, max-age=60" } })), true);

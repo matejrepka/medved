@@ -1,4 +1,5 @@
 import { getSupabase } from "./supabase.js";
+import { buildRecordDocuments } from "../record-documents.js";
 
 const STATE_TTL_MS = 15_000;
 const MAX_DOCUMENTS = 128;
@@ -90,6 +91,7 @@ export async function publishPublicSnapshot(revision, day, payload, client = get
     locations: Object.fromEntries(payload.locations.map(location => [location.slug, location])),
     warnings: { items: payload.warnings, updatedAt: payload.updatedAt },
     news: { items: payload.news, updatedAt: payload.updatedAt },
+    records: buildRecordDocuments(payload),
   };
   const { data, error } = await client.rpc("publish_public_snapshot", {
     p_revision: revision, p_day: day, p_payload: documents,

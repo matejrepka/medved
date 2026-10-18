@@ -19,6 +19,12 @@ adresár bez tiel záznamov alebo jednu lokalitu.
    zápisy neinvalidujú snapshot. Migrácia nemení obsah existujúcich hlásení.
 3. S premennými `SUPABASE_URL` a `SUPABASE_SERVICE_ROLE_KEY` správneho projektu
    spustite `npm run precompute:public`. Overte úspešné uloženie prvého výsledku.
+   Pre aktualizáciu detailov aplikujte aj
+   `supabase/migrations/20261018184716_record_detail_documents.sql`, potom
+   `supabase/migrations/20261018185139_record_publish_safe_updates.sql` a spustite
+   `npm run precompute:public -- --force` pred nasadením Workera. Publikujte aj
+   aktualizovaný `src/db/public-snapshot.js` a nový `src/record-documents.js`, aby
+   background workflow vytváral detaily pri každom ďalšom prepočte.
 4. Nasaďte Worker a pushnite workflow súbory do predvolenej vetvy GitHubu.
    GitHub secrets musia smerovať na ten istý projekt ako Worker.
 5. Overte `/api/stats`, `/domov` a existujúcu `/vyskyt-medveda/<slug>` stránku.
@@ -56,6 +62,15 @@ Cache API sa zdieľa iba v rámci jedného dátového centra. Prvý request v no
 izoláte alebo po evikcii môže stále načítať celý potrebný dokument; nejde o
 trvalú inkrementálnu repliku databázy. Statické súbory a mapové dlaždice si
 zachovávajú existujúce správanie.
+
+Detaily `/spravy/<slug>` a `/varovania/<slug>` majú rovnakú cache celých odpovedí.
+Pri studenom requeste sa číta iba dokument jedného záznamu z indexovanej privátnej
+tabuľky `public_record_snapshots`, vrátane najviac štyroch súvisiacich kariet a
+odkazov na jeho lokality. Na vyhľadanie detailu sa nesťahujú celé feedy ani sa
+neopakujú plné načítania pri neexistujúcom tokene. Dokumenty sa publikujú v jednej
+transakcii so snapshotom a pri zmene revízie sa tiež prestanú čítať. Pôvodné URL,
+presmerovania a odkazy na členov ručných skupín zostávajú zachované. Stránky lokalít
+načítajú iba uložený adresár a dokument danej lokality, bez plných feedov.
 
 Databázové triggre iba zvýšia revíziu. Ak sa dáta zmenia počas výpočtu, uloženie sa
 odmietne a proces výpočet zopakuje. Starý JSON s už zamietnutými položkami sa po

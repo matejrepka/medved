@@ -17,11 +17,14 @@ test("snapshot publication and manual buckets are transactional and private", as
   const optimization = await readFile(new URL("../supabase/migrations/20261018172624_cache_unchanged_sightings.sql", import.meta.url), "utf8");
   await db.exec(optimization);
   await db.exec(optimization);
+  await db.exec(await readFile(new URL("../supabase/migrations/20261018184716_record_detail_documents.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../supabase/migrations/20261018185139_record_publish_safe_updates.sql", import.meta.url), "utf8"));
   const scalar = async (sql, args = []) => Object.values((await db.query(sql, args)).rows[0])[0];
   const revision = () => scalar("select revision from public.public_snapshots where id = 'overview'");
   const publish = rev => scalar("select public.publish_public_snapshot($1, '2026-10-18', $2)",
     [rev, { stats: { report: { totals: { sightings: 2 } } },
-      overview: { report: { totals: { sightings: 2 } } }, locations: {} }]);
+      overview: { report: { totals: { sightings: 2 } } }, locations: {},
+      records: { "warning:one": { record: { id: "one" } } } }]);
   const apply = plan => scalar("select public.apply_sighting_bucket_plan($1)", [plan]);
 
   await db.exec(`insert into public.tumedved_logs(id,location) values ('one','Brezno'),('two','Brezno');
@@ -35,9 +38,12 @@ test("snapshot publication and manual buckets are transactional and private", as
   await db.exec("delete from public.news_logs where id = 'not-present'");
   assert.equal(await revision(), before, "An empty write does not invalidate the snapshot");
   assert.equal(await publish(before), true);
+  assert.equal((await scalar("select public.read_public_snapshot('record','warning:one')")).record.id, "one");
+  assert.equal(await scalar("select public.read_public_snapshot('record','warning:missing')"), null);
   assert.equal((await scalar("select public.read_public_snapshot()" )).report.totals.sightings, 2);
   await db.exec("update public.tumedved_logs set status = 'rejected' where id = 'two'");
   assert.equal(await scalar("select public.read_public_snapshot()"), null, "Old rejected content cannot be served");
+  assert.equal(await scalar("select public.read_public_snapshot('record','warning:one')"), null, "Details follow the same revision guard");
   assert.equal(await publish(before), false, "A concurrent edit prevents publishing stale content");
   await db.exec("update public.tumedved_logs set status = 'approved' where id = 'two'");
 
@@ -61,6 +67,7 @@ test("snapshot publication and manual buckets are transactional and private", as
   assert.ok(disabled.every(row => row.tgenabled === "D"), "Paused emails do not enqueue more work");
   await db.exec("set role anon");
   await assert.rejects(db.query("select * from public.public_snapshots"), /permission denied/);
+  await assert.rejects(db.query("select * from public.public_record_snapshots"), /permission denied/);
   await assert.rejects(db.query("select public.apply_sighting_bucket_plan('[]')"), /permission denied/);
   await assert.rejects(db.query("select public.read_public_snapshot()"), /permission denied/);
 });

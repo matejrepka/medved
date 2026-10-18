@@ -8,13 +8,14 @@ export function publicCacheUrl(request, version) {
   const url = new URL(request.url);
   if (url.pathname.length > 300 || url.search.length > 300) return null;
   const api = PUBLIC_API.has(url.pathname);
-  const page = PUBLIC_PAGES.has(url.pathname) || /^\/vyskyt-medveda\/[a-z0-9-]+$/.test(url.pathname);
+  const page = PUBLIC_PAGES.has(url.pathname) || /^\/vyskyt-medveda\/[a-z0-9-]+$/.test(url.pathname) ||
+    /^\/(?:varovania|spravy)\/[a-z0-9-]+-[a-f0-9]{10}$/.test(url.pathname);
   if (!api && !page) return null;
   for (const key of url.searchParams.keys()) {
     if (api ? key !== "v" : !(["/spravy", "/varovania"].includes(url.pathname) && ARCHIVE_PARAMETERS.has(key))) return null;
   }
   url.searchParams.sort();
-  url.searchParams.set("__medved_cache", `public-v12:${version}`);
+  url.searchParams.set("__medved_cache", `public-v13:${version}`);
   return url.href;
 }
 

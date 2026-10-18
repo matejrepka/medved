@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,8 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const output = path.join(root, "dist-worker");
 const assets = path.join(output, "public");
 await mkdir(assets, { recursive: true });
+// Remove the retired analytics assets left by builds before the migration.
+await rm(path.join(assets, "vendor", "analytics"), { recursive: true, force: true });
 await cp(path.join(root, "public"), assets, { recursive: true });
 
 // Copy only browser packages to the public assets binding. No environment,
@@ -17,7 +19,6 @@ const vendors = {
   chart: "chart.js/dist",
   "fonts/hanken": "@fontsource-variable/hanken-grotesk",
   "fonts/newsreader": "@fontsource-variable/newsreader",
-  analytics: "@vercel/analytics/dist",
 };
 for (const [destination, source] of Object.entries(vendors)) {
   await cp(path.join(root, "node_modules", source), path.join(assets, "vendor", destination), { recursive: true });

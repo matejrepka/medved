@@ -6,6 +6,7 @@ import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import "./build-worker.mjs";
 import { buildPublicOverview } from "../src/public-overview.js";
 import { loadPlaces } from "../src/geo/geocode.js";
+import { buildRecordDocuments, recordToken } from "../src/record-documents.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const config = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
@@ -100,6 +101,11 @@ function createRuntime(bindings, simulateUpdates = false, dataset = null) {
           assert.equal(table, "read_public_snapshot", "Public requests never run computation or publish RPCs");
           if (dataset && Object.hasOwn(dataset, "public_snapshot")) return Response.json(dataset.public_snapshot);
           return request.json().then(({ p_kind, p_slug }) => {
+            if (p_kind === "record") {
+              assert.ok(!dataset?.forbidDetails, "This test forbids record reads");
+              return Response.json((dataset?.record_documents || buildRecordDocuments(storedSnapshot))[p_slug] || null);
+            }
+            assert.ok(!dataset?.recordsOnly, `Detail must not download the ${p_kind} feed/directory`);
             if (dataset?.public_documents && Object.hasOwn(dataset.public_documents, p_kind)) {
               return Response.json(dataset.public_documents[p_kind]);
             }
@@ -191,7 +197,7 @@ try {
 
 const pendingSnapshot = createRuntime(fixtures, false, { public_snapshot: null });
 try {
-  for (const route of ["/api/stats", "/vyskyt-medveda/brezno"]) {
+  for (const route of ["/api/stats", "/vyskyt-medveda/brezno", `/varovania/brezno-${recordToken("snapshot-1")}`]) {
     const response = await pendingSnapshot.dispatchFetch(`https://www.kdejemedved.sk${route}`);
     assert.equal(response.status, 503, "Pending background computation never produces a false 404 or a visitor computation");
     assert.equal(response.headers.get("cache-control"), "no-store");
@@ -224,6 +230,31 @@ try {
   await privateResponse.arrayBuffer();
   console.log("Workers checks passed: shared public response caching and private-request exclusion");
 } finally { await prepared.dispose(); }
+
+const detailNews = { id: "small-detail-news", title: "Medveď pri Brezne", category: "article",
+  date: sighting.reported_at, summary: "Saved news detail", source: "Test", place: "Brezno" };
+const detailData = { ...storedSnapshot, news: [detailNews] };
+const details = createRuntime(fixtures, false, { forbidRawReads: true, recordsOnly: true,
+  record_documents: buildRecordDocuments(detailData) });
+try {
+  for (const route of [`/varovania/brezno-${recordToken("snapshot-1")}`,
+    `/spravy/medved-pri-brezne-${recordToken(detailNews.id)}`]) {
+    const response = await details.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.status, 200, route);
+    assert.match(await response.text(), /Brezno/);
+    const before = databaseRequests;
+    const cached = await details.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(cached.headers.get("x-medved-cache"), "HIT");
+    await cached.arrayBuffer();
+    assert.equal(databaseRequests, before, "Detail HIT never touches the database");
+  }
+  const beforeMissing = databaseRequests;
+  const missing = await details.dispatchFetch("https://www.kdejemedved.sk/varovania/missing-0000000000");
+  assert.equal(missing.status, 404);
+  await missing.arrayBuffer();
+  assert.equal(databaseRequests, beforeMissing + 1, "A missing token does not reload the full history");
+  console.log("Workers checks passed: cold news/warning details use one small document and repeated requests hit cache");
+} finally { await details.dispose(); }
 
 // Exercise cold page/API requests with populated feeds rather than an empty
 // news fixture, which cannot reveal resource-heavy directory construction.

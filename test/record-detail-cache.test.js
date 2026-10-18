@@ -8,7 +8,7 @@ test("record detail retries with a fresh overview before returning a missing-rec
   assert.match(source, /async function loadLocationOverview\(\{ force = false \} = \{\}\)/);
   assert.match(
     source,
-    /if \(!record && token\) \{\s*overview = await loadLocationOverview\(\{ force: true \}\);\s*\(\{ record, recordType \} = findOverviewRecord/
+    /if \(!isWorker && !record && token\) \{\s*overview = await loadLocationOverview\(\{ force: true \}\);\s*\(\{ record, recordType \} = findOverviewRecord/
   );
   assert.match(
     source,
