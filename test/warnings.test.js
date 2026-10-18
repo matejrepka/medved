@@ -63,3 +63,25 @@ test("samostatná správa bez zhodného hlásenia sa nepridá do zoznamu hlásen
   assert.equal(merged.length, 1);
   assert.equal(merged[0].id, sighting.id);
 });
+
+test("identical approved reports stay independent without explicit bucket links", () => {
+  const other = { ...sighting, id: "tm-11" };
+  assert.equal(mergeWarnings({ sightings: [sighting, other] }).length, 2);
+});
+
+test("only stored membership groups warnings, and rejected members cannot reappear", () => {
+  const other = { ...sighting, id: "tm-11", source: "mapamedvedov.sk", sourceKey: "mapamedvedov",
+    sourceLinks: [{ key: "mapamedvedov", label: "mapamedvedov.sk", url: "https://mapamedvedov.sk/", sourceId: "11" }] };
+  const report = { ...sighting, id: "report-42", sourceType: "report", source: "Hlásenie používateľa" };
+  const buckets = [{ id: "bucket-1", primaryKey: "sighting:tm-10",
+    memberKeys: ["sighting:tm-10", "sighting:tm-11", "report:42"] }];
+  const grouped = mergeWarnings({ sightings: [sighting, other], reports: [report], buckets });
+  assert.equal(grouped.length, 1);
+  assert.equal(grouped[0].id, sighting.id);
+  assert.equal(grouped[0].bucketMemberIds.length, 3);
+  assert.equal(sighting.bucketMemberIds, undefined, "Inputs are not mutated");
+  const afterRejection = mergeWarnings({ sightings: [other], buckets });
+  assert.equal(afterRejection[0].id, other.id, "Approved fallback replaces rejected primary");
+  assert.deepEqual(afterRejection[0].bucketMemberIds, [other.id]);
+  assert.equal(mergeWarnings({ buckets }).length, 0);
+});

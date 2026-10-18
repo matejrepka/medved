@@ -2524,8 +2524,8 @@
           '</div>' +
           '<div class="incident-auto-note">' +
             '<i class="ph ph-git-merge" aria-hidden="true"></i>' +
-            '<div><strong>Automatické zoskupenie po schválení</strong>' +
-            '<p>Systém použije dátum udalosti a lokality z AI analýzy. Spoľahlivú zhodu pripojí alebo vytvorí novú udalosť; nejasný článok schváli bez núteného spojenia.</p></div>' +
+            '<div><strong>Samostatné schválenie záznamu</strong>' +
+            '<p>Schválený záznam zostane samostatný. Zoskupovanie udalostí sa vykonáva samostatne po kontrole.</p></div>' +
           '</div>' +
           '<p class="review-msg" role="alert"></p>';
 
@@ -2713,7 +2713,7 @@
         const cards = Array.from(document.querySelectorAll('#' + listId + ' .review-card'));
         if (!cards.length) return;
         const confirmation = type === 'news'
-          ? 'Schváliť ' + cards.length + ' správ ako bežné články? Automatické zoskupenie sa použije iba tam, kde AI našla spoľahlivý dátum a lokalitu.'
+          ? 'Schváliť ' + cards.length + ' správ ako bežné články? Záznamy zostanú samostatné.'
           : 'Schváliť ' + cards.length + ' položiek?';
         if (!confirm(confirmation)) return;
 

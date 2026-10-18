@@ -1,4 +1,3 @@
-import { dedupeSightings } from "../sightings-dedupe.js";
 import { fetchMapamedvedov } from "./mapamedvedov.js";
 import { fetchSprejnamedveda } from "./sprejnamedveda.js";
 import { fetchTumedved } from "./tumedved.js";
@@ -52,7 +51,7 @@ export async function fetchSightings() {
     throw failure;
   }
 
-  const merged = dedupeSightings(allItems);
+  const merged = allItems;
   Object.defineProperty(merged, "sourceOutcomes", {
     value: sourceOutcomes,
     enumerable: false,

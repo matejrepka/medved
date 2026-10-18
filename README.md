@@ -18,10 +18,9 @@ Live site: kdejemedved.sk
 
 - **Hlásenia o výskyte** – sťahuje hlásenia z tumedved.sk, používateľské hlásenia z
   mapamedvedov.sk a aktuálnu mapu sprejnamedveda.sk (lokalita, dátum, poznámka a GPS).
-- **Zlučovanie mapových zdrojov** – podobné udalosti z máp porovná podľa dátumu, času,
-  lokality, súradníc a komentára. Na mape ostane jeden bod s odkazmi na všetky zhodné
-  mapové hlásenia. Spravodajské články sa s hláseniami nezlučujú. Zdroj
-  sprejnamedveda.sk sa z každého bodu preklikáva iba na jeho stránku Aktuality.
+- **Samostatné hlásenia a uložené skupiny** – importované aj schválené hlásenia
+  zostávajú samostatné. Zoskupovanie vykonáva Codex iba na výslovný pokyn;
+  členstvo a hlavný záznam skupiny sa uložia do databázy. Web už podobnosť nepočíta.
 - **Správy** – agreguje slovenské spravodajstvo o medveďoch z viacerých vyhľadávaní cez
   Google News (výskyt, útok, stretnutie turistu…), odstráni duplicity a zoradí podľa dátumu.
   Relevančný filter vyhodí články, ktoré medveďa len spomenú/odkazujú naň (medvedí výraz
@@ -39,7 +38,7 @@ Live site: kdejemedved.sk
   filtrovaný a stránkovaný zoznam. Každý verejný záznam má stabilnú detailnú URL,
   štruktúrované dáta, interné odkazy a záznam v dynamickej sitemap.
 - **Udalosti a spravodajské pokrytie** – každý článok ostáva samostatným moderovaným
-  záznamom, no admin ho môže pri schválení pripojiť k trvalej udalosti podľa skutočného
+  záznamom, no offline údržba ho môže pripojiť k trvalej udalosti podľa skutočného
   dátumu a lokality. Verejný zoznam potom ukáže jednu udalosť s počtom zdrojov a rozbaliteľným
   pokrytím. Neisté zhody sa nikdy nepripájajú automaticky a možno ich schváliť bez spojenia.
 - **Primárny zdroj udalosti** – poradie je založené na type zdroja, nie na všeobecnom
@@ -57,15 +56,15 @@ Live site: kdejemedved.sk
 - **Svetlý a tmavý režim** – prepínač v hlavičke, voľba sa pamätá; dá sa vynútiť aj cez
   URL parameter `?theme=light` / `?theme=dark`. Štandardná mapová vrstva mení dlaždice podľa
   režimu a zvolená vrstva mapy sa pamätá samostatne.
-- **Serverové obnovovanie + Supabase** – scraping spúšťa externý cron job (cron-job.org),
+- **Serverové obnovovanie + Supabase** – scraping spúšťa GitHub Actions,
   výsledky sa ukladajú do Supabase tabuliek a používatelia čítajú už pripravené dáta.
 - **Telegram upozornenia a mobilná moderácia** – voliteľná, predvolene vypnutá
   integrácia používa trváci DB outbox, retry a súkromné schvaľovanie/zamietanie s auditom.
   Nastavenie je popísané v [`docs/telegram-notifications.md`](docs/telegram-notifications.md).
-- **E-mailové upozornenia** – potvrdený odber (double opt-in), výber všetkých oblastí
-  alebo konkrétnej lokality, súhrny varovaní a správ o 6:00, 12:00 a 18:00,
-  trváci outbox, retry, ochrana pred duplicitami a odhlásenie jedným kliknutím.
-  Nastavenie je v [`docs/email-notifications.md`](docs/email-notifications.md).
+- **Predpočítané štatistiky a lokality** – samostatný Node proces po importe a
+  pri pravidelnej kontrole vytvorí JSON v Supabase. Návšteva stránky report nepočíta.
+- **E-maily pozastavené** – odosielanie aj päťminútový Cloudflare notifikačný cron
+  sú vypnuté. Nastavenie a nasadenie sú v [`docs/precomputed-data.md`](docs/precomputed-data.md).
 
 ## Prehľad
 
@@ -85,9 +84,9 @@ Zameriava sa na prehľadnosť, deduplikáciu a mapové zobrazenie namiesto jedn�
 ## Ako funguje
 
 - Dáta sa zbierajú z viacerých verejných zdrojov a ukladajú sa do vlastnej databázovej vrstvy.
-- Podobné mapové hlásenia sa zlučujú, aby sa na mape nezobrazovali duplicity.
+- Mapové hlásenia sa zoskupujú iba cez výslovne uložené databázové väzby.
 - AI pri nových správach oddeľuje dátum udalosti od publikovania a vyhľadá všetky spoľahlivé lokality.
-- Admin časť podporuje moderáciu nových správ a používateľských hlásení; po schválení správy server automaticky pripojí jednoznačnú zhodu alebo vytvorí novú udalosť.
+- Admin časť schvaľuje samostatné správy a používateľské hlásenia. Výpočet skupín je oddelená offline údržba.
 - Frontend je navrhnutý ako mapový prehľad s filtrami, vyhľadávaním a prepínaním vrstiev.
 
 ## Databázové migrácie
@@ -99,8 +98,9 @@ Nasadenie backendu aj mapy na Cloudflare Workers je popísané v
 Pre novú databázu najprv spustite `docs/supabase-schema.sql` a potom migrácie
 `docs/migration-006-news-incidents.sql`, `docs/migration-007-email-notifications.sql`,
 `docs/migration-008-priority-telegram.sql`, `docs/migration-009-email-digests.sql` a
-`docs/migration-010-feedback-submissions.sql`
-v Supabase SQL Editore. Pri existujúcej databáze ich po migráciách 001-005 spustite
+`docs/migration-010-feedback-submissions.sql` a `docs/migration-011-public-snapshots-buckets.sql`
+v Supabase SQL Editore. Pred nasadením vytvorte prvý výsledok cez `npm run precompute:public`;
+postup je v [`docs/precomputed-data.md`](docs/precomputed-data.md). Pri existujúcej databáze ich po migráciách 001-005 spustite
 v tomto poradí.
 
 V SQL Editore spustite celý obsah migrácií bez označeného čiastkového výberu.
@@ -111,7 +111,7 @@ Migrácia 006 zámerne sama nerobí historický backfill ani spätne nespája st
 Po jej nasadení možno najprv skontrolovať plán príkazom `npm run backfill:news-incidents`
 a potom ho vykonať cez `npm run backfill:news-incidents -- --apply`. Skript je
 obnoviteľný: spracúva iba schválené varovania, ktoré ešte nemajú incidentový odkaz.
-Budúce spoľahlivé priradenia sa po schválení vyberú automaticky a ukladajú transakčne
+Nové priradenia sa vytvárajú iba explicitnou offline údržbou a ukladajú transakčne
 cez serverový service-role klient; funkcia RPC nemá oprávnenie pre `anon` ani
 `authenticated` rolu. Tá istá migrácia pridáva usporiadané lokality varovaní;
 prvá lokalita zostáva zrkadlená v pôvodných stĺpcoch kvôli spätnej kompatibilite.

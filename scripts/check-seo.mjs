@@ -83,8 +83,9 @@ if (!server.includes("detailRows.set(warningPath(item)")) {
 if (!server.includes('const CANONICAL_SITE_ORIGIN = "https://www.kdejemedved.sk"')) {
   errors.push("server.js: kanonický origin musí byť https://www.kdejemedved.sk");
 }
-if (!server.includes("mergeLocationPages(locationCandidates)")) {
-  errors.push("server.js: lokalitné stránky musia byť deduplikované podľa slugu");
+const overviewBuilder = await readFile(new URL("../src/public-overview.js", import.meta.url), "utf8");
+if (!overviewBuilder.includes("mergeLocationPages(candidates)")) {
+  errors.push("public-overview.js: lokalitné stránky musia byť deduplikované podľa slugu");
 }
 if (!server.includes('"<!-- RECORD_SUMMARY_HEADING -->"') || !server.includes('"<!-- RECORD_SUMMARY -->"')) {
   errors.push("server.js: detail článku musí vykresliť nadpis a obsah súhrnu");

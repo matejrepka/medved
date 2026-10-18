@@ -1,6 +1,6 @@
 // Medveď Sledovač — server.
 //
-// Dáta sa sťahujú výhradne cez externý cron job (cron-job.org), ktorý volá
+// Dáta sa importujú v Node procese cez GitHub Actions, ktorý volá
 // /api/cron/refresh. Server pri štarte načíta existujúce dáta
 // zo Supabase a servíruje ich cez JSON API + frontend zo zložky /public.
 
@@ -29,9 +29,9 @@ import {
 } from "./src/ai/report-spam-classifier.js";
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations, resolveSlovakLocation } from "./src/geo/search.js";
-import { buildStatsReport } from "./src/stats-report.js";
+import { loadPublicSnapshot, invalidatePublicSnapshotCache } from "./src/db/public-snapshot.js";
+import { loadSightingBuckets } from "./src/db/sighting-buckets.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
-import { createLocationRecordMatcher, mergeLocationPages } from "./src/location-pages.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
 import { readTelegramConfig } from "./src/telegram/config.js";
 import { TelegramService, webhookSecretMatches } from "./src/telegram/service.js";
@@ -74,7 +74,7 @@ import {
   updateSightingFields,
   updateSightingStatus,
   unsubscribeEmailSubscription,
-  reviewNewsWithAutomaticIncident,
+  reviewIndependentNews,
 } from "./src/db/repository.js";
 
 const __dirname = projectDirectory;
@@ -91,7 +91,7 @@ const ARCHIVE_PAGE_SIZES = new Set([24, 50, 100]);
 const PUBLIC_SSR_DATA_WAIT_MS = 180;
 const WARNINGS_CACHE_TTL_MS = 60 * 1000;
 const DISABLE_STARTUP_REFRESH = process.env.DISABLE_STARTUP_REFRESH === "true";
-const DISABLE_WEBSITE_LOGS = process.env.DISABLE_WEBSITE_LOGS === "true";
+const DISABLE_WEBSITE_LOGS = process.env.ENABLE_WEBSITE_LOGS !== "true" || process.env.DISABLE_WEBSITE_LOGS === "true";
 const parsedTelegramConfig = readTelegramConfig();
 const telegramConfig = {
   ...parsedTelegramConfig,
@@ -100,8 +100,8 @@ const telegramConfig = {
 const parsedEmailConfig = readEmailConfig();
 const emailConfig = {
   ...parsedEmailConfig,
-  enabled: parsedEmailConfig.enabled && isSupabaseConfigured(),
-  moderationEnabled: parsedEmailConfig.moderationEnabled && isSupabaseConfigured(),
+  enabled: false, // Email delivery is paused, including confirmations and feedback.
+  moderationEnabled: false,
 };
 
 const PUBLIC_PAGES = {
@@ -876,10 +876,19 @@ function invalidateLocationOverviewCache() {
 }
 
 function invalidateWarningsCache() {
+  invalidatePublicSnapshotCache();
   warningsCache.value = null;
   warningsCache.version = null;
   warningsCache.expiresAt = 0;
   invalidateLocationOverviewCache();
+}
+
+// A changed database revision must also retire the derived in-memory feeds.
+// The Worker calls this before rendering a response under the new cache key.
+export function invalidatePublicCaches() {
+  invalidateWarningsCache();
+  sightingsStore.loadedAt = 0;
+  newsStore.loadedAt = 0;
 }
 
 function emptyLocationOverview() {
@@ -932,69 +941,28 @@ async function loadLocationOverviewForRender({ includeLocations = true } = {}) {
 }
 
 async function loadLocationOverview({ force = false } = {}) {
-  const version = latestContentDate();
-  if (
-    !force &&
-    locationOverviewCache.value &&
-    locationOverviewCache.version === version &&
-    locationOverviewCache.expiresAt > Date.now()
-  ) {
+  if (!force && locationOverviewCache.value && locationOverviewCache.expiresAt > Date.now()) {
     return locationOverviewCache.value;
   }
-  if (locationOverviewCache.inFlight) {
-    const overview = await locationOverviewCache.inFlight;
-    if (!force) return overview;
-  }
-
+  if (locationOverviewCache.inFlight) return locationOverviewCache.inFlight;
   locationOverviewCache.inFlight = (async () => {
-    const [warnings, news, gz] = await Promise.all([
-      loadWarnings(),
-      newsStore.get(),
-      loadPlaces(),
+    if (force) {
+      warningsCache.expiresAt = 0;
+      await Promise.all([sightingsStore.loadFromDatabase(), newsStore.loadFromDatabase()]);
+    }
+    const [warnings, news, snapshot] = await Promise.all([
+      loadWarnings(), newsStore.get(), loadPublicSnapshot().catch(error => {
+        console.error("[snapshot] read failed:", error.message);
+        return null;
+      }),
     ]);
-    const report = buildStatsReport({
-      sightings: warnings,
-      news,
-      gz,
-      includeAllLocations: true,
-    });
-    const matchWarnings = createLocationRecordMatcher(warnings, "warning", normalizeSearchText);
-    const matchNews = createLocationRecordMatcher(news, "news", normalizeSearchText);
-    const locationCandidates = report.allLocations.map((location) => {
-      const warningItems = matchWarnings(location.name);
-      const newsItems = matchNews(location.name);
-      const latest = [
-        ...warningItems.map((item) => item.reportedAt),
-        ...newsItems.map((item) => item.date),
-      ].filter(Boolean).sort().pop() || latestContentDate() || CONTENT_UPDATED;
-      return {
-        ...location,
-        sightings: warningItems.length,
-        news: newsItems.length,
-        total: warningItems.length + newsItems.length,
-        slug: locationSlug(location.name),
-        path: locationPath(location.name),
-        warningItems,
-        newsItems,
-        latest,
-      };
-    });
-    const locations = mergeLocationPages(locationCandidates).filter(
-      (location) => location.total >= 2
-    );
-    const overview = {
-      warnings,
-      news,
-      report,
-      locations,
-      topLocations: locations.slice(0, 12),
-    };
+    const overview = { ...emptyLocationOverview(), ...(snapshot || {}), warnings, news,
+      snapshotReady: Boolean(snapshot) };
     locationOverviewCache.value = overview;
     locationOverviewCache.version = latestContentDate();
-    locationOverviewCache.expiresAt = Date.now() + 5 * 60 * 1000;
+    locationOverviewCache.expiresAt = Date.now() + 60_000;
     return overview;
   })();
-
   try {
     return await locationOverviewCache.inFlight;
   } finally {
@@ -1081,7 +1049,13 @@ const sightingsStore = new ScheduledDataStore({
 const newsStore = new ScheduledDataStore({
   name: "news",
   fetcher: fetchNews,
-  loadStored: loadNewsLogs,
+  loadStored: async () => {
+    if (isWorker) {
+      const snapshot = await loadPublicSnapshot({ kind: "news" });
+      if (snapshot) return snapshot.items.map(item => ({ ...item, _scrapedAt: snapshot.updatedAt }));
+    }
+    return loadNewsLogs();
+  },
   saveFresh: (items, scrapedAt) =>
     saveNewsLogs(items, scrapedAt, { prepareFresh: classifyFreshNews }),
   recordRun: recordScrapeRun,
@@ -1090,8 +1064,8 @@ const newsStore = new ScheduledDataStore({
 const emailService = new EmailService({ config: emailConfig });
 const telegramService = new TelegramService({
   config: telegramConfig,
-  // Public reports use the existing durable moderation queue, delivered by email.
-  sendReportEmail: (row) => emailService.sendReportModeration(row),
+  // Email is paused. Configured Telegram can still deliver direct notifications.
+  sendReportEmail: null,
 });
 
 async function flushTelegramNotifications(context) {
@@ -1115,15 +1089,6 @@ async function flushPriorityTelegramNotification(aggregateType, aggregateId, con
     console.error(`[telegram] ${context} priority delivery failed:`, err.message);
     telegramService.kick();
     return { processed: 0, sent: 0 };
-  }
-}
-
-async function flushEmailNotifications(context) {
-  if (!emailConfig.enabled) return;
-  try {
-    await emailService.runScheduled(new Date(), 3);
-  } catch (err) {
-    console.error(`[email] ${context} outbox flush failed:`, err.message);
   }
 }
 
@@ -1265,14 +1230,24 @@ async function loadWarnings() {
   if (warningsCache.inFlight) return warningsCache.inFlight;
 
   warningsCache.inFlight = (async () => {
-    const [scraped, reports] = await Promise.all([
+    if (isWorker) {
+      const snapshot = await loadPublicSnapshot({ kind: "warnings" });
+      if (snapshot) {
+        warningsCache.value = snapshot.items;
+        warningsCache.version = sightingsStore.meta.fetchedAt || "unloaded";
+        warningsCache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
+        return snapshot.items;
+      }
+    }
+    const [scraped, reports, buckets] = await Promise.all([
       sightingsStore.get(),
       loadApprovedBearReports().catch((err) => {
         console.error("[warnings] reports load failed:", err.message);
         return [];
       }),
+      loadSightingBuckets(),
     ]);
-    const warnings = mergeWarnings({ sightings: scraped, reports });
+    const warnings = mergeWarnings({ sightings: scraped, reports, buckets });
     warningsCache.value = warnings;
     warningsCache.version = sightingsStore.meta.fetchedAt || "unloaded";
     warningsCache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
@@ -1317,31 +1292,27 @@ app.get("/api/news", async (_req, res) => {
       detailUrl: newsPath(item),
     }));
 
-    res.set("Cache-Control", "no-cache");
+    res.set("Cache-Control", "public, max-age=60");
     res.json({ updatedAt, count: items.length, items });
   } catch (err) {
     res.status(502).json({ error: "Nepodarilo sa stiahnuť správy", detail: err.message });
   }
 });
 
-// Automatický štatistický report — počíta sa zo všetkých dát (nie len z toho,
-// čo je na mape) a cez gazetteer nájde aj obce spomenuté len v texte správ.
+// Statistics are built offline and stored in Supabase. Public reads never compute them.
 app.get("/api/stats", async (_req, res) => {
   try {
-    const [sightings, news, gz] = await Promise.all([
-      loadWarnings(),
-      newsStore.get(),
-      loadPlaces(),
-    ]);
-
-    const report = buildStatsReport({ sightings, news, gz });
-    const updatedAt =
-      [sightingsStore.meta.fetchedAt, newsStore.meta.fetchedAt].filter(Boolean).sort().pop() || null;
-
-    res.set("Cache-Control", "public, max-age=300");
-    res.json({ updatedAt, ...report });
+    const snapshot = await loadPublicSnapshot({ kind: "stats" });
+    if (!snapshot) {
+      return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+        .json({ error: "Štatistiky sa aktualizujú. Skúste to o chvíľu." });
+    }
+    const { allLocations, ...report } = snapshot.report;
+    res.set("Cache-Control", "public, max-age=60");
+    res.json({ updatedAt: snapshot.updatedAt, ...report });
   } catch (err) {
-    res.status(500).json({ error: "Nepodarilo sa zostaviť štatistiky", detail: err.message });
+    console.error("[snapshot] stats read failed:", err.message);
+    res.status(503).set("Cache-Control", "no-store").json({ error: "Štatistiky sú dočasne nedostupné." });
   }
 });
 
@@ -1440,10 +1411,8 @@ async function refreshAll(reason) {
     source.children ? Object.values(source.children) : [source]
   );
 
-  // DB triggre vytvorili outbox položky spolu s novým obsahom. Telegram
-  // doručujeme hneď, e-mailový worker odošle jeden súhrn v najbližšom okne.
+  // Telegram delivery remains event-driven; email delivery is paused.
   await flushTelegramNotifications(`${reason} refresh`);
-  await flushEmailNotifications(`${reason} refresh`);
 
   let indexNow = null;
   if ((sources.sightings.ok || sources.news.ok) && reason !== "startup") {
@@ -1504,7 +1473,6 @@ app.post("/api/telegram/webhook", async (req, res) => {
       await newsStore.loadFromDatabase().catch((err) => {
         console.error("[telegram moderation] news reload failed:", err.message);
       });
-      if (result.status === "approved") await flushEmailNotifications("telegram approval");
     }
     return res.json({ ok: true });
   } catch (err) {
@@ -1840,8 +1808,12 @@ async function renderPublicPage(req, res, pathname, page) {
 async function renderLocationPage(req, res) {
   try {
     const overview = await loadLocationOverview();
+    if (!overview.snapshotReady) {
+      return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+        .type("text").send("Prehľady lokalít sa aktualizujú. Skúste to o chvíľu.");
+    }
     const requestedSlug = locationSlug(req.params.slug);
-    const location = overview.locations.find((item) => item.slug === requestedSlug);
+    const location = await loadPublicSnapshot({ kind: "location", slug: requestedSlug });
     if (!location) {
       return res
         .status(404)
@@ -1918,7 +1890,8 @@ function findOverviewRecord(overview, token, requestedKind) {
     };
   }
 
-  const warning = overview.warnings.find((item) => recordToken(item.id) === token) || null;
+  const warning = overview.warnings.find((item) => recordToken(item.id) === token ||
+    item.bucketMemberIds?.some(id => recordToken(id) === token)) || null;
   if (warning) return { record: warning, recordType: "warning" };
 
   return {
@@ -2400,7 +2373,6 @@ app.post("/api/admin/reports/:id/status", adminAuth, async (req, res) => {
   try {
     await updateBearReportStatus(Number(req.params.id), status);
     invalidateWarningsCache();
-    if (status === "approved") await flushEmailNotifications("report approval");
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -2420,7 +2392,6 @@ app.post("/api/admin/sightings/:id/status", adminAuth, async (req, res) => {
       console.error("[sighting status] reload failed:", err.message);
     });
     invalidateWarningsCache();
-    if (status === "approved") await flushEmailNotifications("sighting approval");
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -2433,7 +2404,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
     return res.status(400).json({ ok: false, error: "Neplatný stav." });
   }
   try {
-    await reviewNewsWithAutomaticIncident(req.params.id, {
+    await reviewIndependentNews(req.params.id, {
       status,
       category: "article",
       actor: "admin",
@@ -2476,7 +2447,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
 
     }
 
-    const incidentResult = await reviewNewsWithAutomaticIncident(req.params.id, fields);
+    const incidentResult = await reviewIndependentNews(req.params.id, fields);
     // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
     await newsStore.loadFromDatabase().catch((err) => {
       console.error("[news review] reload failed:", err.message);
@@ -2651,10 +2622,8 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     invalidateWarningsCache();
     res.json({ ok: true });
 
-    // DB triggre už vytvorili trvácne outbox položky. Telegram zobudíme
-    // hneď; e-mail ostane v rade do najbližšieho plánovaného súhrnu.
+    // Wake configured Telegram delivery after the explicit content change.
     telegramService.kick();
-    emailService.kick();
   } catch (err) {
     console.error("[manual warning] save failed:", err.message);
     res.status(err.statusCode || 500).json({ ok: false, error: err.message });
@@ -2814,12 +2783,7 @@ app.use((error, req, res, next) => {
 
 // Keep imports side-effect free so HTTP tests can start an isolated server
 // without loading production data or starting notification workers.
-async function runNotificationJobs() {
-  await flushTelegramNotifications("scheduled");
-  await flushEmailNotifications("scheduled");
-}
-
-export { app, runNotificationJobs };
+export { app };
 export default app;
 if (!isWorker && process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   app.listen(PORT, () => {
@@ -2828,7 +2792,6 @@ if (!isWorker && process.argv[1] && path.resolve(process.argv[1]) === fileURLToP
       `Supabase: ${isSupabaseConfigured() ? "configured" : "not configured"}; refresh: external cron; Telegram: ${telegramConfig.enabled ? "enabled" : "disabled"}; email: ${emailConfig.enabled ? "enabled" : `disabled (${emailConfig.missing.join(", ") || "Supabase"})`}`
     );
     telegramService.start();
-    emailService.start();
     sightingsStore.start().catch((err) => {
       console.error("[sightings] startup load failed:", err.message);
     });

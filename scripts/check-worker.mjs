@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import "./build-worker.mjs";
+import { buildPublicOverview } from "../src/public-overview.js";
+import { loadPlaces } from "../src/geo/geocode.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const config = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
@@ -22,6 +24,11 @@ const sighting = {
   status: "approved",
   url: "https://tumedved.sk/",
 };
+const storedSnapshot = buildPublicOverview({
+  warnings: [1, 2].map(id => ({ id: `snapshot-${id}`, location: "Brezno", note: "Saved fixture",
+    reportedAt: sighting.reported_at, lat: sighting.lat, lng: sighting.lng })),
+  news: [], gz: await loadPlaces(), updatedAt: "2026-10-18T10:00:00Z",
+});
 const fixtures = {
   SUPABASE_URL: "https://fixture.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "test-only-service-key",
@@ -84,6 +91,19 @@ function createRuntime(bindings, simulateUpdates = false, dataset = null) {
         assert.ok([fixtures.SUPABASE_SERVICE_ROLE_KEY, rotated.SUPABASE_SERVICE_ROLE_KEY].includes(key));
         seenDatabaseKeys.add(key);
         const table = url.pathname.split("/").at(-1);
+        if (url.pathname.includes("/rpc/")) {
+          assert.equal(table, "read_public_snapshot", "Public requests never run computation or publish RPCs");
+          if (dataset && Object.hasOwn(dataset, "public_snapshot")) return Response.json(dataset.public_snapshot);
+          return request.json().then(({ p_kind, p_slug }) => {
+            if (dataset?.public_documents && Object.hasOwn(dataset.public_documents, p_kind)) {
+              return Response.json(dataset.public_documents[p_kind]);
+            }
+            if (["news", "warnings"].includes(p_kind)) return Response.json(null);
+            return Response.json(p_kind === "location"
+              ? storedSnapshot.locations.find(location => location.slug === p_slug) || null : storedSnapshot);
+          });
+        }
+        assert.ok(!dataset?.forbidRawReads, `Prepared feeds must not query ${table}`);
         return Response.json(dataset ? dataset[table] || [] : table === "tumedved_logs" ? [sighting] : []);
       }
       if (url.hostname === "nominatim.openstreetmap.org") return Response.json([]);
@@ -108,6 +128,16 @@ try {
     if (route !== "/api/news") assert.equal(data.items[0].location, "Brezno", "Stored sightings reach the map API");
   }
   assert.ok(databaseRequests > 0, "Runtime bindings reach the Supabase client");
+  response = await get("/api/stats");
+  assert.equal(response.status, 200);
+  const stats = await response.json();
+  assert.equal(stats.totals.sightings, 2, "Statistics come from the snapshot, not the one live fixture sighting");
+  assert.equal(stats.updatedAt, storedSnapshot.updatedAt);
+  for (const route of ["/domov", "/vyskyt-medveda/brezno"]) {
+    response = await get(route);
+    assert.equal(response.status, 200, `${route}: ${await response.clone().text()}`);
+    assert.match(await response.text(), /Brezno/);
+  }
   response = await get("/api/map-tiles/dark_all/0/0/0.png");
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "image/png");
@@ -148,12 +178,34 @@ try {
   assert.equal(tourist.lat, 48.9526744);
   assert.equal(tourist.lng, 20.3988546);
   assert.match(tourist.label, /orientačný bod na trase/);
-  const worker = await runtime.getWorker("medved-test");
-  await worker.scheduled({ cron: "*/5 * * * *" });
+  assert.deepEqual(config.triggers.crons, [], "Notification cron stays disabled");
   console.log("Workers checks passed: API, runtime secrets, tiles, SSR, assets, admin authentication and gazetteer");
 } finally {
   await runtime.dispose();
 }
+
+const pendingSnapshot = createRuntime(fixtures, false, { public_snapshot: null });
+try {
+  for (const route of ["/api/stats", "/vyskyt-medveda/brezno"]) {
+    const response = await pendingSnapshot.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.status, 503, "Pending background computation never produces a false 404 or a visitor computation");
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  }
+  console.log("Workers checks passed: saved statistics/location JSON and pending-snapshot responses");
+} finally { await pendingSnapshot.dispose(); }
+
+const prepared = createRuntime(fixtures, false, { forbidRawReads: true, public_documents: {
+  news: { items: [{ id: "prepared-news", title: "Uložená správa", date: "2026-10-18T10:00:00Z" }], updatedAt: storedSnapshot.updatedAt },
+  warnings: { items: storedSnapshot.warnings, updatedAt: storedSnapshot.updatedAt },
+} });
+try {
+  for (const [route, count] of [["/api/news", 1], ["/api/warnings", 2]]) {
+    const response = await prepared.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.status, 200, route);
+    assert.equal((await response.json()).items.length, count);
+  }
+  console.log("Workers checks passed: prepared feeds bypass all source-table and incident-link queries");
+} finally { await prepared.dispose(); }
 
 // Exercise cold page/API requests with populated feeds rather than an empty
 // news fixture, which cannot reveal resource-heavy directory construction.

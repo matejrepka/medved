@@ -73,12 +73,13 @@ Supabase. The Worker reads approved records from the same database. Chromium's
 local browser fallback is excluded from the Worker bundle; Cloudflare Workers
 cannot launch this Node application's local Chromium executable.
 
-A five-minute Cloudflare Cron Trigger drains the durable Telegram/email queues;
-email digests retain their configured Bratislava delivery windows. Workers does
-not start Node polling timers. SMTP connections are opened per delivery rather
-than pooled across requests. Use port 587 or 465 for SMTP, since Workers blocks
-outbound port 25. Production SMTP/Telegram deliveries are not exercised by the
-local fixture checks.
+The Worker has no Cron Trigger or scheduled notification handler. Email delivery
+is paused in the application, including confirmations, moderation and feedback.
+Configured Telegram delivery remains event-driven. The independent GitHub workflow
+precomputes statistics and location pages as JSON stored in Supabase; public requests
+never build those reports. Apply migration 011 and seed the snapshot before deploying
+this version. See [precomputed-data.md](precomputed-data.md) for deployment order,
+the background schedule, and explicit offline bucket maintenance.
 
 ## Local development
 

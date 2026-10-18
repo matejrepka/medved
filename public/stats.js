@@ -283,9 +283,8 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
 }
 
 async function loadData() {
-  const cacheBust = Date.now();
   try {
-    const report = await fetch(`/api/stats?t=${cacheBust}`, { cache: "no-store" }).then((r) => {
+    const report = await fetch("/api/stats").then((r) => {
       if (!r.ok) throw new Error(`Štatistiky HTTP ${r.status}`);
       return r.json();
     });

@@ -839,18 +839,6 @@ function normalizeSearchText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function sightingDedupeTime(iso) {
-  if (!iso) return "";
-  const time = new Date(iso).getTime();
-  if (!Number.isFinite(time)) return "";
-  return new Date(Math.floor(time / 60000) * 60000).toISOString();
-}
-
-function sightingCoordKey(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(5) : "";
-}
-
 function mapCoord(value, axis) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
@@ -870,36 +858,6 @@ function safeDetailUrl(value, fallback) {
   } catch {
     return fallback;
   }
-}
-
-function sightingDedupeKey(s) {
-  return [
-    normalizeSearchText(s.location).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
-    normalizeSearchText(s.note).replace(/[^\p{L}\p{N}]+/gu, " ").trim(),
-    sightingDedupeTime(s.reportedAt),
-    sightingCoordKey(s.lat),
-    sightingCoordKey(s.lng),
-  ].join("|");
-}
-
-function dedupeSightings(items) {
-  const seenIds = new Set();
-  const seenContent = new Set();
-  const unique = [];
-
-  for (const item of items || []) {
-    const id = item?.id ? String(item.id) : "";
-    if (id && seenIds.has(id)) continue;
-    if (id) seenIds.add(id);
-
-    const contentKey = sightingDedupeKey(item || {});
-    if (contentKey && seenContent.has(contentKey)) continue;
-    if (contentKey) seenContent.add(contentKey);
-
-    unique.push(item);
-  }
-
-  return unique;
 }
 
 function matchesSearchQuery(fields) {
@@ -1596,7 +1554,7 @@ async function loadData() {
   const sightingsRequest = fetchMapData(`/api/warnings?v=${API_VERSION}`)
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta hlásení");
-      state.sightings = dedupeSightings(payload.items);
+      state.sightings = payload.items;
       state.sightingsUpdatedAt = payload.updatedAt;
       renderSightings();
       state.loaded.sightings = true;

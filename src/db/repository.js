@@ -2,13 +2,9 @@ import crypto from "node:crypto";
 
 import { getSupabase, isSupabaseConfigured } from "./supabase.js";
 import { decodeHtmlEntities } from "../html-text.js";
-import { dedupeSightings, sightingSourceLinks } from "../sightings-dedupe.js";
+import { sightingSourceLinks } from "../sightings-dedupe.js";
 import {
-  decideAutomaticIncidentMatch,
-  deriveIncidentDateFacts,
   groupNewsByIncidents,
-  inferIncidentSourceType,
-  isSubstantiveIncidentSummary,
   rankIncidentSuggestions,
 } from "../incidents.js";
 import { newsLocations, normalizeNewsLocations } from "../news-locations.js";
@@ -65,12 +61,6 @@ function rowToSighting(row) {
   return item;
 }
 
-function sourceLinkIdentity(link) {
-  return link.sourceId
-    ? `${link.key}|id:${link.sourceId}`
-    : `${link.key}|url:${link.url}`;
-}
-
 function normalizedSource(value) {
   return String(value || "").trim().toLowerCase().replace(/^www\./, "");
 }
@@ -98,18 +88,6 @@ export function sightingStatus(item, existingStatus) {
   if (existingStatus === "rejected") return "rejected";
   if (isTrustedSighting(item)) return "approved";
   return existingStatus || "pending";
-}
-
-async function loadSightingsForMerge() {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("tumedved_logs")
-    .select("id,source,location,note,lat,lng,has_coords,reported_at,url,payload,scraped_at")
-    .order("reported_at", { ascending: false, nullsFirst: false })
-    .limit(2000);
-  if (error) throw error;
-  return (data || []).map(rowToSighting);
 }
 
 function normalizeText(value) {
@@ -324,25 +302,10 @@ async function loadSightingStatuses(ids) {
 }
 
 export async function saveTumedvedLogs(items, scrapedAt = new Date().toISOString()) {
-  // Porovnaj čerstvé dáta aj s databázou. Ak je napr. TuMedveď dočasne
-  // nedostupný, záznam z ďalšej mapy sa stále pripojí k už uloženému bodu.
-  const stored = await loadSightingsForMerge();
-  const incomingIds = new Set(items.map((item) => String(item.id || "")).filter(Boolean));
-  const incomingLinks = new Set(items.flatMap(sightingSourceLinks).map(sourceLinkIdentity));
-  // Čerstvá položka s rovnakým stabilným ID nahrádza svoju staršiu podobu.
-  // Inak by pri rovnakej priorite mohol zostať dlhší, ale už neaktuálny text.
-  const storedWithoutFreshCopies = stored.filter((item) =>
-    !incomingIds.has(String(item.id || ""))
-  );
-  const deduped = dedupeSightings([...storedWithoutFreshCopies, ...items]).filter((item) =>
-    incomingIds.has(String(item.id || "")) ||
-    sightingSourceLinks(item).some((link) => incomingLinks.has(sourceLinkIdentity(link)))
-  );
-
   // Hlásenia, ktoré admin ručne upravil, pri scrapingu NEprepisujeme — inak by
   // sa úprava stratila hneď pri ďalšom behu (tabuľka sa inak prepisuje upsertom).
-  const editedIds = await loadManuallyEditedSightingIds(deduped.map((item) => item.id));
-  const candidates = deduped.filter((item) => !editedIds.has(item.id));
+  const editedIds = await loadManuallyEditedSightingIds(items.map((item) => item.id));
+  const candidates = items.filter((item) => !editedIds.has(item.id));
 
   // Záznamy z troch priamo integrovaných verejných máp schválime automaticky.
   // Ručne zamietnuté záznamy ostávajú zamietnuté a prípadný budúci neznámy
@@ -629,7 +592,7 @@ export async function loadTumedvedLogs() {
     .map(rowToSighting)
     .sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
 
-  return dedupeSightings(items);
+  return items;
 }
 
 export async function loadNewsLogs() {
@@ -1094,109 +1057,10 @@ export async function reviewNewsWithIncident(id, fields) {
   throw error;
 }
 
-/**
- * Routine moderation path. The moderator approves the independent article;
- * AI event facts are preferred, with publication/first-seen day retained as an
- * explicitly approximate fallback. Ambiguity still leaves the item ungrouped,
- * but a missing AI result no longer guarantees a permanently separate card.
- */
-export async function reviewNewsWithAutomaticIncident(id, fields) {
-  const supabase = getSupabase();
-  if (!supabase) return null;
-
-  if (fields.status !== "approved") {
-    return reviewNewsWithIncident(id, {
-      ...fields,
-      incidentAction: "ungrouped",
-      actor: fields.actor || "admin:auto-cluster",
-    });
-  }
-
-  const { data: row, error } = await supabase
-    .from("news_logs")
-    .select("id,source,title,link,google_news_url,article_url,snippet,published_at,scraped_at,payload")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-
-  const payload = row?.payload && typeof row.payload === "object" ? row.payload : {};
-  const analysis = payload.aiClassification && typeof payload.aiClassification === "object"
-    ? payload.aiClassification
-    : {};
-  const locations = normalizeNewsLocations(fields.category === "warning" ? fields.locations : []);
-  const facts = deriveIncidentDateFacts({
-    analysis,
-    category: fields.category,
-    publishedAt: row.published_at,
-    scrapedAt: row.scraped_at,
-  });
-
-  const automaticFields = {
-    ...fields,
-    locations,
-    incidentAction: "ungrouped",
-    sourceType: inferIncidentSourceType(row),
-    actor: fields.actor || "admin:auto-cluster",
-  };
-
-  if (fields.category !== "warning" || !locations.length || !facts) {
-    const result = await reviewNewsWithIncident(id, automaticFields);
-    return { ...result, automatic: true, reason: "insufficient_evidence" };
-  }
-
-  // The first location describes the primary event. Further places frequently
-  // provide context about other weekend incidents and must not veto a correct
-  // match for the article's main subject.
-  const primary = locations[0];
-  const analysisPlaces = Array.isArray(analysis.places) ? analysis.places : [];
-  const focusedAiSummary = analysisPlaces.length <= 1 &&
-    isSubstantiveIncidentSummary(payload.aiSummary, row.title)
-    ? payload.aiSummary
-    : null;
-  const matchingSummary = focusedAiSummary || row.snippet;
-  const criteria = {
-    eventDate: facts.eventDate,
-    datePrecision: facts.precision,
-    locality: primary.place,
-    lat: primary.lat,
-    lng: primary.lng,
-    title: row.title,
-    summary: matchingSummary,
-  };
-  const suggestions = await loadIncidentSuggestions(criteria);
-  const decision = decideAutomaticIncidentMatch(suggestions, criteria);
-
-  if (decision.match) {
-    const result = await reviewNewsWithIncident(id, {
-      ...automaticFields,
-      incidentAction: "attach",
-      incidentId: decision.match.id,
-    });
-    return { ...result, automatic: true, reason: "high_confidence_match" };
-  }
-
-  if (decision.ambiguous) {
-    const result = await reviewNewsWithIncident(id, automaticFields);
-    return { ...result, automatic: true, reason: "ambiguous_match" };
-  }
-
-  const result = await reviewNewsWithIncident(id, {
-    ...automaticFields,
-    incidentAction: "create",
-    eventDate: facts.eventDate,
-    eventDatePrecision: facts.precision,
-    incidentLocality: primary.place,
-    incidentLat: primary.lat,
-    incidentLng: primary.lng,
-    incidentTitle: row.title,
-    incidentSummary: matchingSummary,
-    incidentStatus: "active",
-  });
-  return {
-    ...result,
-    automatic: true,
-    reason: facts.precision === "day" ? "new_reliable_incident" : "new_approximate_incident",
-  };
+// Approval keeps records independent. Explicit offline tools own incident links.
+export async function reviewIndependentNews(id, fields) {
+  await reviewNews(id, fields);
+  return { status: fields.status, automatic: false };
 }
 
 export async function loadIncidentSuggestions(criteria = {}) {

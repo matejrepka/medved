@@ -124,3 +124,7 @@ jobs:
 
           echo ""
           echo "Refresh completed successfully."
+
+      - name: Precompute public statistics and locations
+        if: ${{ !cancelled() }}
+        run: npm run precompute:public

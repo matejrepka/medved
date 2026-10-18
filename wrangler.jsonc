@@ -22,9 +22,7 @@
     "html_handling": "none",
     "not_found_handling": "none"
   },
-  "triggers": {
-    "crons": ["*/5 * * * *"]
-  },
+  "triggers": { "crons": [] },
   "observability": {
     "enabled": true
   }

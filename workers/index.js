@@ -1,5 +1,5 @@
 import { httpServerHandler } from "cloudflare:node";
-import app, { runNotificationJobs } from "../server.js";
+import app from "../server.js";
 import { withWorkerContext } from "./platform.js";
 
 app.listen(3000);
@@ -14,11 +14,5 @@ export default {
     headers.set("x-forwarded-proto", new URL(request.url).protocol.slice(0, -1));
     const forwarded = new Request(request, { headers });
     return withWorkerContext({ request: forwarded, env, ctx }, () => handler.fetch(forwarded, env, ctx));
-  },
-
-  // Durable notification queues replace Node's polling timers. Scraping stays
-  // in the existing GitHub Actions job, where Chromium is available.
-  scheduled(_controller, env, ctx) {
-    ctx.waitUntil(withWorkerContext({ env, ctx }, () => runNotificationJobs()));
   },
 };

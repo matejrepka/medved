@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { reviewNewsWithAutomaticIncident } from "./lib/automatic-news-incidents.mjs";
 
 import { pathToFileURL } from "node:url";
 
@@ -6,7 +7,6 @@ import { classifyFreshNews } from "../src/ai/news-classifier.js";
 import { getSupabase } from "../src/db/supabase.js";
 import {
   loadIncidentSuggestions,
-  reviewNewsWithAutomaticIncident,
   reviewNewsWithIncident,
 } from "../src/db/repository.js";
 import {

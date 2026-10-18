@@ -7,7 +7,6 @@
 // Každé hlásenie má pole `acf` (Advanced Custom Fields):
 //   { lat, lng, datum: "YYYYMMDD", cas: "HH:MM", lokalita, poznamka }
 
-import { dedupeSightings } from "../sightings-dedupe.js";
 
 const BASE = "https://tumedved.sk/wp-json/wp/v2/vyskyt-medveda";
 const USER_AGENT =
@@ -170,7 +169,6 @@ export async function fetchTumedved() {
     items = await fetchViaBrowser();
   }
 
-  items = dedupeSightings(items);
 
   // Zoradíme od najnovšieho po najstaršie podľa nahláseného času.
   items.sort((a, b) => new Date(b.reportedAt || 0) - new Date(a.reportedAt || 0));
