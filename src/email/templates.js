@@ -1,3 +1,5 @@
+import { sourceAttributionHtml, sourceAttributionText } from "../source-attribution.js";
+
 export function buildReportModerationEmail(row, config) {
   const payload = row.payload || {};
   const adminUrl = absoluteUrl(config.siteOrigin, "/admin");
@@ -150,12 +152,13 @@ export function buildWarningEmail({ row, subscription, unsubscribeToken, config 
       <tr><td style="padding:5px 12px 5px 0;color:#667068">Zdroj</td><td style="padding:5px 0;font-weight:600">${escapeHtml(source)}</td></tr>
     </table>
     <p style="margin:20px 0;font-size:16px;line-height:1.65">${escapeHtml(note)}</p>
+    ${sourceAttributionHtml(payload)}
     ${button(mapUrl, "Otvoriť aktuálnu mapu")}
     <p style="font-size:13px;line-height:1.6;color:#667068">Údaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa. Detail si overte v <a href="${escapeHtml(sourceUrl)}" style="color:#365f43">pôvodnom zdroji</a>.</p>`;
   return {
     subject: `Nové hlásenie: ${headerText(location, "Lokalita neuvedená")} – Kde je Medveď`,
     messageId: `<warning-${row.id}@${new URL(config.siteOrigin).hostname}>`,
-    text: `NOVÉ HLÁSENIE\n\nLokalita: ${location}\nČas: ${formatDate(reportedAt)}\nZdroj: ${source}\n\n${note}\n\nMapa: ${mapUrl}\nZdroj: ${sourceUrl}\n\nÚdaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa.\n${scope}\nOdhlásenie: ${unsubscribeUrl}`,
+    text: `NOVÉ HLÁSENIE\n\nLokalita: ${location}\nČas: ${formatDate(reportedAt)}\nZdroj: ${source}\n\n${note}\n\nMapa: ${mapUrl}\nZdroj: ${sourceUrl}\n${sourceAttributionText(payload)}\n\nÚdaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa.\n${scope}\nOdhlásenie: ${unsubscribeUrl}`,
     html: layout({
       preheader: `Nové hlásenie v lokalite ${location}.`,
       title: `Nové hlásenie: ${location}`,
@@ -184,7 +187,8 @@ function rowContent(row, config) {
   const reportedAt = payload.reported_at || payload.reported_date || payload.published_at || payload.created_at;
   const source = payload.source || (row.aggregate_type === "bear_report" ? "Schválené komunitné hlásenie" : "Verejný zdroj");
   const sourceUrl = safeHttpUrl(payload.url || payload.article_url || payload.link, config.siteOrigin);
-  return { kind, location, title, note, reportedAt, source, sourceUrl };
+  return { kind, location, title, note, reportedAt, source, sourceUrl,
+    attributionHtml: sourceAttributionHtml(payload), attributionText: sourceAttributionText(payload) };
 }
 
 function digestItemHtml(item) {
@@ -197,6 +201,7 @@ function digestItemHtml(item) {
       ${location}
       <p style="margin:8px 0;font-size:15px;line-height:1.55">${escapeHtml(item.note)}</p>
       <p style="margin:0;color:#667068;font-size:12px;line-height:1.5">${escapeHtml(formatDate(item.reportedAt))} · ${escapeHtml(item.source)} · <a href="${escapeHtml(item.sourceUrl)}" style="color:#365f43">Otvoriť zdroj</a></p>
+      ${item.attributionHtml}
     </div>`;
 }
 
@@ -215,7 +220,7 @@ function digestSectionText(title, items, emptyText) {
   if (!items.length) return `${title.toUpperCase()} (0)\n${emptyText}`;
   return `${title.toUpperCase()} (${items.length})\n\n${items.map((item) => {
     const place = item.kind === "warning" ? `\nLokalita: ${item.location}` : "";
-    return `${item.title}${place}\nČas: ${formatDate(item.reportedAt)}\nZdroj: ${item.source}\n${item.note}\n${item.sourceUrl}`;
+    return `${item.title}${place}\nČas: ${formatDate(item.reportedAt)}\nZdroj: ${item.source}\n${item.note}\n${item.sourceUrl}\n${item.attributionText}`;
   }).join("\n\n")}`;
 }
 

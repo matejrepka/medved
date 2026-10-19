@@ -1,3 +1,5 @@
+import { attributeSourceLink } from "./source-attribution.js";
+
 const DEDUPE_TIME_BUCKET_MS = 60 * 1000;
 const MAX_CLOSE_DISTANCE_KM = 2.5;
 const MAX_POSSIBLE_DISTANCE_KM = 5;
@@ -119,12 +121,12 @@ function normalizeSourceLink(link) {
       ...(link.sourceId ? { sourceId: String(link.sourceId) } : {}),
     };
   }
-  return {
+  return attributeSourceLink({
     key,
     label,
     url,
     ...(link.sourceId ? { sourceId: String(link.sourceId) } : {}),
-  };
+  });
 }
 
 export function sightingSourceLinks(item) {
@@ -133,12 +135,12 @@ export function sightingSourceLinks(item) {
     .filter(Boolean);
 
   if (item?.url) {
-    links.push({
+    links.push(attributeSourceLink({
       key: sourceKey(item),
       label: String(item.source || "Zdroj"),
       url: String(item.url),
       ...(item.id ? { sourceId: String(item.id) } : {}),
-    });
+    }));
   }
 
   const seen = new Set();

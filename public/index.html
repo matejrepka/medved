@@ -134,9 +134,9 @@
         .map-startup-actions { margin-top: 12px; }
       }
     </style>
-    <link rel="preload" as="style" href="/styles.css?v=20261005-scroll-cue1"
+    <link rel="preload" as="style" href="/styles.css?v=20261019-source-attribution1"
       onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-map-styles-ready','');window.mapStartup?.ready('styles')" />
-    <noscript><link rel="stylesheet" href="/styles.css?v=20261005-scroll-cue1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
+    <noscript><link rel="stylesheet" href="/styles.css?v=20261019-source-attribution1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -538,6 +538,17 @@
           </div>
         </div>
 
+        <p class="source-attribution">
+          Časť údajov pochádza zo zdroja <a href="https://mapamedvedov.sk/">mapamedveďov.sk</a> —
+          licencia <a href="https://creativecommons.org/licenses/by/4.0/" rel="license">CC BY 4.0</a>.
+          Údaje boli spracované a agregované. <a href="/o-mape#uvedenie-zdroja">Podrobnosti o uvedení zdroja</a>.
+        </p>
+
+        <p class="source-attribution">
+          Ďalší zdroj údajov: <a href="https://tumedved.sk/">tumedved.sk</a>.
+          <a href="/o-mape#zdroj-tumedved">Povinné uvedenie zdroja</a>.
+        </p>
+
         <div class="footer-bottom">
           <p>© 2026 Kde je Medveď</p>
           <p>Nezávislý informačný projekt pre Slovensko.</p>
@@ -553,7 +564,7 @@
       defer
       onerror="window.mapStartup?.fail('Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"
     ></script>
-    <script src="/app.js?v=20261012-data-loading1" defer
+    <script src="/app.js?v=20261019-source-attribution2" defer
       onerror="window.mapStartup?.fail('Načítanie stránky prerušilo pripojenie. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"></script>
     <script src="/consent.js?v=20261018-cloudflare1" defer></script>
   </body>

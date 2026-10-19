@@ -1,3 +1,5 @@
+import { attributeSourceLink } from "../source-attribution.js";
+
 const PAGE_URL = "https://mapamedvedov.sk/";
 const USER_AGENT = "Mozilla/5.0 (compatible; KdeJeMedved/1.0; +https://www.kdejemedved.sk)";
 
@@ -73,12 +75,12 @@ function normalize(row) {
     datePrecision: "date",
     url,
     sourceLinks: [
-      {
+      attributeSourceLink({
         key: "mapamedvedov",
         label: "mapamedvedov.sk",
         url,
         sourceId: id,
-      },
+      }),
     ],
     originalUrl: row.source_facebook_url || row.article_url || null,
   };

@@ -1436,6 +1436,19 @@ main {
   overflow-wrap: anywhere;
 }
 
+.source-attribution {
+  margin: 12px 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.source-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .card.news .card-note {
   display: -webkit-box;
   overflow: hidden;

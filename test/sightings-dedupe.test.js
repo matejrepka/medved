@@ -77,7 +77,7 @@ test("zlúči podobné hlásenie z troch zdrojov a zachová všetky odkazy", () 
   assert.equal(merged[0].reportedAt, tumedved.reportedAt);
   assert.deepEqual(
     merged[0].sourceLinks.map((link) => link.label).sort(),
-    ["mapamedvedov.sk", "sprejnamedveda.sk", "tumedved.sk"]
+    ["mapamedveďov.sk", "sprejnamedveda.sk", "tumedved.sk"]
   );
   assert.equal(merged[0].mergedSourceCount, 3);
 });

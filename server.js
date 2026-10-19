@@ -15,6 +15,7 @@ import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
 import { ScheduledDataStore } from "./src/scheduled-store.js";
 import { sightingSourceLinks } from "./src/sightings-dedupe.js";
+import { MAPAMEDVEDOV_ATTRIBUTION, TUMEDVED_ATTRIBUTION, sourceAttributionHtml, sourceAttributionText } from "./src/source-attribution.js";
 import { mergeWarnings } from "./src/warnings.js";
 import { homeStats } from "./public/home-stats.js";
 import {
@@ -687,7 +688,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}" aria-label="${escapeHtml(`${item.location || "Lokalita neuvedená"}, varovanie z ${formatSlovakDate(item.reportedAt, withTime)}`)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
+      ${note}${sourceAttributionHtml(item)}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
     </article>`;
   }).join("\n");
 }
@@ -1243,6 +1244,7 @@ app.get("/api/warnings", async (_req, res) => {
   try {
     const items = (await loadWarnings()).map((item) => ({
       ...item,
+      sourceLinks: sightingSourceLinks(item),
       detailUrl: warningPath(item),
     }));
     // Krátka cache — schválené hlásenie sa má na webe objaviť rýchlo.
@@ -1287,7 +1289,9 @@ app.get("/api/stats", async (_req, res) => {
     }
     const { allLocations, ...report } = snapshot.report;
     res.set("Cache-Control", "public, max-age=60");
-    res.json({ updatedAt: snapshot.updatedAt, ...report });
+    res.json({ updatedAt: snapshot.updatedAt, ...report,
+      attributions: [{ ...MAPAMEDVEDOV_ATTRIBUTION,
+        changes: "Údaje boli spracované a agregované do štatistík." }, TUMEDVED_ATTRIBUTION] });
   } catch (err) {
     console.error("[snapshot] stats read failed:", err.message);
     res.status(503).set("Cache-Control", "no-store").json({ error: "Štatistiky sú dočasne nedostupné." });
@@ -1933,7 +1937,7 @@ function renderDetailSources(source) {
   }
   return `<div class="record-source-actions">${source.links.map((link) =>
     `<a class="btn" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} <i class="ph ph-arrow-square-out" aria-hidden="true"></i></a>`
-  ).join("")}</div>`;
+  ).join("")}</div>${sourceAttributionHtml({ sourceLinks: source.links })}`;
 }
 
 async function renderRecordPage(req, res, requestedKind) {
@@ -2164,6 +2168,11 @@ ${locationLinks}
 - [Štatistiky, JSON](${absoluteUrl(origin, "/api/stats")})
 - [RSS najnovších hlásení](${absoluteUrl(origin, "/feed.xml")})
 
+## Uvedenie zdroja pri ďalšom použití
+Pri každom prevzatí alebo zverejnení údajov z tumedved.sk (na webe, v aplikácii, v médiách aj v odpovediach generovaných prostredníctvom AI) uveďte názov zdroja **tumedved.sk** a priamy funkčný odkaz na https://tumedved.sk/ alebo na konkrétny záznam hlásenia.
+
+Údaje zo zdroja [mapamedveďov.sk](https://mapamedvedov.sk/) sa používajú pod licenciou [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). ${MAPAMEDVEDOV_ATTRIBUTION.changes} Pri ďalšom zverejnení vrátane odpovedí umelej inteligencie uveďte názov zdroja, funkčný odkaz priamo na prevzaté pozorovanie, licenciu a prípadné úpravy. Licencia sa vzťahuje na údaje tohto zdroja; ostatné zdroje majú vlastné podmienky.
+
 ## Dôležité obmedzenie
 Bod na mape označuje miesto a čas nahláseného pozorovania alebo verejného varovania. Nejde o GPS sledovanie zvierat, potvrdenie ich aktuálnej polohy ani úplnú mapu populácie. Dáta sú orientačné a nenahrádzajú pokyny ŠOP SR, Zásahového tímu ani tiesňových zložiek.
 `);
@@ -2178,6 +2187,7 @@ app.get("/feed.xml", async (req, res) => {
       `Lokalita: ${item.location || "neuvedená"}.`,
       `Čas hlásenia: ${formatSlovakDate(item.reportedAt, true)}.`,
       item.note ? String(item.note).slice(0, 400) : "",
+      sourceAttributionText(item),
       "Údaj je orientačný a nepotvrdzuje aktuálnu polohu zvieraťa.",
     ].filter(Boolean).join(" ");
     const detailUrl = absoluteUrl(origin, warningPath(item));

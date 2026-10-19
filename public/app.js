@@ -1104,6 +1104,19 @@ function warningSourceLinksHtml(s, className) {
     </a>`).join("")}</div>`;
 }
 
+function warningAttributionHtml(s) {
+  return warningSourceLinks(s).map(link => {
+    const host = new URL(link.url).hostname;
+    if (link.key === "tumedved" || ["tumedved.sk", "www.tumedved.sk"].includes(host)) {
+      return `<p class="source-attribution">Zdroj: <a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">tumedved.sk</a></p>`;
+    }
+    if (link.key === "mapamedvedov" || ["mapamedvedov.sk", "www.mapamedvedov.sk"].includes(host)) {
+      return `<p class="source-attribution">Zdroj: <a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">mapamedveďov.sk</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="license noopener noreferrer">CC BY 4.0</a>. Údaje boli spracované: zjednotený formát, prípadne zlúčené duplicitné záznamy.</p>`;
+    }
+    return "";
+  }).join("");
+}
+
 function listingSourceMetaHtml(label, links = []) {
   if (!label) return "";
   const safeLinks = links.filter((link) => link?.label && link?.url);
@@ -1161,6 +1174,7 @@ function renderSightings() {
           <time class="meta-date" datetime="${esc(s.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${esc(fmtDate(s.reportedAt, withTime))}</time>
         </div>
         ${s.note ? `<p class="card-note">${esc(s.note)}</p>` : ""}
+        ${warningAttributionHtml(s)}
         <div class="card-actions card-actions-sighting">
           <div class="card-primary-actions">
             ${mapAction}
@@ -1209,6 +1223,7 @@ function renderMarkers({ fit = true } = {}) {
       <p class="popup-meta"><strong>${esc(sourceLabel || "Zdroj neuvedený")}</strong><br>${withTime ? "Hlásené" : "Dátum záznamu"}: ${esc(fmtDate(s.reportedAt, withTime))}</p>
       ${s.note ? `<p class="popup-note">${esc(s.note)}</p>` : ""}
       ${warningSourceLinksHtml(s, "popup-link")}
+      ${warningAttributionHtml(s)}
     `);
     state.markers.set(s.id, marker);
     bounds.push([s.lat, s.lng]);
