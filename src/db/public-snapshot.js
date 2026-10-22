@@ -81,6 +81,7 @@ export async function loadPublicSnapshot({ kind = "overview", slug = null, clien
 
 export async function publishPublicSnapshot(revision, day, payload, client = getSupabase()) {
   if (!client) throw new Error("Supabase is not configured");
+  const started = performance.now();
   const { allLocations, ...report } = payload.report;
   const directory = payload.locations.map(({ warningItems, newsItems, ...location }) => location);
   // Prepare small documents once. Each visitor downloads just their report or
@@ -93,6 +94,7 @@ export async function publishPublicSnapshot(revision, day, payload, client = get
     news: { items: payload.news, updatedAt: payload.updatedAt },
     records: buildRecordDocuments(payload),
   };
+  console.log(`[snapshot] prepare-documents completed in ${Math.round(performance.now() - started)} ms (${Object.keys(documents.records).length} records)`);
   const { data, error } = await client.rpc("publish_public_snapshot", {
     p_revision: revision, p_day: day, p_payload: documents,
   });

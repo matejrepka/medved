@@ -37,6 +37,24 @@ dátach sa výpočet preskočí. Kontrola nepotrebuje Chromium ani AI.
 Workflow importu dát spustí predpočítanie aj po svojom behu. Plány GitHub Actions
 môžu mať oneskorenie a podliehajú dostupnosti a kvótam daného repozitára.
 
+### Odolnosť publikovania a diagnostika
+
+Aplikujte aj `supabase/migrations/20261022094010_optimize_snapshot_publication.sql`.
+Publikačná funkcia vyberie mapu detailov z veľkého JSON-u iba raz, namiesto jej
+opakovaného kopírovania pri kontrole každého uloženého záznamu. Zachováva spoločnú
+transakciu, kontrolu revízie aj vynechanie zápisov nezmenených detailov.
+
+`precompute:public` má najviac tri pokusy. Pri databázovom `statement timeout`
+(`57014`) alebo nedostupnom zámku (`55P03`) počká 2 sekundy, potom 5 sekúnd a znovu
+načíta revíziu aj zdrojové dáta. Chyby oprávnení, neplatný payload a manuálne
+zrušenie príkazu sa neopakujú. Zmena revízie počas výpočtu naďalej vyvolá nový
+výpočet v rámci rovnakého limitu troch pokusov.
+
+Log `[snapshot]` uvádza číslo pokusu, čas načítania každého zdroja, zostavenia
+prehľadu, prípravy detailov a publikovania, počet detailov a celkové trvanie.
+Pri chybe uvádza fázu aj databázový kód; neobsahuje samotné dokumenty ani kľúče.
+Rovnaké správanie používa samostatný workflow aj prepočet po importe dát.
+
 ### Cache verejných dát
 
 Worker kontroluje malé metadáta revízie najviac raz za 15 sekúnd v jednom

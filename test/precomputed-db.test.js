@@ -19,12 +19,13 @@ test("snapshot publication and manual buckets are transactional and private", as
   await db.exec(optimization);
   await db.exec(await readFile(new URL("../supabase/migrations/20261018184716_record_detail_documents.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../supabase/migrations/20261018185139_record_publish_safe_updates.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../supabase/migrations/20261022094010_optimize_snapshot_publication.sql", import.meta.url), "utf8"));
   const scalar = async (sql, args = []) => Object.values((await db.query(sql, args)).rows[0])[0];
   const revision = () => scalar("select revision from public.public_snapshots where id = 'overview'");
-  const publish = rev => scalar("select public.publish_public_snapshot($1, '2026-10-18', $2)",
+  const publish = (rev, records = { "warning:one": { record: { id: "one" } } }) => scalar("select public.publish_public_snapshot($1, '2026-10-18', $2)",
     [rev, { stats: { report: { totals: { sightings: 2 } } },
       overview: { report: { totals: { sightings: 2 } } }, locations: {},
-      records: { "warning:one": { record: { id: "one" } } } }]);
+      records }]);
   const apply = plan => scalar("select public.apply_sighting_bucket_plan($1)", [plan]);
 
   await db.exec(`insert into public.tumedved_logs(id,location) values ('one','Brezno'),('two','Brezno');
@@ -41,10 +42,24 @@ test("snapshot publication and manual buckets are transactional and private", as
   assert.equal((await scalar("select public.read_public_snapshot('record','warning:one')")).record.id, "one");
   assert.equal(await scalar("select public.read_public_snapshot('record','warning:missing')"), null);
   assert.equal((await scalar("select public.read_public_snapshot()" )).report.totals.sightings, 2);
+  const recordVersion = await scalar("select xmin::text from public.public_record_snapshots where record_key = 'warning:one'");
+  assert.equal(await publish(before), true);
+  assert.equal(await scalar("select xmin::text from public.public_record_snapshots where record_key = 'warning:one'"), recordVersion,
+    "Identical record documents are not rewritten");
+  await assert.rejects(publish(before, null), /Invalid public snapshot/);
+  assert.equal((await scalar("select public.read_public_snapshot('record','warning:one')")).record.id, "one",
+    "Invalid payloads retain the published documents");
+  assert.equal(await publish(before, { "warning:two": { record: { id: "two" } } }), true);
+  assert.equal(await scalar("select public.read_public_snapshot('record','warning:one')"), null,
+    "Records absent from the new snapshot are removed");
+  assert.equal((await scalar("select public.read_public_snapshot('record','warning:two')")).record.id, "two");
+  await publish(before);
   await db.exec("update public.tumedved_logs set status = 'rejected' where id = 'two'");
   assert.equal(await scalar("select public.read_public_snapshot()"), null, "Old rejected content cannot be served");
   assert.equal(await scalar("select public.read_public_snapshot('record','warning:one')"), null, "Details follow the same revision guard");
-  assert.equal(await publish(before), false, "A concurrent edit prevents publishing stale content");
+  assert.equal(await publish(before, {}), false, "A concurrent edit prevents publishing stale content");
+  assert.equal(await scalar("select count(*)::int from public.public_record_snapshots"), 1,
+    "A stale publisher cannot remove the saved record documents");
   await db.exec("update public.tumedved_logs set status = 'approved' where id = 'two'");
 
   const id = "10000000-0000-4000-8000-000000000001";
