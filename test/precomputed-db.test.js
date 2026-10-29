@@ -20,7 +20,18 @@ test("snapshot publication and manual buckets are transactional and private", as
   await db.exec(await readFile(new URL("../supabase/migrations/20261018184716_record_detail_documents.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../supabase/migrations/20261018185139_record_publish_safe_updates.sql", import.meta.url), "utf8"));
   await db.exec(await readFile(new URL("../supabase/migrations/20261022094010_optimize_snapshot_publication.sql", import.meta.url), "utf8"));
+  const keySetMigration = await readFile(new URL("../supabase/migrations/20261029084849_materialize_snapshot_record_keys.sql", import.meta.url), "utf8");
+  await db.exec(keySetMigration);
+  await db.exec(keySetMigration);
+  const budgetMigration = await readFile(new URL("../supabase/migrations/20261029085858_budget_snapshot_publication.sql", import.meta.url), "utf8");
+  await db.exec(budgetMigration);
+  await db.exec(budgetMigration);
   const scalar = async (sql, args = []) => Object.values((await db.query(sql, args)).rows[0])[0];
+  const publicationSettings = await scalar("select proconfig from pg_proc where oid = 'public.publish_public_snapshot(bigint,date,jsonb)'::regprocedure");
+  assert.ok(publicationSettings.includes("statement_timeout=30s"), "Background publication gets its own bounded API timeout");
+  assert.ok(publicationSettings.includes("work_mem=16MB"), "The multi-megabyte record map fits in working memory");
+  const sessionSettings = () => scalar("select jsonb_build_array(current_setting('statement_timeout'),current_setting('work_mem'))");
+  const beforeSettings = await sessionSettings();
   const revision = () => scalar("select revision from public.public_snapshots where id = 'overview'");
   const publish = (rev, records = { "warning:one": { record: { id: "one" } } }) => scalar("select public.publish_public_snapshot($1, '2026-10-18', $2)",
     [rev, { stats: { report: { totals: { sightings: 2 } } },
@@ -39,6 +50,7 @@ test("snapshot publication and manual buckets are transactional and private", as
   await db.exec("delete from public.news_logs where id = 'not-present'");
   assert.equal(await revision(), before, "An empty write does not invalidate the snapshot");
   assert.equal(await publish(before), true);
+  assert.deepEqual(await sessionSettings(), beforeSettings, "Publication settings do not change other requests");
   assert.equal((await scalar("select public.read_public_snapshot('record','warning:one')")).record.id, "one");
   assert.equal(await scalar("select public.read_public_snapshot('record','warning:missing')"), null);
   assert.equal((await scalar("select public.read_public_snapshot()" )).report.totals.sightings, 2);
@@ -61,6 +73,27 @@ test("snapshot publication and manual buckets are transactional and private", as
   assert.equal(await scalar("select count(*)::int from public.public_record_snapshots"), 1,
     "A stale publisher cannot remove the saved record documents");
   await db.exec("update public.tumedved_logs set status = 'approved' where id = 'two'");
+
+  await t.test("large record maps retain unchanged rows and atomically replace removed records", async () => {
+    const current = await revision();
+    const records = Object.fromEntries(Array.from({ length: 1800 }, (_, i) =>
+      [`warning:large-${i}`, { record: { id: `large-${i}`, note: "Medveď v okolí obce. ".repeat(200) } }]));
+    assert.equal(await publish(current, records), true);
+    const unchangedVersion = await scalar("select xmin::text from public.public_record_snapshots where record_key = 'warning:large-1'");
+    delete records["warning:large-0"];
+    records["warning:large-1799"].record.note = "Aktualizované hlásenie";
+    records["warning:new"] = { record: { id: "new" } };
+    const started = performance.now();
+    assert.equal(await publish(current, records), true);
+    t.diagnostic(`Republished 1800 records (${Math.round(JSON.stringify(records).length / 1024)} KiB) in ${Math.round(performance.now() - started)} ms`);
+    assert.equal(await scalar("select count(*)::int from public.public_record_snapshots"), 1800);
+    assert.equal(await scalar("select xmin::text from public.public_record_snapshots where record_key = 'warning:large-1'"), unchangedVersion);
+    assert.equal(await scalar("select public.read_public_snapshot('record','warning:large-0')"), null);
+    assert.equal((await scalar("select public.read_public_snapshot('record','warning:large-1799')")).record.note, "Aktualizované hlásenie");
+    assert.equal((await scalar("select public.read_public_snapshot('record','warning:new')")).record.id, "new");
+    assert.equal(await publish(current, {}), true, "An empty key set removes all previous documents");
+    assert.equal(await scalar("select count(*)::int from public.public_record_snapshots"), 0);
+  });
 
   const id = "10000000-0000-4000-8000-000000000001";
   const plan = [{ id, primaryKey: "sighting:one", memberKeys: ["sighting:one", "report:42"] }];
@@ -85,4 +118,5 @@ test("snapshot publication and manual buckets are transactional and private", as
   await assert.rejects(db.query("select * from public.public_record_snapshots"), /permission denied/);
   await assert.rejects(db.query("select public.apply_sighting_bucket_plan('[]')"), /permission denied/);
   await assert.rejects(db.query("select public.read_public_snapshot()"), /permission denied/);
+  await assert.rejects(publish(rev), /permission denied/);
 });

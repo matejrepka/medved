@@ -1,0 +1,701 @@
+[
+  {
+    "ids": [
+      "tm-1756",
+      "sprejnamedveda-3fd17f90587901ade8fe",
+      "sprejnamedveda-cc3c8054ca8637d593b4"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-10-17",
+    "locations": [
+      "Margočová Osada",
+      "Panické Dravce"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-5af370733ae8a1a362cb",
+      "tm-1725"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-10-05",
+    "locations": [
+      "Urpín",
+      "Banská Bystrica"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-4261823bc648b5284af8",
+      "tm-1690",
+      "sprejnamedveda-dbfab80f024af0d11e19"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-23",
+    "locations": [
+      "Trnavá Hora",
+      "Ladno"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1687",
+      "sprejnamedveda-15d79aeab80ce85ef525"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-22",
+    "locations": [
+      "Praha (LC)",
+      "Praha"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-019b1442fbcd2b7dac38",
+      "mapamedvedov-1018"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-20",
+    "locations": [
+      "Gazdoráň",
+      "Gazdoráň (507 m)"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-b7061178ca7f013223f2",
+      "tm-1682",
+      "sprejnamedveda-c5e6210eb5e4e387d364"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-19",
+    "locations": [
+      "Nižný Klátov – Vyšný Klátov",
+      "Klátov",
+      "Klátove"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-42c591fd7c04ed8371d9",
+      "mapamedvedov-959"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-15",
+    "locations": [
+      "Podtureň"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-7b5dd556183fd1de5cc5",
+      "tm-1635",
+      "mapamedvedov-945"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-15",
+    "locations": [
+      "Priechod"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-ddfeb29a66cbc0dea44f",
+      "tm-1627",
+      "tm-1629"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-13",
+    "locations": [
+      "Tatry",
+      "Vysoké Tatry – Štrbské Pleso (Mlynická dolina)"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1623",
+      "mapamedvedov-925",
+      "sprejnamedveda-042d9e36beb713c5d93e"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-12",
+    "locations": [
+      "Spišská Teplica"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-35f0f2f25554356935aa",
+      "tm-1581",
+      "mapamedvedov-914"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-09",
+    "locations": [
+      "Háj"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-47e1a8e19ce464de007d",
+      "tm-1573",
+      "mapamedvedov-892"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-08",
+    "locations": [
+      "Lučivná"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-56e971a22f7a1116d155",
+      "sprejnamedveda-ab8e5111025e88d8792e"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-08",
+    "locations": [
+      "Zobrakov",
+      "Suchá Hora"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-79fe01b3aa5e5df369f3",
+      "tm-1587",
+      "tm-1588",
+      "mapamedvedov-883",
+      "sprejnamedveda-35b5f693a89ffa5938db"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-05",
+    "locations": [
+      "Kežmarské žľaby",
+      "Vysoké Tatry, Kežmarské Žľaby",
+      "Vysoké Tatry"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-904",
+      "tm-1561",
+      "sprejnamedveda-367b16a685059c85d9a6"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-05",
+    "locations": [
+      "Vychylovka, Chmúrovci",
+      "Vychylovka"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-879",
+      "sprejnamedveda-9da20aeaf58769432ebb"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-04",
+    "locations": [
+      "Jedliny, Lendak",
+      "Jedliny"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-3646ce2773f495a5fad4",
+      "mapamedvedov-886"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-04",
+    "locations": [
+      "Poludnica",
+      "Poludnica, Liptovský Mikuláš"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-839",
+      "tm-1519",
+      "sprejnamedveda-bbca5b4b1af78970c48a"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-09-01",
+    "locations": [
+      "Zbyňov, Dielnice",
+      "Zbyňov"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-d1b906f26a360f7f93e7",
+      "mapamedvedov-827"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-29",
+    "locations": [
+      "Chleb",
+      "Chleb, Vrátna"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-9987aadc89c6442d793a",
+      "tm-1504"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-26",
+    "locations": [
+      "Oravská Lesná",
+      "Oravská Lesná, Kubínská"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-b837e42ac113122d9cdf",
+      "tm-1494"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-25",
+    "locations": [
+      "Sedlo Medziholie",
+      "Sedlo Medziholie ( Veľký Rozsutec)"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1482",
+      "sprejnamedveda-3d7d2d6f70b543ac1b9a"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-23",
+    "locations": [
+      "Medzi Nitricou a Novákmi",
+      "Medzi Nitricou"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-751",
+      "sprejnamedveda-46dd5a865fa5afaaef7f"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-23",
+    "locations": [
+      "Podbanské, Hrdovo",
+      "Podbanské"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1457",
+      "mapamedvedov-699",
+      "sprejnamedveda-7c928750ea9c124fa14e"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-16",
+    "locations": [
+      "Iľanovo",
+      "Liptovský Mikuláš"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-f26236b7b0b29e0d6896",
+      "tm-1451"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-14",
+    "locations": [
+      "Zvolen Stráže",
+      "Zvolen Stráže, v blízkosti záhrad, pri vstupe do lesa"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1438",
+      "sprejnamedveda-0e733438a359a7d7a679"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-11",
+    "locations": [
+      "Cesta svobody,silnice 537",
+      "Cesta svobody"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-665",
+      "tm-1439",
+      "sprejnamedveda-edc117836444edb2a650"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-11",
+    "locations": [
+      "Telgárt"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-9aeff72df155466f5168",
+      "tm-1432",
+      "mapamedvedov-657"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-08-10",
+    "locations": [
+      "Omšenie"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1367",
+      "report-6",
+      "sprejnamedveda-76ea6aef0d0f452abfcf",
+      "tm-1389"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-30",
+    "locations": [
+      "Liptovský Mikuláš Tesco",
+      "Liptovský Mikuláš, Tesco",
+      "Liptovský Mikuláš"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1333",
+      "sprejnamedveda-1d6b8cc7e6ccb4951196"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-26",
+    "locations": [
+      "Hlboké - okres Čadca (Makov)",
+      "Hlboké"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-581",
+      "sprejnamedveda-ce83149b81c569d17ef7"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-26",
+    "locations": [
+      "Háj, Turčianske Teplice",
+      "Háj"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-1faa15fc9d784690af6d",
+      "report-2",
+      "tm-1247"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-21",
+    "locations": [
+      "Žiar nad Hronom",
+      "Šibeničný vrch, Žiar nad Hronom",
+      "Žiar nad Hronom,"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-d2730a1f11ac999def8f",
+      "tm-1215"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-17",
+    "locations": [
+      "Modrá značka z Medziholie na Osnicu na stráni pod Stohom viditeľná z Osnice",
+      "Sedlo Medziholie (pod Stohom)"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1239",
+      "sprejnamedveda-c19fbfdbbf636e9bbbb9"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-16",
+    "locations": [
+      "Povina"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-393c51e58eb2bff04f2e",
+      "sprejnamedveda-10bfba0c807b754e54c6"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-15",
+    "locations": [
+      "Beluša"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-65342d5f8feca6c57cb3",
+      "mapamedvedov-476"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-14",
+    "locations": [
+      "Morovno",
+      "Morovno, Handlová"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1203",
+      "mapamedvedov-467",
+      "sprejnamedveda-48cfa75d2b2ade5d574a"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-13",
+    "locations": [
+      "Malá Čausa",
+      "Malá Čausa, Prievidza"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1155",
+      "sprejnamedveda-c298c26e3b428c4207c2",
+      "sprejnamedveda-b786b61e35cebff5a28d"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-10",
+    "locations": [
+      "Hrdovo, Podbanské",
+      "Pribylina",
+      "Hrdovo"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-29457723fcfb00079357",
+      "sprejnamedveda-38c02b327d6134f05164"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-07-01",
+    "locations": [
+      "Suchá Hora"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-9b53babf6b3c2ed00295",
+      "sprejnamedveda-f94ba37602c416081f7c"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-28",
+    "locations": [
+      "Opatová"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-b037da23ce4c50665c40",
+      "tm-942",
+      "sprejnamedveda-093077f53fa34f8c2cdc"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-24",
+    "locations": [
+      "Šidlovec",
+      "Prešov"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-ddf68c3e2669c5528a08",
+      "sprejnamedveda-84f80907612a7b032c60"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-22",
+    "locations": [
+      "Dúbravica"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-bfd38ca4c05da16286c5",
+      "sprejnamedveda-514242026bdafbeb8675"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-19",
+    "locations": [
+      "Bodíc"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-fd54eafc480a366851dd",
+      "sprejnamedveda-3f4369b4416901dbd69f"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-13",
+    "locations": [
+      "Vrátna"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-e7e20dc4e584e3eda24f",
+      "sprejnamedveda-376272100e97c5bf887a"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-05",
+    "locations": [
+      "Dedovka"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-a20f6db15d1b854d4eb5",
+      "sprejnamedveda-513175e54750391986bc"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-06-02",
+    "locations": [
+      "Krosna"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1298",
+      "sprejnamedveda-b0610e6e101d1426837e"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-05-28",
+    "locations": [
+      "Ľubietová; Strelníky",
+      "Ľubietová"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-d086d68a14295be755e9",
+      "sprejnamedveda-b67cdd284cac97a75e03"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-05-19",
+    "locations": [
+      "Tisovec,poniže Papierne"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-592296aa42619bc8ca39",
+      "tm-408"
+    ],
+    "reason": "Reviewed event descriptions, time where available, nearby map positions and alternate place labels; records describe the same dated event.",
+    "date": "2026-05-01",
+    "locations": [
+      "Spariská",
+      "v lese"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-ccef85aaa98b7ddd85a3",
+      "tm-1731",
+      "tm-1732",
+      "sprejnamedveda-838d6b8d4ad65a1154bd",
+      "sprejnamedveda-079a1da7c0ce675932db"
+    ],
+    "reason": "Same encounter at Klastorisko in Slovensky raj, reported under Hrabusice and Letanovce; empty nearby record retained separately.",
+    "date": "2026-10-07",
+    "locations": [
+      "Kláštorisko",
+      "Hrabušice",
+      "Letanovce"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1645",
+      "sprejnamedveda-5dab7a9ea1909f874ec6"
+    ],
+    "reason": "Identical Hradocka dolina observation, shortened municipality label.",
+    "date": "2026-09-15",
+    "locations": [
+      "Hrádok - okres Nové Mesto nad Váhom",
+      "Hrádok"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1500",
+      "sprejnamedveda-277dc94787efdd92950f",
+      "mapamedvedov-792"
+    ],
+    "reason": "Same 05:45 bear crossing D1 at Liptovsky Jan exit.",
+    "date": "2026-08-26",
+    "locations": [
+      "Uhorská Ves"
+    ]
+  },
+  {
+    "ids": [
+      "mapamedvedov-587",
+      "sprejnamedveda-b42f673519ca33fd9b5c"
+    ],
+    "reason": "Same photographs of bear tracks at Vychylovka; expanded municipality label.",
+    "date": "2026-07-26",
+    "locations": [
+      "Vychylovka, Nová Bystrica",
+      "Vychylovka"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1190",
+      "sprejnamedveda-ee8046e1804d45e9f7b9"
+    ],
+    "reason": "Same Bela roadside observation around 01:40-01:47, nearby map locations.",
+    "date": "2026-07-04",
+    "locations": [
+      "Belá"
+    ]
+  },
+  {
+    "ids": [
+      "tm-1758",
+      "sprejnamedveda-86a536040ea07f2ebfa4",
+      "sprejnamedveda-24d1a5b1ac91ded4650d"
+    ],
+    "reason": "Same Novy Svet in Banska Bystrica, with inconsistent geocoding in older copies.",
+    "date": "2026-10-18",
+    "locations": [
+      "Banská bystrica",
+      "Nový Svet"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-86102999b78b82688e3c",
+      "tm-1727"
+    ],
+    "reason": "Same official warning about three Liptov localities on 5 October; keep separate from individual place warnings.",
+    "date": "2026-10-05",
+    "locations": [
+      "Liptovský Mikuláš",
+      "Liptov"
+    ]
+  },
+  {
+    "ids": [
+      "sprejnamedveda-3ad2bc5272a38e51c5a6",
+      "sprejnamedveda-2cab6ae17b678b8bdff7",
+      "tm-1422"
+    ],
+    "reason": "Identical cyclist attack description in Velka Fatra, labelled Valcianska dolina or Martin.",
+    "date": "2026-08-08",
+    "locations": [
+      "Valčianska dolina",
+      "Martin"
+    ]
+  }
+]

@@ -40,9 +40,27 @@ môžu mať oneskorenie a podliehajú dostupnosti a kvótam daného repozitára.
 ### Odolnosť publikovania a diagnostika
 
 Aplikujte aj `supabase/migrations/20261022094010_optimize_snapshot_publication.sql`.
-Publikačná funkcia vyberie mapu detailov z veľkého JSON-u iba raz, namiesto jej
-opakovaného kopírovania pri kontrole každého uloženého záznamu. Zachováva spoločnú
-transakciu, kontrolu revízie aj vynechanie zápisov nezmenených detailov.
+Následne aplikujte
+`supabase/migrations/20261029084849_materialize_snapshot_record_keys.sql`.
+Prvá optimalizácia sama nestačí: aj odovzdanie veľkej PL/pgSQL premennej operátoru
+`?` pri každom uloženom riadku opakovane kopíruje celý JSON a môže prekročiť limit
+API. Nová funkcia vyberie iba kľúče pomocou `jsonb_object_keys` v nekorelovanom
+poddotaze; databáza si ich pripraví raz a pri mazaní kontroluje tento malý zoznam.
+Zachováva spoločnú transakciu, kontrolu revízie, odstránenie chýbajúcich detailov
+aj vynechanie zápisov nezmenených detailov. Globálne timeouty sa nemenia.
+
+Aplikujte aj `supabase/migrations/20261029085858_budget_snapshot_publication.sql`.
+Publikačné RPC má vlastný limit 30 sekúnd a `work_mem=16MB`: pri približne 9 MB
+dokumentov už nezávisí od predvoleného 8-sekundového API limitu a nízkej pracovnej
+pamäte, ktorá spôsobovala zápis medzivýsledkov na disk. Nastavenia platia iba počas
+tejto privátnej funkcie; limity ostatných požiadaviek a rolí sa nemenia. Migrácia
+obnoví schému PostgREST, aby sa limit uplatnil už pred vykonaním RPC príkazu.
+Postup vychádza z dokumentácie
+[Supabase pre limity funkcií](https://supabase.com/docs/guides/database/postgres/timeouts#function-level).
+
+Po migrácii spustite `npm run precompute:public -- --force`, aby sa overilo skutočné
+publikovanie aj pri už aktuálnej revízii. Samostatný workflow aj prepočet po importe
+používajú tú istú opravenú databázovú funkciu bez zmeny volania.
 
 `precompute:public` má najviac tri pokusy. Pri databázovom `statement timeout`
 (`57014`) alebo nedostupnom zámku (`55P03`) počká 2 sekundy, potom 5 sekúnd a znovu
