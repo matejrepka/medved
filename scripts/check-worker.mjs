@@ -112,7 +112,8 @@ function createRuntime(bindings, simulateUpdates = false, dataset = null) {
         if (url.pathname.includes("/rpc/")) {
           assert.equal(table, "read_public_snapshot", "Public requests never run computation or publish RPCs");
           if (dataset && Object.hasOwn(dataset, "public_snapshot")) return Response.json(dataset.public_snapshot);
-          return request.json().then(({ p_kind, p_slug }) => {
+          return request.json().then(async ({ p_kind, p_slug }) => {
+            if (dataset?.snapshotDelayMs) await new Promise(resolve => setTimeout(resolve, dataset.snapshotDelayMs));
             if (p_kind === "record") {
               assert.ok(!dataset?.forbidDetails, "This test forbids record reads");
               return Response.json((dataset?.record_documents || buildRecordDocuments(storedSnapshot))[p_slug] || null);
@@ -209,7 +210,7 @@ try {
 
 const pendingSnapshot = createRuntime(fixtures, false, { public_snapshot: null });
 try {
-  for (const route of ["/api/stats", "/vyskyt-medveda/brezno", `/varovania/brezno-${recordToken("snapshot-1")}`]) {
+  for (const route of ["/", "/domov", "/spravy", "/varovania", "/sitemap.xml", "/api/stats", "/vyskyt-medveda/brezno", `/varovania/brezno-${recordToken("snapshot-1")}`]) {
     const response = await pendingSnapshot.dispatchFetch(`https://www.kdejemedved.sk${route}`);
     assert.equal(response.status, 503, "Pending background computation never produces a false 404 or a visitor computation");
     assert.equal(response.headers.get("cache-control"), "no-store");
@@ -242,6 +243,56 @@ try {
   await privateResponse.arrayBuffer();
   console.log("Workers checks passed: shared public response caching and private-request exclusion");
 } finally { await prepared.dispose(); }
+
+const seoNews = Array.from({ length: 30 }, (_, index) => ({
+  id: `seo-news-${index}`, title: `Medveď pri Brezne ${index}`, category: "article",
+  date: storedSnapshot.updatedAt, source: "Test", summary: "Správa o pozorovaní medveďa pri Brezne.",
+}));
+const seo = createRuntime(fixtures, false, { forbidRawReads: true, snapshotDelayMs: 220, public_documents: {
+  news: { items: seoNews, updatedAt: storedSnapshot.updatedAt },
+  warnings: { items: storedSnapshot.warnings, updatedAt: storedSnapshot.updatedAt },
+} });
+try {
+  const get = route => seo.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+  // Cold responses must wait beyond the old 180 ms race and still expose data.
+  for (const route of ["/", "/domov", "/spravy", "/varovania", "/stats"]) {
+    const response = await get(route);
+    assert.equal(response.status, 200, route);
+    const html = await response.text();
+    const schema = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+    const page = schema["@graph"].find(item => item["@id"] === `https://www.kdejemedved.sk${route}#webpage`);
+    assert.equal(page.dateModified, storedSnapshot.updatedAt, `${route} uses the loaded snapshot date`);
+    if (route !== "/stats") {
+      assert.match(html, /Brezn[oe]/, `${route} has crawlable records on its first request`);
+    }
+    if (["/", "/domov", "/spravy"].includes(route)) {
+      assert.match(html, /href="\/spravy\/medved-pri-brezne-0-/, `${route} links to a prepared news record`);
+    }
+    if (["/", "/domov"].includes(route)) {
+      assert.match(html, /href="\/vyskyt-medveda\/brezno"/, `${route} links to local search pages`);
+    }
+    assert.equal(response.headers.get("last-modified"), new Date(storedSnapshot.updatedAt).toUTCString());
+  }
+  for (const route of ["/spravy?strana=2", "/spravy?pocet=24&strana=2"]) {
+    const response = await get(route);
+    const html = await response.text();
+    assert.equal(response.status, 200);
+    assert.match(html, /<link rel="canonical" href="https:\/\/www\.kdejemedved\.sk\/spravy\?strana=2"/);
+    assert.match(html, /<title>[^<]+Strana 2<\/title>/);
+    assert.match(html, /<meta name="robots" content="index,follow/);
+    assert.match(html, /href="\/spravy\/medved-pri-brezne-24-/);
+    assert.equal(response.headers.get("link"), '<https://www.kdejemedved.sk/spravy?strana=2>; rel="canonical"');
+  }
+  for (const route of ["/spravy?q=Brezno", "/spravy?pocet=50"]) {
+    const response = await get(route);
+    const html = await response.text();
+    assert.match(html, /<meta name="robots" content="noindex,follow"/);
+    assert.match(html, /<link rel="canonical" href="https:\/\/www\.kdejemedved\.sk\/spravy"/);
+  }
+  const sitemap = await (await get("/sitemap.xml")).text();
+  assert.match(sitemap, new RegExp(`<loc>https://www.kdejemedved.sk/</loc>\\s*<lastmod>${storedSnapshot.updatedAt}</lastmod>`));
+  console.log("Workers checks passed: complete cold SSR, snapshot dates, local links and self-canonical archive pagination");
+} finally { await seo.dispose(); }
 
 const detailNews = { id: "small-detail-news", title: "Medveď pri Brezne", category: "article",
   date: sighting.reported_at, summary: "Saved news detail", source: "Test", place: "Brezno" };

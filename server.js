@@ -110,18 +110,18 @@ const emailConfig = {
 const PUBLIC_PAGES = {
   "/": {
     file: "index.html",
-    title: "Mapa medveďov na Slovensku | Aktuálne varovania",
+    title: "Mapa medveďov na Slovensku | Aktuálny výskyt",
     description:
-      "Aktuálna mapa medveďov na Slovensku spája hlásený výskyt, verejné varovania a správy s lokalitou, dátumom a pôvodným zdrojom.",
+      "Kde bol hlásený medveď? Pozrite si mapu výskytu medveďov na Slovensku, najnovšie pozorovania a varovania s dátumom, lokalitou a pôvodným zdrojom.",
     schemaType: "CollectionPage",
     dynamicLastmod: true,
     priority: "1.0",
   },
   "/domov": {
     file: "domov.html",
-    title: "Medvede na Slovensku | Mapa hlásení Kde je Medveď",
+    title: "Medvede na Slovensku | Aktuálna mapa a hlásenia",
     description:
-      "Prehľad medveďov na Slovensku: mapa hlásení, verejné varovania, lokality a aktuálne správy s uvedením zdroja a dátumu.",
+      "Aktuálna mapa a hlásenia medveďov na Slovensku. Vyberte si lokalitu, porovnajte najnovšie pozorovania a správy s dátumom a odkazom na pôvodný zdroj.",
     schemaType: "WebPage",
     dynamicLastmod: true,
     changefreq: "daily",
@@ -364,7 +364,7 @@ function faqEntities(origin) {
 }
 
 function structuredDataForPage(pathname, page, origin) {
-  const canonical = absoluteUrl(origin, pathname);
+  const canonical = absoluteUrl(origin, page.canonicalPath || pathname);
   const websiteId = `${origin}/#website`;
   const organizationId = `${origin}/#organization`;
   const modified = page.dateModified || (
@@ -399,13 +399,7 @@ function structuredDataForPage(pathname, page, origin) {
       "@type": "WebSite",
       "@id": websiteId,
       name: "Kde je Medveď",
-      alternateName: [
-        "Kde je medved",
-        "Mapa medveďov Slovensko",
-        "Mapa medvedov na Slovensku",
-        "Mapa výskytu medveďov",
-        "Medvede na Slovensku",
-      ],
+      alternateName: ["Kde je medved", "kdejemedved.sk"],
       url: `${origin}/`,
       inLanguage: "sk-SK",
       about: bearEntity,
@@ -505,7 +499,7 @@ function structuredDataForPage(pathname, page, origin) {
         inLanguage: "sk-SK",
         isAccessibleForFree: true,
         dateModified: modified,
-        license: absoluteUrl(origin, "/terms"),
+        license: absoluteUrl(origin, "/podmienky-pouzivania"),
       }
     );
   }
@@ -550,7 +544,7 @@ function structuredDataForPage(pathname, page, origin) {
       inLanguage: "sk-SK",
       isAccessibleForFree: true,
       dateModified: modified,
-      license: absoluteUrl(origin, "/terms"),
+      license: absoluteUrl(origin, "/podmienky-pouzivania"),
     });
   }
 
@@ -608,7 +602,7 @@ function structuredDataForPage(pathname, page, origin) {
 }
 
 function buildSeoHead(pathname, page, origin) {
-  const canonical = absoluteUrl(origin, pathname);
+  const canonical = absoluteUrl(origin, page.canonicalPath || pathname);
   const image = absoluteUrl(origin, "/assets/mascot/bear-map-mascot-transparent.png");
   const ogType = /Article$/.test(page.schemaType) ? "article" : "website";
   const schema = JSON.stringify(structuredDataForPage(pathname, page, origin)).replaceAll("<", "\\u003c");
@@ -889,6 +883,9 @@ function emptyLocationOverview() {
 }
 
 async function loadLocationOverviewForRender({ includeLocations = true } = {}) {
+  // Prepared Worker documents must reach crawlers on the first request too.
+  // The short Node fallback can otherwise cache an empty 200 page at the edge.
+  if (isWorker) return loadLocationOverview();
   const version = latestContentDate();
   const cached = locationOverviewCache.value;
   const cacheIsFresh = cached &&
@@ -1730,35 +1727,49 @@ app.post("/api/subscriptions/unsubscribe", async (req, res) => {
 async function renderPublicPage(req, res, pathname, page) {
   try {
     const origin = siteOrigin(req);
-    const hasArchiveParams = (pathname === "/spravy" || pathname === "/varovania") &&
-      Boolean(req.query.q || req.query.strana || req.query.pocet);
-    const seoPage = hasArchiveParams ? { ...page, robots: "noindex,follow" } : page;
+    let seoPage = { ...page };
     let html = await getPageTemplate(page.file);
-    html = html.replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, seoPage, origin));
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
     if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
       const loadedOverview = await loadLocationOverviewForRender({ includeLocations: pathname === "/domov" });
+      if (isWorker && !loadedOverview?.snapshotReady) {
+        return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+          .type("text").send("Prehľad sa aktualizuje. Skúste to o chvíľu.");
+      }
       const overview = loadedOverview || emptyLocationOverview();
+      seoPage.dateModified = overview.updatedAt || latestContentDate() || CONTENT_UPDATED;
       if (pathname === "/") {
         html = html
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_WARNING_COUNT -->", escapeHtml(overview.warnings.length))
           .replace("<!-- SSR_NEWS_COUNT -->", escapeHtml(overview.news.length))
-          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+          .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(seoPage.dateModified));
       } else if (pathname === "/domov") {
         html = html
           .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(loadedOverview))
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
-          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+          .replace("<!-- SSR_ALL_LOCATIONS -->", renderLocationLinks(
+            overview.locations.filter(location => !overview.topLocations.some(top => top.slug === location.slug))
+              .sort((a, b) => a.name.localeCompare(b.name, "sk"))
+          ))
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(seoPage.dateModified));
       } else {
         const archiveItems = pathname === "/spravy"
           ? overview.news
           : warningArchiveItems(overview);
         const state = archiveState(req, archiveItems);
+        const filtered = Boolean(state.query || state.pageSize !== ARCHIVE_PAGE_SIZE);
+        seoPage.canonicalPath = !filtered && state.page > 1 ? `${pathname}?strana=${state.page}` : pathname;
+        if (filtered) seoPage.robots = "noindex,follow";
+        if (state.page > 1) {
+          seoPage.title = `${page.title} | Strana ${state.page}`;
+          seoPage.description = `${page.description} Strana ${state.page} z ${state.totalPages}.`;
+        }
         html = html
           .replace("<!-- ARCHIVE_FILTERS -->", renderArchiveFilters(pathname, state))
           .replace("<!-- ARCHIVE_ITEMS -->", renderArchiveItems(state.items, pathname === "/spravy" ? "news" : "warnings"))
@@ -1766,11 +1777,19 @@ async function renderPublicPage(req, res, pathname, page) {
           .replace("<!-- ARCHIVE_COUNT -->", escapeHtml(
             `${slovakCount(state.total, "záznam", "záznamy", "záznamov")}, strana ${state.page} z ${state.totalPages}`
           ))
-          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(latestContentDate()));
+          .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(seoPage.dateModified));
       }
+    } else if (pathname === "/stats") {
+      const snapshot = await loadPublicSnapshot({ kind: "stats" });
+      seoPage.dateModified = snapshot?.updatedAt || latestContentDate() || CONTENT_UPDATED;
     }
 
-    const canonical = absoluteUrl(origin, pathname);
+    html = html
+      .replace("<!-- SEO_HEAD -->", buildSeoHead(pathname, seoPage, origin))
+      .replace(/<title>[^<]*<\/title>/i, `<title>${escapeHtml(seoPage.title)}</title>`)
+      .replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i,
+        `<meta name="description" content="${escapeHtml(seoPage.description)}" />`);
+    const canonical = absoluteUrl(origin, seoPage.canonicalPath || pathname);
     res.set({
       "Cache-Control": pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania"
         ? "public, max-age=60, stale-while-revalidate=300"
@@ -1778,8 +1797,8 @@ async function renderPublicPage(req, res, pathname, page) {
       "Content-Language": "sk",
       Link: `<${canonical}>; rel="canonical"`,
     });
-    const modified = latestContentDate();
-    if (modified && ["/", "/spravy", "/varovania"].includes(pathname)) {
+    const modified = seoPage.dateModified;
+    if (modified && page.dynamicLastmod) {
       res.set("Last-Modified", new Date(modified).toUTCString());
     }
     res.type("html").send(html);
@@ -2081,9 +2100,18 @@ app.get("/robots.txt", (req, res) => {
 
 app.get("/sitemap.xml", async (req, res) => {
   const origin = siteOrigin(req);
+  let overview;
+  try {
+    overview = await loadLocationOverview();
+    if (isWorker && !overview.snapshotReady) throw new Error("Public snapshot is pending");
+  } catch (err) {
+    console.error("[seo] sitemap data unavailable:", err.message);
+    return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+      .type("text").send("Sitemap sa aktualizuje. Skúste to o chvíľu.");
+  }
   const rows = Object.entries(PUBLIC_PAGES).map(([pathname, page]) => {
     const lastmod = page.dynamicLastmod
-      ? latestContentDate() || CONTENT_UPDATED
+      ? overview.updatedAt || latestContentDate() || CONTENT_UPDATED
       : page.lastmod || CONTENT_UPDATED;
     const changefreq = page.changefreq
       ? `\n    <changefreq>${page.changefreq}</changefreq>`
@@ -2092,7 +2120,6 @@ app.get("/sitemap.xml", async (req, res) => {
   });
 
   try {
-    const overview = await loadLocationOverview();
     const { locations } = overview;
     for (const location of locations) {
       rows.push(

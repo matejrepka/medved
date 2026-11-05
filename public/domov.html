@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Medvede na Slovensku | Mapa hlásení Kde je Medveď</title>
+    <title>Medvede na Slovensku | Aktuálna mapa a hlásenia</title>
     <meta
       name="description"
-      content="Prehľad medveďov na Slovensku: mapa hlásení, verejné varovania, lokality a aktuálne správy s uvedením zdroja a dátumu."
+      content="Aktuálna mapa a hlásenia medveďov na Slovensku. Vyberte si lokalitu, porovnajte najnovšie pozorovania a správy s dátumom a odkazom na pôvodný zdroj."
     />
     <!-- SEO_HEAD -->
 
@@ -93,7 +93,7 @@
     <main>
       <section class="masthead mascot-masthead">
         <div class="masthead-copy">
-          <h1>Medvede na Slovensku: mapa hlásení a varovaní</h1>
+          <h1>Medvede na Slovensku: aktuálna mapa a hlásenia</h1>
           <p class="lede">
             Na jednej priebežne aktualizovanej mape Slovenska spájame moderované hlásenia,
             verejné varovania, upozornenia ŠOP SR a relevantné správy. Pri každej položke
@@ -107,13 +107,13 @@
           </div>
 
           <div class="hero-actions" aria-label="Hlavné akcie">
-            <a class="btn" href="/nahlas">
+            <a class="btn" href="/">
+              <i class="ph ph-map-trifold" aria-hidden="true"></i>
+              Otvoriť mapu medveďov
+            </a>
+            <a class="hero-secondary-btn" href="/nahlas">
               <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
               Nahlásiť výskyt
-            </a>
-            <a class="hero-secondary-btn" href="/stats">
-              <i class="ph ph-chart-bar" aria-hidden="true"></i>
-              Pozrieť štatistiky
             </a>
           </div>
         </div>
@@ -283,6 +283,12 @@
           <div class="api-links location-links">
             <!-- SSR_TOP_LOCATIONS -->
           </div>
+          <details>
+            <summary>Ďalšie lokality podľa abecedy</summary>
+            <nav class="api-links location-links" aria-label="Ďalšie lokality s hláseným výskytom">
+              <!-- SSR_ALL_LOCATIONS -->
+            </nav>
+          </details>
         </div>
 
         <div class="faq" id="caste-otazky">

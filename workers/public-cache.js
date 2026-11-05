@@ -16,7 +16,7 @@ export function publicCacheUrl(request, version) {
     if (api ? key !== "v" : !(["/spravy", "/varovania"].includes(url.pathname) && ARCHIVE_PARAMETERS.has(key))) return null;
   }
   url.searchParams.sort();
-  url.searchParams.set("__medved_cache", `public-v14:${version}`);
+  url.searchParams.set("__medved_cache", `public-v15:${version}`);
   return url.href;
 }
 

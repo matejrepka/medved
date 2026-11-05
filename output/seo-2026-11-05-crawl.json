@@ -1,0 +1,4986 @@
+{
+  "checkedAt": "2026-11-05T21:59:28.323Z",
+  "urls": 986,
+  "uniqueUrls": 986,
+  "passed": 986,
+  "failed": [],
+  "extras": [
+    {
+      "path": "/spravy?strana=2",
+      "status": 200,
+      "canonical": "https://www.kdejemedved.sk/spravy?strana=2",
+      "title": "Správy o medveďoch na Slovensku | Kde je Medveď | Strana 2",
+      "robots": "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1",
+      "records": 24
+    },
+    {
+      "path": "/varovania?strana=2",
+      "status": 200,
+      "canonical": "https://www.kdejemedved.sk/varovania?strana=2",
+      "title": "Aktuálne varovania pred medveďmi na Slovensku | Strana 2",
+      "robots": "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1",
+      "records": 24
+    },
+    {
+      "path": "/api/status",
+      "status": 200,
+      "records": 0,
+      "data": {
+        "supabaseConfigured": true,
+        "mapTilesConfigured": true,
+        "refreshMode": "external-cron",
+        "emailNotificationsEnabled": false,
+        "sightings": {
+          "fetchedAt": null,
+          "loadedAt": null,
+          "refreshing": false,
+          "count": null,
+          "error": null,
+          "errorStage": null,
+          "lastRun": null
+        },
+        "news": {
+          "fetchedAt": null,
+          "loadedAt": null,
+          "refreshing": false,
+          "count": null,
+          "error": null,
+          "errorStage": null,
+          "lastRun": null
+        }
+      }
+    }
+  ],
+  "results": [
+    {
+      "url": "https://www.kdejemedved.sk/domov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/stats",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/nahlas",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/bezpecnost",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/o-mape",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spomenuli-nas",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/ochrana-sukromia",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/podmienky-pouzivania",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zavazna-poruba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/sutovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/banska-bystrica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovsky-mikulas",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/tatry",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hronska-dubrava",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovsky-jan",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/podbanske",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vysoke-tatry",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ziar",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/medzibrod",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/horna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/podhradie",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/sucany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/blatnica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/turany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/brusno",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/pribylina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/terchova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hradok",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/mosovce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ocova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/strelniky",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/svaty-kriz",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/trnava",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/demanovska-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zvolen",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/demanova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/popradske-pleso",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/turcianska-stiavnicka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/pitelova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/bela",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/trnava-hora",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/cadca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ladno",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ziarska-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/velke-rovne",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/haj",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lehota",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovska-kokava",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovska-osada",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovsky-hradok",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/martin",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/rajecka-lesna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/sliac",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/handlova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hrochot",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/klatov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kosariska",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ilanovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/krpelany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kralovany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovska-porubka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/stara-lubovna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/necpaly",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/stranavy",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/belusa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/cavoj",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vysna-mysla",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zilina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/dubravica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/detvianska-huta",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/chvojnica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/jastraba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovske-sliace",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lubietova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lucivna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ludrova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nova-bystrica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ruzomberok",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vratna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zamutov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zlatniky",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/banska-stiavnica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/dobra",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hrdovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/klenovec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lucenec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/muran",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nizna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nova-bana",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/turcek",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/turcianske-teplice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/turzovka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zobrakov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kosice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kovacova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptovska-anna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/rabca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/maluzina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/starina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ziar-nad-hronom",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vychodna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/krahule",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/presov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/borova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/bratislava",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/certizne",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/dovalovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/galovany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hrabusice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/harmanec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/hrnciarska-ves",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kavecany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kokava-nad-rimavicou",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/konska",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lazisko",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lendak",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/lucky",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/oravska-lesna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/povazska-bystrica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/priblizna-oblast-49-2-n",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/povina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/rackova-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/radola",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/rimavska-sobota",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/roh",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/sneznica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/spisska-teplica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/stiavnik",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/trencianske-teplice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vahom",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vazec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vitanova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vychylovka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vysny-zipov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zuberec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zabokreky",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/bertotovce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/bobrovecka-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/brehy",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/breznica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/dlzin",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/dubravy",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/durdos",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/filipovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/fulianka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/ganovce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/habura",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/jahodnicke-haje",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kralova-lehota",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kremnica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/kvacianska-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/liptov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/morske-oko",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nedozery",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nedozery-brezany",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nizna-boca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nolcovo",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nova-dolina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/oscadnica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/klastorska-cesta",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/podkonice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/skalica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/prievidza",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/strecno",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/podbrezova",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/sidlovec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/telgart",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/tekovska-breznica",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/trencianska-turna",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/trencianske-mitice",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/udol",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/urpin-vartovka",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vysny-kelcov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/visnove",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/vysny-klatov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/zemiansky-vrbovok",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/bukovina",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/cinobana",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nitra",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/nizny-klatov",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/vyskyt-medveda/opatovce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-pri-tychto-obciach-sa-objavil-medved-varovanie-pre-obyvatelov-aj-t-ba5a60e173",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sop-upozornuje-na-vyskyt-medveda-pri-medzibrode-a-hronskej-dubrave-6fa94a1ca9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-obec-durdos-0eb3afbd39",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/turista-natocil-medveda-v-doline-suchej-kasprovej-na-polskej-strane-tati-bd586e6d0e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/habura-nalez-uhynutej-zveri-a-nasledne-upozornenie-na-vyskyt-medveda-b031e35559",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vyskyt-medveda-v-lokalite-mutnik-pri-liptovskom-mikulasi-f1a461e870",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/fotopasca-vo-velkej-fatre-zachytila-utek-medveda-a7b705c843",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turista-sa-zranil-pri-uteku-pred-medvedicou-v-kvacianskej-doline-c255622826",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-pri-novej-bani-b11724bbe3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/blizke-stretnutie-s-medvedom-na-banskobystrickom-urpine-prezradili-co-ic-e13eb48907",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bystricania-pozor-medveda-mali-zaznamenat-na-dalsom-mieste-v-meste-1aabe998d2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/statni-tajomnici-mzp-diskutovali-s-e-mamerom-o-manazmente-medveda-6cc7fba41e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/medvede-sa-objavili-tam-kde-ich-nikto-necakal-kde-ich-je-najviac-7e9a79eeaf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvedica-s-mladatami-sa-objavila-pri-obci-nedaleko-kosic-policia-varuje-0722ca52cf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-12-oktobru-2026-5ebddd791d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/sokujuce-video-medveda-prevazali-rozparaneho-na-privesnom-voziku-0af8eae6dd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/medvede-sa-objavuju-tam-kde-roky-neboli-co-sa-deje-b00810096f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hlasenia-pri-vysnej-mysli-a-medzi-niznym-a-vysnym-klatovom-1ba9f8786b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-8-oktobru-2026-a315f8d995",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/zmos-po-brifingu-v-mosovciach-ziada-zmenu-manazmentu-medveda-hnedeho-99e5bf25d6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stret-medveda-s-bezcom-na-klastorskej-ceste-v-slovenskom-raji-8ba22bb254",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvedica-s-mladatami-pri-vysnej-mysli-98f84a9732",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-liptove-si-davajte-pozor-medveda-videli-hned-pri-troch-obciach-d4b06fe599",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvedica-s-dvoma-mladatami-v-kamenistej-doline-7de77642a4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mozny-vyskyt-medveda-v-novej-doline-a-na-ludovike-v-kremnici-eeba442b00",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vikendove-hlasenia-medveda-svaty-kriz-zavazna-poruba-ilanovo-a-urpin-var-9e81d557a0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-1-oktobru-2026-47fc570a79",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/slovenski-ochranari-si-vymenili-skusenosti-s-japonskym-odbornikom-na-med-e2a6826005",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-medved-varovanie-dostali-dve-obce-fdbecca040",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-28-septembru-2026-166ec2c1fc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-medveda-pri-hronskej-dubrave-a-trnavej-hore-a7dad57e33",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-trnava-hora-427dbcb1b1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/prekonal-tri-ploty-a-potrhal-ovce-medvede-na-liptove-a-turci-hladaju-aj--30c914478b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/pozor-na-medvede-na-tomto-mieste-treba-zvysit-obozretnost-edabd4b995",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lesne-hospodarstvo-upozornuje-na-vyskyt-medveda-spozorovali-ho-pri-trenc-1e1c2774a6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-na-medveda-ochranari-upozornili-na-vyskyt-selmy-na-niekolkych-mies-a568c1435d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-24-septembru-2026-386ab4f1af",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sialene-zabery-z-ocovej-termokamera-zachytila-na-poli-26-medvedov-huliak-beeb366d77",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/zvysena-obozretnost-pocas-zberu-polnohospodarskych-plodin-e86858d0db",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mapa-v-tychto-okresoch-hlasia-vyskyt-medvedov-niekde-su-stovky-hlaseni-o-1cd2d6fa13",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-medzi-obcami-ladno-a-trnava-hora-eb3bb788fb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-v-okrese-presov-upozornuje-na-vyskyt-medveda-budte-opatrni-588f9e819b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pred-zimou-su-aktivnejsie-na-vychode-slovenska-spozorovali-dalsieho-medv-a3d66a7177",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-k-21-septembru-2026-691473f2c0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-ak-sa-chystate-na-liptov-v-okoli-obce-sa-potuluju-dva-medvede-ochr-e005930f9a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-nahana-strach-v-malej-obci-na-vychode-slovenska-obcania-spisali-p-c7eccbd0e4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-sa-objavil-pri-kukuricnych-poliach-na-orave-obec-varuje-ludi-selm-d974b768ff",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-viacerych-obciach-spozorovali-medveda-ochranari-vyzyvaju-na-opatrnos-a99b0a956c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-naucnom-chodniku-nedaleko-kosic-sa-objavil-medved-situaciu-monitoruj-bc116281ab",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/na-slovensku-zastrelili-medveda-ktery-napadl-zenu-po-druhem-stale-patraj-615f1ef332",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/polskych-turistov-v-slovenskom-raji-vyplasilo-hlasne-rucanie-prelakli-sa-e7d7f89e40",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-v-liptovskom-hradku-opat-prekvapil-obyvatelov-v-noci-vosiel-do-me-25939ce17f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-na-severe-slovenska-varuje-pred-medvedom-ed29ee8147",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/video-po-dvoch-utokoch-medvedov-v-turci-kuffa-znovu-ziada-viac-odstrelov-60f164ee3d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/sop-sr-hlasi-zvyseny-pocet-zakrokov-a-uhynov-medvedov-013ae36692",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/v-turci-usmrtili-medvedicu-pri-opakovanom-utoku-na-ovce-65ce163ab4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/mapa-hlaseni-vyskytu-medveda-aktualizacia-zo-17-septembra-2026-1a6bc40574",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsi-vyskyt-medvedov-na-slovensku-padli-dve-nove-hlasenia-pozor-na-tiet-7815d6c065",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/zasahovy-tim-fatra-v-turci-eliminoval-dva-medvede-b6900d3532",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/zamestnanci-si-v-terene-vyskusali-pracu-s-telemetrickymi-datami-16d8051e60",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsi-utok-medveda-na-slovensku-pastiera-vazne-zranil-do-regionu-smeruju-e4166af04a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-vodic-stretol-na-ceste-pod-horskou-chatou-v-turci-4-medvede-kracal-33066fbed6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turany-upozornuju-na-riziko-stretu-s-medvedom-pocas-zberu-kukurice-1ec2fe3c6b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-napadol-starsiu-zenu-v-centre-blatnice-za-bieleho-dna-vybehol-na--74d6bf5558",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-pokojna-chvila-s-medvedicou-sa-v-sekunde-zmenila-na-utok-vo-vysoky-fc7d1a0950",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-zraneneho-medveda-pri-obci-svaty-kriz-0da4e6f60c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-na-medvede-zasahove-timy-hlasia-vyskyt-selmy-v-dvoch-lokalitach-do-db8f5d9a21",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvede-lakali-vonave-sviecky-na-cintorine-liptovska-obec-zavadza-razne--d88bc9b4cb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-demanovej-8b6584ff3f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvedica-s-mladymi-sa-usidlila-v-blizkosti-obce-obyvatelia-musia-davat--75ed576d46",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsi-utok-medveda-na-slovensku-zraneny-clovek-skoncil-v-nemocnici-da3c745081",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-sa-moze-pohybovat-nad-druzstvom-v-obci-pri-presove-654e74b199",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/v-kovacovej-zaznamenali-medveda-nad-arealom-byvaleho-autokempingu-e1e031febb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-ceste-medzi-benusom-a-bujakovom-zaznamenali-medvedicu-s-dvoma-mladat-c3cc68a0a5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/polovnici-ziadaju-obmedzit-pohyb-v-okoli-visnoveho-kde-je-pat-medvedov-ff9b016e12",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/fotografie-z-okolia-murana-zachytili-stopy-medveda-pri-cyklotrase-07b18652b3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/varovanie-medved-pri-jednom-z-najznamejsich-muzei-na-slovensku-tu-budte--899d6c1701",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pravidelne-tam-vidavaju-medvede-laka-ich-skladka-v-liptovskej-sielnici-o-89619864e3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zasahovy-tim-zraneneho-medveda-pri-mosovciach-nenasiel-samosprava-vyzyva-63399bd987",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-liptovskom-jane-81c2e02134",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-na-slovensku-obklopilo-devat-medvedov-ludia-sa-boja-vychadzat-15e4fe2354",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/v-okoli-obce-kosariska-sa-pohybuje-medved-e48a850f46",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-sasovskej-luke-stretli-medveda-zo-vzdialenosti-50-metrov-11d2aa092b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medvedice-s-tromi-mladatami-v-obci-brusno-78f28298ff",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obciach-hrochot-a-liptovsky-jan-d45e641456",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vlak-zrazil-medveda-na-horehroni-zranene-zviera-zmizlo-z-miesta-do-teren-a50d433212",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-zraneneho-medveda-po-zrazke-s-vlakom-pri-kralovej-lehote-33fe902f53",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/foto-v-okrese-levice-zachytila-fotopasca-dalsieho-medveda-obec-vydala-va-608324e4ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-opat-strasi-obyvatelov-obce-na-liptove-len-par-tyzdnov-po-utoku-p-3606673383",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medviedat-pri-penzione-hradisko-v-obci-nemecka-22d75bd38a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-zraneneho-medveda-v-blizkosti-obce-telgart-415d32692e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-stos-2f1e1c876b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsi-medved-pri-meste-v-turci-objavil-sa-pri-trase-ktoru-vyuzivaju-bezc-263a749f2d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strach-po-utoku-pri-turanoch-v-krovi-objavili-dalsie-medvede-3af65e9788",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-brusno-c98be1b035",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-zapadnom-slovensku-sa-objavil-medved-videli-ho-pri-cyklotrase-obec-va-643aaac6a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-mapa-vyskytu-medveda-na-slovensku-v-tejto-obci-sa-majte-na-pozore-h-275df6d23e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-na-medvedicu-s-mladatami-vyskyt-hlasia-pri-popularnom-historickom--af9a55b7f6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-bezal-po-ceste-medzi-brehmi-a-tekovskou-breznicou-f3c38a76d4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-tribec-v-noci-navstivil-stvornohy-turista-fotopasca-zachytila-medv-fce2093f06",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/slovaci-pozor-pri-znamej-priehrade-spozorovali-medveda-403dc4ef21",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vodici-varuju-pred-medvedom-pri-medzibrode-na-ceste-ho-vidaju-opakovane-0d7fc7bb4e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-napadol-cyklistu-pri-martine-muza-strhol-priamo-z-bicykla-63ee6ec2c8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/druhy-incident-s-medvedom-hnedym-vo-velkej-fatre-tento-vikend-99d6941e53",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medveda-hlasia-zo-zelenej-trasy-v-malej-fatre-pri-dolnej-stanici-lanovky-2f8d5bb1d1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/po-meste-na-strednom-slovensku-sa-potuluje-medved-zvyste-opatrnost-varuj-6b880509f6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-pri-rajeckej-lesnej-nahanal-auto-aj-cyklistov-vinit-treba-cloveka-a6cfaaee98",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/muz-v-turci-narazil-na-vacsieho-medveda-stretnutie-sa-nastastie-skoncilo-531c2043e4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-liptovska-porubka-86c0b51c62",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/desive-chvile-v-tatrach-tragicky-pad-a-agresivny-medved-e867ebaca4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oblubene-trasy-su-pod-zvysenym-dohladom-v-okoli-zaznamenali-medvedicu-s--d618a89a35",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-strednom-slovensku-hlasia-vyskyt-medvedice-s-mladatom-obcania-by-mali-27acd5ba81",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-svaty-kriz-8187c24ac1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-prechadzky-v-prirode-tu-radsej-zabudnite-obec-na-zapadnom-slovensku-v-f75205252d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-v-starej-lubovni-mesto-vyzvalo-ludi-na-zvysenu-opatrnost-2af48551df",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/opatovny-vyskyt-medveda-hnedeho-v-intravilane-obce-zavazna-poruba-bc3e97cdf0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medveda-videli-v-kremnici-aj-pitelovej-ludi-vyzvali-na-opatrnost-7791cd8fd2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-pitelova-d7b9812eed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrozny-zazitok-skalicana-pri-cakani-na-kolegu-vysiel-z-krovia-medved-mes-fc3b4d5972",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-liptovska-kokava-085de5e66c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-pri-prievidzi-vyzvala-na-opatrnost-v-okoli-zachytili-medveda-7c4f5cf0ad",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zrazka-vozidla-s-medvedom-medzi-mojtinom-a-belusskymi-slatinami-6b48d0856e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obrovska-medvedica-na-vychode-slovenska-robotnici-brali-nohy-na-plecia-s-db1e59aa41",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-opat-blizko-turistov-ludia-by-mali-zvysit-opatrnost-pri-pohybe-v--d89fa72157",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-v-okrese-presov-upozornuje-na-vyskyt-medveda-pohyboval-sa-blizko-ob-47b80305ff",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-medvedica-sa-pred-autom-postavila-na-zadne-vodic-v-belej-musel-cuv-39a813c1fa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-zautocil-na-muza-v-zavaznej-porube-sposobil-mu-lahke-zranenia-04b06a363c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-vybehol-z-hustiny-priamo-pred-mladu-slovenku-97c0d77e7a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-zemiansky-vrbovok-0fe9ea8d58",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-na-medveda-v-uliciach-handlovej-selmu-spozorovali-pri-zahradkach-65911bf45d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-prekvapil-turistov-pri-morskom-oku-nove-hlasenia-pribudaju-z-viac-caddf75f3a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-obec-na-horehroni-upozornuje-na-medveda-pohyboval-sa-v-dvoch-lokal-daf09f1e54",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/foto-pozor-na-medveda-pri-sliaci-muz-vyfotil-viacero-stop-selmy-eb877ce8e8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-zraneneho-medveda-hnedeho-v-obci-liptovsky-jan-5c10672dd5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kristina-stretla-medveda-pocas-tury-na-ostrvu-video-hladela-mu-do-oci-bo-83d6f0b154",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zraneny-medved-sa-po-zrazke-s-autom-pohybuje-pri-belusi-obec-vyzyva-ludi-930b291125",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pozor-na-vyskyt-medveda-na-zapade-ludia-ho-videli-v-zahradkarskej-oblast-b321d5f6a9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obci-opatova-a-pri-stbskom-plese-ef3aa0e2f2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turisticka-obec-na-severe-slovenska-upozornuje-na-vyskyt-medveda-0fabe83a13",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/okres-liptovsky-mikulas-ma-najviac-hlaseni-medveda-na-slovensku-najnovsi-74803e751c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-medvedia-rodina-sa-prechadzala-priamo-v-uliciach-obce-nocne-zabery-646ef0b759",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-obciach-zavazna-poruba-a-tajov-3a6cd5b6e5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/davajte-si-pozor-dalsi-medved-na-kysuciach-obec-vyzyva-ludi-aby-sa-tejto-0c865cd2df",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualizovana-mapa-medvede-hlasili-pri-2-slovenskych-obciach-zaznamenali-347a3e080c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-v-intravilane-obce-hrochot-738279e3ca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-sa-znovu-objavil-pri-ceste-zo-zuberca-na-spalenu-vodicka-ho-nakru-c1a44e3bd6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-syslovisku-v-murani-upozornuju-na-medveda-pri-turistickej-trase-neda-cb42d5bab6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/robin-rigg-o-pricinach-stretov-medzi-ludmi-a-medvedmi-f2164ec9ab",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualna-mapa-pozri-si-kde-na-slovensku-hlasia-vyskyt-medvedov-174094e194",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-napadol-na-liptove-polovnika-muza-s-poraneniami-noh-previezol-do--69a518f253",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualne-majte-oci-na-stopkach-v-presove-videli-medvede-sem-nechodte-cced1a614c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/slovensko-a-dalsie-staty-ziadaju-eu-o-znizenie-ochrany-medveda-c188ffbe36",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-zraneneho-medveda-v-lokalite-obce-maluzina-e469da09c2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualna-mapa-hlaseni-vyskytu-medveda-hnedeho-a-upozornenie-pre-obce-dub-8ed4092c1f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvedica-pri-kremnici-napadla-polovnika-usmrtil-ju-legalnou-zbranou-d92a733249",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bukovina-planuje-ohradnik-pri-cintorine-a-prevenciu-stretov-s-medvedmi-6a53e29f32",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/aktualne-medveda-videli-nedaleko-znameho-hotela-natocili-ho-na-video-bud-5dff780215",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/populacia-medveda-sa-nam-vymkla-z-ruk-rocne-ich-pribudne-az-1000-hovori--24fde1c14c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/medvedica-s-mladymi-majitelom-ekofarmy-strhla-ovce-a-barana-museli-urobi-23f46d6ecb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/foto-kontroverzne-zabery-mladeho-medveda-zatvoreneho-v-klietke-co-to-ma--21e8f6dc28",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsi-vyskyt-medvedov-hlasenia-pribudaju-video-174d8b59ef",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-vyskyt-medveda-hnedeho-69c15b20ec",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-v-okrese-stara-lubovna-upozornuje-na-vyskyt-medveda-vecer-sa-pohybo-28af01871d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/v-obci-pri-prievidzi-spozorovali-medveda-mohutny-jedinec-mohol-mat-az-20-04ca98b7b5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/opakovane-pozorovania-medvedov-pri-turcianskej-stiavnicke-0658a8dce8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zasahovy-tim-medveda-hnedeho-fatra-uci-medvede-bat-sa-ludi-c4dce5b851",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-na-zvysenie-opatrnosti-v-okoli-obce-ocova-a-aktualna-mapa-hl-effc926812",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribudaju-hlasenia-o-medvedoch-selmu-videli-aj-v-obci-blizko-miestneho-b-f676c80a19",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/pri-novej-bani-aj-v-ocovej-hlasia-medvede-v-jednom-pripade-s-mladatami-0780710ebf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/panika-v-regionoch-dalsie-strety-s-medvedmi-obyvatelia-dostali-nove-upoz-49866a7c64",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/video-medved-pobehoval-medzi-domami-v-krahuliach-492791c329",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualna-mapa-vyskytu-medveda-hnedeho-a-upozornenie-pre-lokalitu-liptovs-a46bd86b32",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pri-cinobani-videli-medvedicu-s-dvomi-mladatami-obec-znovu-varuje-7a16b979ce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/v-okoli-kovacovej-sa-pohybuje-medved-obec-vyzyva-na-opatrnost-14b37982c8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/obec-pod-kremnicou-nasla-jednoduchy-trik-proti-medvedom-pomohlo-lacne-ri-15201bd818",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualne-hlasenia-vyskytu-medveda-hnedeho-na-slovensku-v-roku-2026-3352fd1227",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/pri-domoch-v-zilinskom-trnovom-sa-prechadzal-medved-miestni-maju-obavy-773599b2f7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/lovci-policia-aj-hasici-marne-patraju-po-mimoriadne-inteligentnom-medved-8f57ffbe5a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-na-juhu-banskobystrickeho-kraja-upozornuje-na-vyskyt-medveda-dajte--9598bfacdc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/spravy/panika-v-povazskom-inovci-pod-modrovou-sa-objavil-medved-a-nie-je-to-prv-608b95bc5d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/britsky-zoolog-robin-rigg-o-prevencii-utokov-medveda-1b2db21ba2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/utok-medveda-hnedeho-na-cloveka-v-lokalite-medzi-vysnou-a-niznou-bocou-4bb59477ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-na-vychode-varuje-obcanov-pred-pohybom-medveda-v-okoli-pred-mesiaco-0a16bacac0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dalsia-obec-na-vychode-upozornila-na-vyskyt-medveda-ec2bd26dd8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/aktualne-na-liptove-opat-utocil-medved-zachranari-sa-pre-drsny-teren-nev-de23f46068",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/foto-obec-v-okrese-humenne-upozornuje-na-vyskyt-medveda-pohyboval-sa-v-o-d42a1c65a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-slovensku-medved-zautocil-na-cloveka-muza-36-ratoval-zachranarsky-vrt-bb3de09bcd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vyskyt-medviedata-v-okoli-hotela-v-demanovskej-doline-d719bd9ba0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/elektricky-ohradnik-jedno-z-preventivnych-opatreni-384911eefa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medvieda-z-intravilanu-beluse-je-v-bezpeci-2a331a4e3f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vyskyt-medveda-v-obci-belusa-9fdc11d2ca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medved-sa-pohybuje-pri-turistickom-chodniku-obec-vydala-varovanie-acc330332c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/leon-dostal-druhu-sancu-v-zoo-kosice-pokracuje-jeho-novy-pribeh-0790f72115",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/v-parku-pri-kastieli-betliar-a-jeho-okoli-sa-pohyboval-medved-5ab453897c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zasahovy-tim-fatra-medzi-ziakmi-v-turzovke-b90f5a9401",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/reportaz-stvr-o-monitoringu-pohybu-medvedov-4682d9d80d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/monitoring-lokality-urpin-pokracuje-09bb22a8a3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-pre-obyvatelov-a-navstevnikov-chko-vychodne-karpaty-7e21c98edb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/monitoring-vyskytu-medveda-hnedeho-v-lokalite-cavoj-c38e7cc7b0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/upozornenie-4b4a85ab3f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zacalo-sa-obdobie-ruje-zvyste-opatrnost-cd4463828c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/novy-prirastok-v-narodnej-zoologickej-zahrade-bojnice-b63dca1917",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zaciatok-iniciativy-averznej-terapie-na-synantropnych-jedincoch-medveda--2ea3f16801",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/utok-medveda-na-urpine-v-banskej-bystrici-0f1bcb23e6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oznacovanie-biokoridoru-trusalova-podhradie-d2773731ea",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/serval-stepny-prekvapil-obyvatelov-obce-hviezdoslavov-a54d7739c8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zasahovy-tim-na-veltrhu-caravan-bike-travel-v-nitre-37d6dbd2c4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zrazka-vlaku-s-medvedom-hnedym-v-lokalite-turcek-5b5f0e2b70",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/poplach-v-nitre-nedaleko-znameho-kostola-videli-medveda-14d19dc6a2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tomuto-miestu-sa-radsej-vyhnite-pri-ovocnom-sade-sa-pohybuje-medved-ae8a6666ee",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/certizne-d54cb4a7b3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/certizne-fd15866b12",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lubietova-db51c8d6f5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-514fe9017f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-5fb20a7cd2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzibrod-656e9af898",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-fa6faf268e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oravska-lesna-d898f26037",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-trnovec-e55b4f7268",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/durdos-7f7b795af6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-okres-poprad-15067e82c0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nizna-boca-0f43972158",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rybniky-brcna-4f86783887",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-a2cf789e02",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-7f18d8ee64",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/habura-b5d67b0eda",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oskerda-d06e60ae0d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tlsta-1373-m-7d02362f13",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-mikulas-5504725699",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mutnik-liptovsky-mikulas-f787838b16",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/galovany-9e0f9efb7f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-1f1c823be5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanovska-dolina-zilinsky-kraj-3e7685f0f4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-29922ff89c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-63efa27a12",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kokava-nad-rimavicou-e8f0d56902",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kvacianska-dolina-4bde23f7be",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-zilinsky-kraj-f909960198",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-603e5efc0c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stiavnik-f01de61d08",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-32c58448bf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bratislava-37e817ee41",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lutise-affbf749c2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-bana-512ed29e74",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dukovce-60236c5fe4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vikartovce-fc1bd0794c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brestov-1e6778e370",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sneznica-17267f96ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zelezna-studnicka-nove-mesto-b0b8a554a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/novy-svet-81613d372c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/margocova-osada-2563abf91a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/helpiansky-vrch-91d69d5bb2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zlatniky-5bc4fe012f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/roh-69b4a56c4b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velke-rovne-062e8ee5c7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rackove-plesa-5c7bd45e25",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velke-rovne-c160e571d1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcek-bc7a70aa9f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ludrova-151-66b0acf6aa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velke-rovne-priblizna-oblast-019214cede",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nizna-mysla-126e7ee1ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bachledova-dolina-9708dfc95b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysny-klatov-d3baa6822b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kokava-nad-rimavicou-44c516954e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruskov-77f18dfb28",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mala-fatra-8c813ea80e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klastorska-cesta-f87bff1bf1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kosice-7c792899d1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysna-mysla-f07286166e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/maluzinska-dolina-216f497a61",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klastorisko-2568d85968",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zadne-kotly-25f804bea2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vitanova-4f9eac2337",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tale-horna-lehota-14e759322a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kamenista-dolina-4a639eb7a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/udica-prosne-62104b5fb7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrad-hricov-f06b5a536e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptov-a51b111ad9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-4fd4be545c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/spissky-stiavnik-2e858c1a79",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-dolina-c4f6efc75a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-a8902f721f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/svaty-kriz-2d7e62c6dd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-ffe43c220f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ilanovo-1e493d321b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/urpin-vartovka-5f70f6139c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mosovske-aleje-d7e2ab1b5b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pod-rozsutcom-2264-7bff0c42ee",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrabusice-e9aa8a89cc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucenec-4677beda19",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucenec-b35990dca3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-6582081174",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jamnicka-dolina-aa21d45178",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-f54839fbd6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/polanovce-a7dbe80f89",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziarska-dolina-482e3c3b9d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-4989714605",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribylina-665c1b16b4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanovska-dolina-afa3d9480a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bartosova-lehotka-2f7b483bd2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kaliste-7039bd3137",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanovska-dolina-dca6efbb03",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanovska-dolina-81bd12b70d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priblizna-oblast-49-2-n-18-9-e-023fbe168f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trnava-hora-a13efc5bc0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mojzisove-pramene-05840ad961",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/gonove-lazy-ea054e4817",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanovska-dolina-3808fed787",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-2b4e49cdcb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stranik-nad-zilinou-abed0e4bb2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jasna-26f2f81dd7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/valentova-a3dc83b647",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-kokava-okres-liptovsky-mikulas-f54ae0debf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jakovany-0657d23b2a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ocova-2176cab779",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bratislava-3b50802c4a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/radola-7bf705ba27",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ocova-f729a5a0bf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ilija-okres-banska-stiavnica-e50a3a6665",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ludrova-554fed7292",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/siroka-dolina-930835d0f6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zvolen-d75a6901e3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/blatnica-17f839a4a9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-jan-afbbd85811",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ladno-be288f6fd2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/praha-lc-f891a22aa5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krpelany-782b41d432",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bertotovce-55d743a083",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trencianske-teplice-94ea7a6926",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tatranske-metliare-8c6fe8b003",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zabokreky-8cf5ad2c47",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrabusice-airport-cf7faa5353",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/gazdoran-507-m-58fd59b22e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanova-fd09974bb6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rackova-dolina-c0163e90af",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priblizna-oblast-49-1-n-18-9-e-b95b1b7e1d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-b02c2e638c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tatranska-lomnica-612cda1163",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-hradok-a12eb63945",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kamenista-dolina-da3f204045",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanova-68fb02d555",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vapec-955-m-f9bf22036a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rohacska-dolina-742e956301",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rabca-4585d25ad5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krpelany-4d9e0056a0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klatov-83ccb6efb0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turany-b342eb695e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priblizna-oblast-49-2-n-20-2-e-4f20b505b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/galovany-c3e32aa581",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horna-micina-075bff69de",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/necpaly-138520e6e2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianske-klacany-d939b903ca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianske-klacany-44d94788a9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velke-rovne-a1571c2c72",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vn-starina-bda577d667",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horna-micina-d6b652456d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strelniky-2a5794ef63",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zabokreky-0ddb7ab317",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/partizanska-lupca-132503ce83",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/detvianska-huta-fbef920264",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nolcovo-05e6727d5f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/smrecany-daf4efaa27",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/blatnica-2fc31712b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trencianska-turna-okolite-lesy-096d165705",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/necpaly-bc05bb34bd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-8cd9ae6421",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oscadnica-461a3d23de",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysne-hagy-46f049613a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/martin-94938d2278",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/partizanska-lupca-4f0b9f3752",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priblizna-oblast-48-7-n-17-9-e-658688f9ea",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podturen-e4c96984e9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hradok-79336c575d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovske-sliace-13cfaceae7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zlatniky-cef7c9f1b7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hradok-okres-nove-mesto-nad-vahom-e8d0a37a15",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hnusta-okres-rimavska-sobota-c2f7b8c923",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/blatnica-f4a1b5b4c1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priechod-d12db880b4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ludrova-ec531fa6b0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-251d9d2dd5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-1e512a4991",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/popradske-pleso-625a97d3bb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/svaty-kriz-5310d9fbab",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcek-39f41061fc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziarska-chata-ad207aee9f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kotlinec-4fe71cad29",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovske-sliace-157ca448ee",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovske-sliace-534d71d792",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nahe-der-hutte-utulna-snp-sklene-7be32506be",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysny-zipov-68070e48be",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-strbske-pleso-mlynicka-dolina-ea7a0a7db6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/spisska-teplica-1e71cac513",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kavecany-c4c4518ad0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mazarna-95ee6f199e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/popradske-pleso-d39cd69a9e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sliac-5d8ae8805d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zlatniky-cd7ad8fa66",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/harmanec-99bb23aeae",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/prakovce-ef16188438",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/motycky-banskobystricky-kraj-2000e0c953",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dovalovo-2b785fbcb4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovske-klacany-fb4d6acc10",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krasna-luka-d14333a536",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podkonice-3d2c17c8cc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zobrakov-3e300a8c62",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dobra-6c737c1ea0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/spania-dolina-okres-banska-bystrica-df74e5e283",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/demanova-c34c02044e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/haj-b7c304d999",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zobrakov-304740f8b4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucivna-2b590d1732",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horny-kalnik-b24ddea5d5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/borova-sihot-roven-3d4055e4e9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vahom-5d2e0a78c4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziarska-dolina-5f074d8328",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/obec-jakubovany-e6a3deaab4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-jan-2f8717de70",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/konske-202d8041ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zaciatok-chodnika-udolie-permonikov-06675fc4de",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vychylovka-f4963a2966",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kezmarske-zlaby-8c42369413",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cadca-1992adea72",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jedliny-lendak-d35293b79e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/muran-7717a37ef7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rimavska-sobota-36409e0443",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/poludnica-liptovsky-mikulas-a7563c8937",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velka-studena-dolina-c85233a53d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/priblizna-oblast-49-0-n-21-8-e-cb367cead9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vitazovce-06bf3afe19",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/visnove-38238b3bf4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pod-ostrym-hrebenom-vysoke-tatry-a0fe4ef49c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-1135614b6d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kovacova-c699327cfd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jahodnicke-haje-52fa41e0ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-f4be08dfe4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruske-peklany-c991baa95d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-jan-9ed6c5b56e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brezova-pod-bradlom-9214224100",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mosovce-be8fcfb4b1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/komjatna-d637bb54cd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziarska-dolina-2b8a85b221",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stara-voda-94a50d219f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stranavy-bfbde0cdf6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stranavy-d73b4a3c4a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-7f8e2f8af3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lubietova-8fd5f5722c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sasova-3574f2fcb8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zbynov-a2e24be1ab",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mutnik-ef0c56015d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucany-f870b6500d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rackova-dolina-pribylina-b74848840e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-jan-7e4078c12e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krasnohorska-dlha-luka-c48bb19b9f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dubravy-e2c19cc79b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cadca-0c54d7e39c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brusno-462f97d6f5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrochot-eee5b855e5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-mikulas-6606fb13ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rajecka-lesna-0524623d3a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ocova-7376c5c8eb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/povazska-bystrica-1aba436714",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zuberec-spalena-ba11cfda29",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strelniky-1af474a5a2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribylina-9f48a4d6c0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/popradske-pleso-baaaf21ec2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/chleb-vratna-1e595638d0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brusno-ebd0d7ab2d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribylina-okres-liptovsky-mikulas-0d133b5763",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kvacany-46e8552452",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/skalite-44811c7a9b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/popradske-pleso-b785863872",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/filipovo-f52910fd0b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velika-nad-iplom-1bcd747e5a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/partizanska-lupca-5506571206",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-kokava-f8ddbad5f7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kralova-lehota-0a2e1ff99a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-123c37ef8c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vitanova-37f4c9c0fa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sliezsky-dom-4ea200e103",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cervena-skala-9ef53813f2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/svit-799baee9d1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-presovsky-kraj-6c62c12094",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/uhorska-ves-f764b65e79",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oravska-lesna-kubinska-2caabb79ae",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-hradok-c7c0aae1f2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/soblahov-5016ec4be7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sedlo-medziholie-velky-rozsutec-93a6688944",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tomasovsky-vyhlad-ffcc6129b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lubietova-18e9f8ab1f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zakopcie-22bf40169d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mala-petrova-e1a949f3e5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vrutky-5df8120889",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tomasovsky-vyhlad-54e6938831",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzi-nitricou-a-novakmi-2c2ac2f19e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-osada-0926c301bc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krasna-ves-f1f5903310",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/smolnik-612cd32d8b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/salkova-cc9b91c16d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velka-lomnica-198baf4533",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tatranska-lesna-8eb30d1047",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-hrdovo-d70ad71e3a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-b4447cce53",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/koprova-dolina-f6216ef4ef",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzibrod-d7ff43ef20",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-6d8896cebf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turciansky-michal-5ceff5351a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-stiavnica-dd089c95ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brusno-c7ffc043b3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turany-376bad14f9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/brehy-876e18ba25",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jaskyna-mrtvych-netopierov-48ad86a97b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-bystrica-18dd0df0d9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrnciarska-ves-1b0491f095",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/revisne-36591b7820",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-8d1e5650f5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turany-19bb907095",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-bystrica-26e8709385",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zirska-chata-zdarske-sedlo-e9c9b5194a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kosariska-10f14f0cc1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kosariska-47ae068e98",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ilanovo-a778e542f5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bela-dulice-7c0ac55b5b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krasnany-70c1e8d149",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-fff74b6a6b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mlynna-dolina-97275943c2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-226f9b77e7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hronska-dubrava-a7cec09a83",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/blatnica-9f1476020d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zvolen-straze-v-blizkosti-zahrad-pri-vstupe-do-lesa-4e46a180a2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zelezno-zelezne-de8b15f8e8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jamnik-55ecf395e4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tekovska-breznica-c970a9e4f4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianska-stiavnicka-ea32139e50",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucivna-b79849efad",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribylina-ea66a770a1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-da0e3617ef",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tuzina-f1fc083dc9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cesta-svobody-silnice-537-dded6f9f1e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kolonia-hviezda-33c79ab7a4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzibrod-fdaf2e8f73",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nedozery-brezany-23dd9fc454",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-af2c38aef1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/telgart-f974057e48",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/budca-a6deb36331",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/omsenie-76390c53f0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mala-fatra-4d758d7462",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cadca-abf9c54439",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-776e06056f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucany-f99b942121",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-e5740344e2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lemesany-54b4922eae",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turany-6af45aa5a1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lendak-1cb55bccaa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/chvojnica-a42aa42d1c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nitrianske-pravno-f2f2dee44d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/martin-9333310c5e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/krpacovo-09671e0af8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucany-0c0f127629",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kavecany-b50c766576",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lest-ecfbefb80e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/orlove-34766ab08c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/straze-a85f07eccc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucky-f2b00c5b2e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velke-biele-pleso-175500185f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/martin-cf6fac2927",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vratna-96d73592e4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lieskovec-3ddcdc5eca",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ostra-luka-7e81756a92",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jasenska-dolina-c1e6266cba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horna-micina-121224e684",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-porubka-b02a2f994d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trencianske-teplice-964db21ddb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bobrovecka-dolina-44efdefbb5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-7b8c540544",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/harmanec-a92d1594b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kubinska-hola-23dad63f79",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/polana-586c01ac4c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mala-causa-243cef3c78",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mosovce-058821810d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-mikulas-tesco-a0f8e52ded",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/oravska-jasenica-1179d7a320",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/slaska-e72f49cba2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tatry-nadbanske-e0b04f39ef",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoke-tatry-fd23958abb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-6739466e22",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/na-stefanikovu-chatu-9fdacd1de8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pitelova-0170454cb5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/haj-43d021b9bd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strbske-pleso-b5e841c8b2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruska-nova-ves-e1fbd59d5a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zamutov-3d7144f2d6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-86cb86ad5b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/velka-ves-290afcaec4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dobra-niva-66342a6f2e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zamutov-4315f6f3c3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-povraznik-ea936b3188",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rajecka-lesna-rybna-0f6b76a5a0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mosovce-d2faff9d07",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pohronska-polhora-224ee7b922",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hlboke-okres-cadca-makov-10749022d5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/haj-turcianske-teplice-f97fc22fb0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vychylovka-nova-bystrica-95547b2dc7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-hradok-4f84398ef9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/namestovo-b9213044a7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/makovce-8d85d7cf19",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strbske-pleso-14aa030aad",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dacov-lom-c29de8a664",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vychodna-bf4fa0da48",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-a58a4fc4c0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sedlo-medzi-vretenami-7516d31ce7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zamutov-9c6c0e365e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stara-lubovna-8d923e2831",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zvolen-7108c40e9f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zlata-idka-b6df0cbc66",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stara-lubovna-57e0b57240",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stefanova-9358c0f3f9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-4c41b1b33a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ustie-uzkej-doliny-fefb5e4b70",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kotrcina-lucka-f097ee55fc",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-567921fbe8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zupkov-3e2e9ea8f2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-a460632628",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-7bb6bfc2fb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/prosiek-e9f60f4c91",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-nad-hronom-97e4f068fa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jastraba-c3b70822cb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzibrod-72d595b8df",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-c3f84a53a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vreten-dfc7736733",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sneznica-92dfab46b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/partizanska-lupca-5b41ef205a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trencianske-mitice-9c796b7ba2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/povina-b40f1700de",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mirola-96d0cf5fb5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rakova-95043dbd90",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kremnica-roh-68e4f77d2e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pitelova-536b7b57d4",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/svedernik-0384489f21",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianska-stiavnicka-7d802d8d42",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-anna-55740e5383",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/skalica-abfc8bfa84",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jastraba-4b42aeaef2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sedlo-medziholie-pod-stohom-7c6428c73f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/povina-fe5387dc4c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-4c9b200847",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysny-zipov-570e9c84eb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cavoj-4a54a93de8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stara-voda-00ef405d9a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-kokava-8d22c1b51b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/tatranske-zruby-b0a9557f4a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/jastraba-366d486628",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-d997a4b24a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kalameny-38758fa301",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/belusa-c2d546ea3f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianska-stiavnicka-medokys-24e73fa1c2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horna-lehota-145a2a8b42",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/malatina-2bb0c6b05d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/morovno-handlova-db609fe59a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/konska-d73173d57f",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/chvojnica-198b847ba7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zlata-idka-a37325f841",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ganovce-9bd2ccd077",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klokocov-af232307f9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mala-causa-4ba9945c95",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-osada-11f7d7fbe3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vratna-dolina-0cb6d5db89",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/konska-068b06a957",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zemiansky-vrbovok-f1a37feb7d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kuznice-68073ad506",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-3552675cd9",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/handlova-577262597e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/povazska-bystrica-1d2b8f06ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-bana-790454e4c5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/trencianska-tepla-5461898bf5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziar-9951e29ca0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-sedlica-0a572705bf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vavrisovo-49336947aa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podhradie-73c9edcb06",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vazec-cierny-vah-69e6bb29c5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/cestou-do-vratne-4f4bab54bb",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pribylina-33a65eaad5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-c36160c2cf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrdovo-podbanske-f08e9c285a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rajecka-lesna-520f732771",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbrezova-943cb2ef07",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klenovec-chorepa-vysielac-6f7627ff55",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/fulianka-5019f21602",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-rieka-dc26296d54",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sliac-53985f54d7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/fulianke-ec6b31f61b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-strelniky-0f234c6371",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucany-kosuty-1e52d91235",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-povraznik-4e782d7798",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podvysoka-db42d519f0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-osada-ef8607357c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lazisko-vapenica-6c43e67502",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-eea8519814",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-c71d87bfe7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/latky-74e0946b31",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mladzovo-da7fd50edf",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-43ee1e5d93",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-jan-9d2bfd3af7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dovalovo-2029b8e359",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/detvianska-huta-81894e3b06",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/medzibrod-588fa7f039",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrnciarska-ves-76ddbcd245",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sklabinsky-podzamok-e8c8ddc6aa",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ziarska-dolina-fbc5fa9635",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/terchova-ed388de92a",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kalenik-lipt-peter-431fd42c75",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/danova-rybnik-aaf9493f60",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/gapel-valaska-bela-f3c628311e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bela-c318dafac8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruzomberok-1796942a75",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysoka-nad-kysucou-b1223d6c58",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ulic-a28884cde2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-eef309adde",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kremnicka-banska-bystrica-9093a805e7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/u-cyklostezky-a-loucky-na-ktere-je-velky-krmelec-c30edbb966",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/morske-oko-367e309405",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-mikulas-demanova-e691455ed6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/radola-e70f006219",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-88d003439e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianske-jaseno-10ed1dc871",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kralovany-f4e2988308",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bankova-jama-sliac-3f6a3d8d91",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lubochna-3fa9b22fee",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/branisko-chvalabohu-66b1253467",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stara-bystrica-0d283b8db1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turzovka-11b4bf65d1",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/banska-bystrica-sajbica-b1b9e25987",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucha-hora-ee32f4bd13",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/laskar-novaky-443cb9b422",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianske-teplice-0629a003a0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ilava-75acb52874",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/spisska-teplica-f40776192b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strecno-0217995562",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/strelniky-cf94928cce",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vazec-196da89fd0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turzovka-f723ec0e8e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucky-4003fc4d52",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lucivna-2f602ec13c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/opatova-02066fb367",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kralovany-f9177dea7e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/kremna-194b84a0c2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/fackov-84f18841ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sucany-a01f338833",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/prievidza-7c51cfa5e7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zuberec-brestovska-vyvieracka-c15ed3c7ed",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zavazna-poruba-1a601f72c0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vysny-kelcov-a70b602fd7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/rysy-4148906bcd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-mikulas-b06520183b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruzomberok-de4e9be3d7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/uhrovec-47d9361444",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-87afdc9ef7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/muranska-planina-e1135f5d95",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrochot-952e679b88",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/ruzomberok-ae7917a162",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/horna-stubna-bf807f1b47",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bela-1aace8d3a0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sidlovec-01f7260c8b",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/vodna-nadrz-cierny-vah-fc6cbf61f8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-5aac14b080",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/babin-5b04540518",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovska-porubka-b3b34868de",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dlzin-483ce1cab0",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/dubravica-89f1c7a321",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/maluzina-3b980ed0ba",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/muran-b790f6682c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/detva-e2005e5ba2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/filakovo-72ecc359c6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/grobnov-chodnik-af66786ea5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/stefanov-nad-oravou-927bfbd30e",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/detvianska-huta-0dc409b293",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/smizany-38daea2cd8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/liptovsky-ondrej-b33370d38d",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zaborie-890eee5eea",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-74a0691fe2",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zvolen-e955a29968",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pitelova-809f950a2c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hrinova-ee0a1a7f24",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/chvojnica-85ad401523",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bodic-4811bc5f21",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/pliesna-359ad87a8c",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hranicne-e6dd606150",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/udol-82917eafa7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/klenovec-borova-b8f176d2dd",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/nova-lesna-5ded3e1848",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zadna-ticha-9fc479bf93",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/zvolen-bienska-dolina-1a5669c7ee",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/lazisko-42aae653ab",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/turcianska-stiavnicka-3abd503cc3",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/bocina-b809c602b5",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/istebne-eab2d65ac7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/mosovce-76e45cd6b6",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/hybe-1ba48984a8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/podbanske-1eeb3829d7",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/miklusovce-dabfebddff",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/gemer-50d8ebadc8",
+      "status": 200,
+      "issues": []
+    },
+    {
+      "url": "https://www.kdejemedved.sk/varovania/sutovo-cd8f0f834d",
+      "status": 200,
+      "issues": []
+    }
+  ]
+}
