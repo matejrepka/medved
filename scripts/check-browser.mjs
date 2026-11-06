@@ -32,7 +32,7 @@ try {
     const url = new URL(response.url());
     if (url.origin === origin && response.status() === 404 && /\.(?:js|mjs|css|png|webp|woff2?)$/.test(url.pathname)) missingAssets.push(url.pathname);
   });
-  for (const route of ["/", "/domov", "/spravy", "/varovania", "/stats", "/nahlas", "/bezpecnost", "/o-mape", "/ochrana-sukromia", "/podmienky-pouzivania", "/admin"]) {
+  for (const route of ["/", "/domov", "/spravy", "/varovania", "/stats", "/nahlas", "/bezpecnost", "/o-mape", "/spomenuli-nas", "/ochrana-sukromia", "/podmienky-pouzivania", "/admin"]) {
     const response = await page.goto(origin + route, { waitUntil: "networkidle" });
     assert.equal(response.status(), 200, route);
     assert.ok(await page.locator("h1").count(), `${route} must have a heading`);
@@ -45,7 +45,6 @@ try {
   console.log("Browser OK: admin login with UTF-8 and colon password");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(origin + "/nahlas", { waitUntil: "networkidle" });
-  await page.locator("[data-consent='necessary']").click();
   await page.locator("#menuBtn").click();
   assert.equal(await page.locator("#siteMenuDialog").evaluate(el => el.open), true);
   await page.locator("[data-menu-close]").click();

@@ -17,21 +17,22 @@ const server = app.listen(0, "127.0.0.1");
 await once(server, "listening");
 const origin = `http://127.0.0.1:${server.address().port}`;
 const tile = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=", "base64");
+const fixtureDate = new Date().toISOString();
 const warning = {
   id: "startup-warning", location: "Liptovský Mikuláš",
-  lat: 49.08, lng: 19.61, hasCoords: true, reportedAt: "2026-10-05T09:00:00.000Z",
+  lat: 49.08, lng: 19.61, hasCoords: true, reportedAt: fixtureDate,
   source: "tumedved.sk", note: "Testovacie hlásenie",
 };
 const newsItem = {
   id: "incident-startup-news", incidentId: "startup-news", isIncident: true,
   title: "Stret medveďa s bežcom na Kláštorskej ceste", category: "warning",
-  date: "2026-10-07", source: "ŠOP SR", articleUrl: "https://www.pozormedved.sk/test",
+  date: fixtureDate, source: "ŠOP SR", articleUrl: "https://www.pozormedved.sk/test",
   detailUrl: "/varovania/test", summary: "Zásahový tím monitoruje Kláštorskú cestu.",
   locations: [{ place: "Kláštorská cesta", lat: 48.9526744, lng: 20.3988546 }],
   verificationStatus: "official_notice", sourceCount: 2,
   coverage: [
-    { id: "official", source: "ŠOP SR", sourceTypeLabel: "Úradné oznámenie", url: "https://www.pozormedved.sk/test", publishedAt: "2026-10-07" },
-    { id: "media", source: "TASR", sourceTypeLabel: "Prevzatá správa", url: "https://www.teraz.sk/test", publishedAt: "2026-10-08" },
+    { id: "official", source: "ŠOP SR", sourceTypeLabel: "Úradné oznámenie", url: "https://www.pozormedved.sk/test", publishedAt: fixtureDate },
+    { id: "media", source: "TASR", sourceTypeLabel: "Prevzatá správa", url: "https://www.teraz.sk/test", publishedAt: fixtureDate },
   ],
 };
 function gate() {
@@ -200,7 +201,6 @@ try {
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(origin + "/?theme=dark", { waitUntil: "networkidle" });
-    await page.locator("[data-consent='necessary']").click();
     assert.match(await page.locator("#mapStartupTitle").textContent(), /nepodarilo/);
     assert.ok(await page.locator("#mapStartupRetry").isVisible());
     assert.equal(await page.locator("#mapStartupRetry").getAttribute("href"), "/?theme=dark");

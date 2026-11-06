@@ -1,0 +1,96 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "deepmerge": {
+      "name": "deepmerge",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1243505,
+          "name": "deepmerge",
+          "dependency": "deepmerge",
+          "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+          "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+          "severity": "low",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=4.2.0 <=4.3.1"
+        }
+      ],
+      "effects": [
+        "puppeteer-extra-plugin-user-preferences"
+      ],
+      "range": ">=4.2.0",
+      "nodes": [
+        "node_modules/deepmerge"
+      ],
+      "fixAvailable": {
+        "name": "puppeteer-extra-plugin-stealth",
+        "version": "2.7.0",
+        "isSemVerMajor": true
+      }
+    },
+    "puppeteer-extra-plugin-stealth": {
+      "name": "puppeteer-extra-plugin-stealth",
+      "severity": "low",
+      "isDirect": true,
+      "via": [
+        "puppeteer-extra-plugin-user-preferences"
+      ],
+      "effects": [],
+      "range": ">=2.7.1",
+      "nodes": [
+        "node_modules/puppeteer-extra-plugin-stealth"
+      ],
+      "fixAvailable": {
+        "name": "puppeteer-extra-plugin-stealth",
+        "version": "2.7.0",
+        "isSemVerMajor": true
+      }
+    },
+    "puppeteer-extra-plugin-user-preferences": {
+      "name": "puppeteer-extra-plugin-user-preferences",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "deepmerge"
+      ],
+      "effects": [
+        "puppeteer-extra-plugin-stealth"
+      ],
+      "range": ">=2.1.5",
+      "nodes": [
+        "node_modules/puppeteer-extra-plugin-user-preferences"
+      ],
+      "fixAvailable": {
+        "name": "puppeteer-extra-plugin-stealth",
+        "version": "2.7.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 3,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 3
+    },
+    "dependencies": {
+      "prod": 162,
+      "dev": 91,
+      "optional": 60,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 253
+    }
+  }
+}

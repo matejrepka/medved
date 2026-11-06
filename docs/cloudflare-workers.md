@@ -6,6 +6,13 @@ database-backed endpoints will return 404 regardless of environment variables.
 
 ## Update the existing Worker
 
+Before deploying the current backend or running the updated Node importer, apply
+`supabase/migrations/20261106205315_atomic_news_warning_locations.sql` in the existing
+Supabase database, after migration 006. It adds the private transactional location
+replacement RPC and does not modify existing records. Apply the SQL first; older
+code remains compatible. The new backend deliberately refuses the former
+delete-then-insert fallback when the RPC is unavailable.
+
 Use Node.js 24 for the deployment tools. From the repository directory:
 
 ```sh

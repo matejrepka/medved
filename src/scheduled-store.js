@@ -12,6 +12,7 @@ export class ScheduledDataStore {
     this.loadedAt = 0;
     this.inFlight = null;
     this.loadInFlight = null;
+    this.loadGeneration = 0;
     this.lastError = null;
     this.lastErrorStage = null;
     this.lastRun = null;
@@ -23,13 +24,25 @@ export class ScheduledDataStore {
     });
   }
 
-  async loadFromDatabase() {
-    if (!this.loadStored) return [];
-    if (this.loadInFlight) return this.loadInFlight;
+  invalidate() {
+    this.loadGeneration += 1;
+    this.loadInFlight = null;
+    this.loadedAt = 0;
+  }
 
-    this.loadInFlight = (async () => {
+  async loadFromDatabase({ force = false } = {}) {
+    if (!this.loadStored) return [];
+    if (this.loadInFlight) {
+      if (!force) return this.loadInFlight;
+      // A read started before a write cannot confirm the saved result.
+      await this.loadInFlight.catch(() => {});
+      return this.loadFromDatabase();
+    }
+
+    const generation = this.loadGeneration;
+    const pending = this.loadInFlight = (async () => {
       const data = await this.loadStored();
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && generation === this.loadGeneration) {
         const scrapedTimes = data
           .map((item) => new Date(item._scrapedAt || 0).getTime())
           .filter((time) => Number.isFinite(time) && time > 0);
@@ -45,9 +58,9 @@ export class ScheduledDataStore {
     })();
 
     try {
-      return await this.loadInFlight;
+      return await pending;
     } finally {
-      this.loadInFlight = null;
+      if (this.loadInFlight === pending) this.loadInFlight = null;
     }
   }
 
@@ -68,7 +81,7 @@ export class ScheduledDataStore {
         }
         if (this.loadStored) {
           stage = "reload";
-          await this.loadFromDatabase();
+          await this.loadFromDatabase({ force: true });
         } else {
           this.value = data;
         }
@@ -149,9 +162,7 @@ export class ScheduledDataStore {
     }
     if (this.inFlight) return this.inFlight;
 
-    await this.loadFromDatabase().catch((err) => {
-      console.error(`[${this.name}] DB reload failed:`, err.message);
-    });
+    await this.loadFromDatabase();
 
     if (this.value !== null) return this.value;
     return [];

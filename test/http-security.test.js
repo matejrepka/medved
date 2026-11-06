@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import test from "node:test";
+import { gzipSync } from "node:zlib";
 
 // Override before importing dotenv/server: no production DB, scrapers or mail.
 Object.assign(process.env, {
@@ -32,6 +33,18 @@ test("HTTP security and validation regressions", async (t) => {
     const res = await post("/api/admin/reports/1/status", { status: "approved" }, { authorization, Origin: "https://attacker.example" });
     assert.equal(res.status, 403);
   });
+  await t.test("admin writes cannot report success without database storage", async () => {
+    for (const [path, body, method] of [
+      ["/api/admin/reports/1/status", { status: "approved" }, "POST"],
+      ["/api/admin/sightings/example/edit", { note: "Updated" }, "POST"],
+      ["/api/admin/subscriptions/1", {}, "DELETE"],
+    ]) {
+      const res = await fetch(origin + path, { method,
+        headers: { authorization, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      assert.equal(res.status, 503, path);
+      assert.equal((await res.json()).ok, false);
+    }
+  });
   await t.test("invalid subscription area is a 400 response and server stays alive", async () => {
     const res = await post("/api/subscriptions", { email: "test@example.sk", notifyType: "area", areaName: {} });
     assert.equal(res.status, 400);
@@ -56,6 +69,14 @@ test("HTTP security and validation regressions", async (t) => {
     const oversized = await post("/api/feedback", { message: "a".repeat(40_000) });
     assert.equal(oversized.status, 413);
     assert.equal((await oversized.json()).ok, false);
+  });
+  await t.test("invalid trailing gzip data returns an error without crashing the server", async () => {
+    const body = Buffer.concat([gzipSync('{"kind":"newsletter_poll","choice":"yes"}'), Buffer.from("invalid trailing data")]);
+    const response = await fetch(origin + "/api/feedback", { method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Encoding": "gzip" }, body });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).ok, false);
+    assert.equal((await fetch(origin + "/api/status")).status, 200);
   });
   await t.test("report throttling ignores forged earlier proxy hops", async () => {
     const headers = { "X-Forwarded-For": "198.51.100.1, 203.0.113.7" };

@@ -836,14 +836,14 @@ function archiveState(req, items) {
   };
 }
 
-const locationOverviewCache = {
+let locationOverviewCache = {
   value: null,
   version: null,
   expiresAt: 0,
   inFlight: null,
 };
 
-const warningsCache = {
+let warningsCache = {
   value: null,
   version: null,
   expiresAt: 0,
@@ -851,16 +851,13 @@ const warningsCache = {
 };
 
 function invalidateLocationOverviewCache() {
-  locationOverviewCache.value = null;
-  locationOverviewCache.version = null;
-  locationOverviewCache.expiresAt = 0;
+  locationOverviewCache = { value: null, version: null, expiresAt: 0, inFlight: null };
 }
 
 function invalidateWarningsCache() {
   invalidatePublicSnapshotCache();
-  warningsCache.value = null;
-  warningsCache.version = null;
-  warningsCache.expiresAt = 0;
+  // Pending readers may finish, but can only populate the retired cache object.
+  warningsCache = { value: null, version: null, expiresAt: 0, inFlight: null };
   invalidateLocationOverviewCache();
 }
 
@@ -868,8 +865,8 @@ function invalidateWarningsCache() {
 // The Worker calls this before rendering a response under the new cache key.
 export function invalidatePublicCaches() {
   invalidateWarningsCache();
-  sightingsStore.loadedAt = 0;
-  newsStore.loadedAt = 0;
+  sightingsStore.invalidate();
+  newsStore.invalidate();
 }
 
 function emptyLocationOverview() {
@@ -925,14 +922,15 @@ async function loadLocationOverviewForRender({ includeLocations = true } = {}) {
 }
 
 async function loadLocationOverview({ force = false } = {}) {
-  if (!force && locationOverviewCache.value && locationOverviewCache.expiresAt > Date.now()) {
-    return locationOverviewCache.value;
+  const cache = locationOverviewCache;
+  if (!force && cache.value && cache.expiresAt > Date.now()) {
+    return cache.value;
   }
-  if (locationOverviewCache.inFlight) return locationOverviewCache.inFlight;
-  locationOverviewCache.inFlight = (async () => {
+  if (cache.inFlight) return cache.inFlight;
+  cache.inFlight = (async () => {
     if (force) {
       warningsCache.expiresAt = 0;
-      await Promise.all([sightingsStore.loadFromDatabase(), newsStore.loadFromDatabase()]);
+      await Promise.all([sightingsStore.loadFromDatabase({ force: true }), newsStore.loadFromDatabase({ force: true })]);
     }
     const [warnings, news, snapshot] = await Promise.all([
       loadWarnings(), newsStore.get(), loadPublicSnapshot().catch(error => {
@@ -942,15 +940,15 @@ async function loadLocationOverview({ force = false } = {}) {
     ]);
     const overview = { ...emptyLocationOverview(), ...(snapshot || {}), warnings, news,
       snapshotReady: Boolean(snapshot) };
-    locationOverviewCache.value = overview;
-    locationOverviewCache.version = latestContentDate();
-    locationOverviewCache.expiresAt = Date.now() + 60_000;
+    cache.value = overview;
+    cache.version = latestContentDate();
+    cache.expiresAt = Date.now() + 60_000;
     return overview;
   })();
   try {
-    return await locationOverviewCache.inFlight;
+    return await cache.inFlight;
   } finally {
-    locationOverviewCache.inFlight = null;
+    cache.inFlight = null;
   }
 }
 
@@ -1195,45 +1193,43 @@ app.get("/api/sightings", async (_req, res) => {
 // hlásenia od používateľov / manuálne pridané varovania. Spravodajské články
 // zostávajú oddelené v /api/news a nikdy sa nepripájajú k sourceLinks hlásenia.
 async function loadWarnings() {
+  const cache = warningsCache;
   const version = sightingsStore.meta.fetchedAt || "unloaded";
   if (
-    warningsCache.value &&
-    warningsCache.version === version &&
-    warningsCache.expiresAt > Date.now()
+    cache.value &&
+    cache.version === version &&
+    cache.expiresAt > Date.now()
   ) {
-    return warningsCache.value;
+    return cache.value;
   }
-  if (warningsCache.inFlight) return warningsCache.inFlight;
+  if (cache.inFlight) return cache.inFlight;
 
-  warningsCache.inFlight = (async () => {
+  cache.inFlight = (async () => {
     if (isWorker) {
       const snapshot = await loadPublicSnapshot({ kind: "warnings" });
       if (snapshot) {
-        warningsCache.value = snapshot.items;
-        warningsCache.version = sightingsStore.meta.fetchedAt || "unloaded";
-        warningsCache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
+        cache.value = snapshot.items;
+        cache.version = sightingsStore.meta.fetchedAt || "unloaded";
+        cache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
         return snapshot.items;
       }
     }
     const [scraped, reports, buckets] = await Promise.all([
       sightingsStore.get(),
-      loadApprovedBearReports().catch((err) => {
-        console.error("[warnings] reports load failed:", err.message);
-        return [];
-      }),
+      loadApprovedBearReports(),
       loadSightingBuckets(),
     ]);
     const warnings = mergeWarnings({ sightings: scraped, reports, buckets });
-    warningsCache.value = warnings;
-    warningsCache.version = sightingsStore.meta.fetchedAt || "unloaded";
-    warningsCache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
+    cache.value = warnings;
+    cache.version = sightingsStore.meta.fetchedAt || "unloaded";
+    cache.expiresAt = Date.now() + WARNINGS_CACHE_TTL_MS;
     return warnings;
   })();
 
   try {
-    return await warningsCache.inFlight;
+    return await cache.inFlight;
   } finally {
-    warningsCache.inFlight = null;
+    cache.inFlight = null;
   }
 }
 
@@ -1450,7 +1446,7 @@ app.post("/api/telegram/webhook", async (req, res) => {
     const result = await telegramService.handleUpdate(req.body);
     if (result?.status) {
       invalidatePublicSnapshotCache();
-      await newsStore.loadFromDatabase().catch((err) => {
+      await newsStore.loadFromDatabase({ force: true }).catch((err) => {
         console.error("[telegram moderation] news reload failed:", err.message);
       });
     }
@@ -1493,7 +1489,7 @@ app.post("/api/reports", async (req, res) => {
     });
 
     // AI kontrola nemení stav; hlásenie vždy čaká na moderovanie.
-    classifyReportSpam(report)
+    defer(classifyReportSpam(report)
       .then((spamCheck) => {
         console.log(
           `[reports] spam check=${spamCheck.verdict} confidence=${spamCheck.confidence ?? "n/a"} status=pending`
@@ -1501,7 +1497,7 @@ app.post("/api/reports", async (req, res) => {
       })
       .catch((error) => {
         console.warn(`[report spam ai] background classification failed: ${error.message}`);
-      });
+      }));
   } catch (err) {
     console.error("[reports] save failed:", err.message);
     res.status(500).json({ ok: false, error: "Nepodarilo sa uložiť hlásenie." });
@@ -2244,6 +2240,9 @@ function adminAuth(req, res, next) {
     return fail(429, "Priveľa pokusov o prihlásenie. Skúste to znova o 15 minút.");
   }
   if (basicAdminMatches(req.headers.authorization, adminPassword)) {
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && !isSupabaseConfigured()) {
+      return fail(503, "Databáza momentálne nie je dostupná. Zmeny neboli uložené.");
+    }
     return next();
   }
   adminAttempts.consume(key);
@@ -2423,7 +2422,7 @@ app.post("/api/admin/sightings/:id/status", adminAuth, async (req, res) => {
   }
   try {
     await updateSightingStatus(req.params.id, status);
-    await sightingsStore.loadFromDatabase().catch((err) => {
+    await sightingsStore.loadFromDatabase({ force: true }).catch((err) => {
       console.error("[sighting status] reload failed:", err.message);
     });
     invalidateWarningsCache();
@@ -2445,7 +2444,7 @@ app.post("/api/admin/news/:id/status", adminAuth, async (req, res) => {
       actor: "admin",
     });
     invalidatePublicSnapshotCache();
-    await newsStore.loadFromDatabase().catch((err) => {
+    await newsStore.loadFromDatabase({ force: true }).catch((err) => {
       console.error("[news status] reload failed:", err.message);
     });
     invalidateWarningsCache();
@@ -2486,7 +2485,7 @@ app.post("/api/admin/news/:id/review", adminAuth, async (req, res) => {
     const incidentResult = await reviewIndependentNews(req.params.id, fields);
     // Obnov pamäťovú kópiu, nech sa zmena hneď prejaví na webe aj na mape.
     invalidatePublicSnapshotCache();
-    await newsStore.loadFromDatabase().catch((err) => {
+    await newsStore.loadFromDatabase({ force: true }).catch((err) => {
       console.error("[news review] reload failed:", err.message);
     });
     invalidateWarningsCache();
@@ -2538,7 +2537,7 @@ app.post("/api/admin/news/:id/edit", adminAuth, async (req, res) => {
     }
     await updateNewsFields(req.params.id, fields);
     invalidatePublicSnapshotCache();
-    await newsStore.loadFromDatabase().catch((err) => {
+    await newsStore.loadFromDatabase({ force: true }).catch((err) => {
       console.error("[news edit] reload failed:", err.message);
     });
     invalidateWarningsCache();
@@ -2556,7 +2555,7 @@ app.post("/api/admin/sightings/:id/edit", adminAuth, async (req, res) => {
       await updateBearReportFields(Number(reportMatch[1]), req.body || {});
     } else {
       await updateSightingFields(req.params.id, req.body || {});
-      await sightingsStore.loadFromDatabase().catch((err) => {
+      await sightingsStore.loadFromDatabase({ force: true }).catch((err) => {
         console.error("[sighting edit] reload failed:", err.message);
       });
     }
@@ -2580,6 +2579,9 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
     return res.status(400).json({ ok: false, error: "Neplatný typ položky." });
   }
 
+  if (date != null && (typeof date !== "string" || date.length > 40)) {
+    return res.status(400).json({ ok: false, error: "Neplatný dátum." });
+  }
   const reportedAt = date ? new Date(date) : new Date();
   if (Number.isNaN(reportedAt.getTime())) {
     return res.status(400).json({ ok: false, error: "Neplatný dátum." });
@@ -2623,7 +2625,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
       });
 
       invalidatePublicSnapshotCache();
-      await newsStore.loadFromDatabase().catch((err) => {
+      await newsStore.loadFromDatabase({ force: true }).catch((err) => {
         console.error("[manual news] reload failed:", err.message);
       });
     } else {
@@ -2643,7 +2645,7 @@ app.post("/api/admin/warnings", adminAuth, async (req, res) => {
           url: link?.trim() || null,
         });
 
-        await sightingsStore.loadFromDatabase().catch((err) => {
+        await sightingsStore.loadFromDatabase({ force: true }).catch((err) => {
           console.error("[manual tumedved] reload failed:", err.message);
         });
       } else {

@@ -58,7 +58,7 @@ const getChartColors = () => {
   };
 };
 
-Chart.defaults.font.family = "'Hanken Grotesk', system-ui, sans-serif";
+if (typeof Chart !== "undefined") Chart.defaults.font.family = "'Hanken Grotesk', system-ui, sans-serif";
 
 function updateChartTheme() {
   const colors = getChartColors();
@@ -163,6 +163,10 @@ function renderReport(report) {
   // 3. Najčastejšie lokality — hlásenia aj zmienky v správach (top 10)
   const topLocations = report.topLocations.slice(0, 10);
 
+  if (typeof Chart === "undefined") {
+    setStatus("Grafy sa nepodarilo načítať. Skúste obnoviť stránku.", true);
+    return;
+  }
   renderCharts(timelineLabels, timelineSightings, timelineNews, topLocations, report.timeOfDay);
 }
 
@@ -284,7 +288,7 @@ function renderCharts(timelineLabels, timelineSightings, timelineNews, topLocati
 
 async function loadData() {
   try {
-    const report = await fetch("/api/stats").then((r) => {
+    const report = await fetch("/api/stats", { signal: AbortSignal.timeout(15000) }).then((r) => {
       if (!r.ok) throw new Error(`Štatistiky HTTP ${r.status}`);
       return r.json();
     });

@@ -279,6 +279,7 @@
 
       let marker = null;
       let confirmed = false;
+      let locationRequest = 0;
 
       const escapeHtml = (s) =>
         String(s).replace(/[&<>"']/g, (c) => ({
@@ -300,8 +301,10 @@
       async function reverseGeocode(lat, lng) {
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14&accept-language=sk`
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14&accept-language=sk`,
+            { signal: AbortSignal.timeout(8000) }
           );
+          if (!res.ok) return '';
           const data = await res.json();
           const a = (data && data.address) || {};
           const parts = [
@@ -319,8 +322,10 @@
       async function searchPlace(q) {
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=sk&limit=1&accept-language=sk&q=${encodeURIComponent(q)}`
+            `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=sk&limit=1&accept-language=sk&q=${encodeURIComponent(q)}`,
+            { signal: AbortSignal.timeout(8000) }
           );
+          if (!res.ok) return null;
           const data = await res.json();
           if (Array.isArray(data) && data.length) return data[0];
         } catch (e) {}
@@ -328,7 +333,9 @@
       }
 
       async function selectLocation(lat, lng, presetName) {
+        const request = ++locationRequest;
         resetConfirm();
+        locationEl.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         latEl.value = lat.toFixed(6);
         lngEl.value = lng.toFixed(6);
 
@@ -344,8 +351,10 @@
 
         setStatus('<i class="ph ph-spinner spin" aria-hidden="true"></i> <span>Zisťujem názov miesta…</span>');
         const name = presetName || (await reverseGeocode(lat, lng));
+        if (request !== locationRequest) return;
         const label = name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         locationEl.value = label;
+        confirmBtn.disabled = false;
         setStatus(
           `<i class="ph ph-map-pin" aria-hidden="true"></i> <span>Vybraté miesto: <strong>${escapeHtml(label)}</strong>. Potiahnite značku pre upresnenie a polohu potvrďte nižšie.</span>`
         );
@@ -358,8 +367,10 @@
       async function doSearch() {
         const q = searchInput.value.trim();
         if (!q) return;
+        const request = ++locationRequest;
         setStatus('<i class="ph ph-spinner spin" aria-hidden="true"></i> <span>Hľadám miesto…</span>');
         const r = await searchPlace(q);
+        if (request !== locationRequest) return;
         if (!r) {
           setStatus(
             '<i class="ph ph-warning" aria-hidden="true"></i> <span>Miesto sa nenašlo. Skúste iný názov alebo kliknite priamo do mapy.</span>',
@@ -367,10 +378,14 @@
           );
           return;
         }
-        const lat = parseFloat(r.lat);
-        const lng = parseFloat(r.lon);
+        const lat = Number(r.lat);
+        const lng = Number(r.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < 47.65 || lat > 49.7 || lng < 16.75 || lng > 22.65) {
+          setStatus('<span>Vyberte platné miesto na Slovensku.</span>', 'warn');
+          return;
+        }
         pickMap.setView([lat, lng], 13);
-        selectLocation(lat, lng, r.display_name.split(',').slice(0, 2).join(',').trim());
+        selectLocation(lat, lng, String(r.display_name || '').split(',').slice(0, 2).join(',').trim());
       }
 
       searchBtn.addEventListener('click', doSearch);
@@ -391,11 +406,13 @@
         }
         locateBtn.classList.add('loading');
         locateBtn.disabled = true;
+        const request = ++locationRequest;
         setStatus('<i class="ph ph-spinner spin" aria-hidden="true"></i> <span>Zisťujem vašu polohu…</span>');
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             locateBtn.classList.remove('loading');
             locateBtn.disabled = false;
+            if (request !== locationRequest) return;
             const { latitude, longitude } = pos.coords;
             pickMap.setView([latitude, longitude], 14);
             selectLocation(latitude, longitude);
@@ -403,6 +420,7 @@
           () => {
             locateBtn.classList.remove('loading');
             locateBtn.disabled = false;
+            if (request !== locationRequest) return;
             setStatus(
               '<i class="ph ph-warning" aria-hidden="true"></i> <span>Nepodarilo sa zistiť vašu polohu. Povoľte prístup k polohe alebo vyberte miesto v mape.</span>',
               'warn'
@@ -413,7 +431,8 @@
       });
 
       confirmBtn.addEventListener('click', () => {
-        if (!latEl.value || !lngEl.value) return;
+        if (!latEl.value || !lngEl.value || !locationEl.value) return;
+        ++locationRequest;
         confirmed = true;
         confirmBtn.classList.add('confirmed');
         confirmBtn.querySelector('span').textContent = 'Poloha potvrdená';
@@ -427,7 +446,7 @@
         const current = document.documentElement.getAttribute('data-theme');
         const next = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
+        try { localStorage.setItem('theme', next); } catch {}
         themeBtn.querySelector('i').className = next === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
         if (tileLayer) pickMap.removeLayer(tileLayer);
         tileLayer = L.tileLayer(next === 'dark' ? TILE_URLS.dark : TILE_URLS.light, TILE_OPTS).addTo(pickMap);
@@ -494,6 +513,7 @@
               : 'Prioritné varovanie bolo bezpečne uložené a čaká na kontrolu.';
             formMessage.className = 'form-message success';
             form.reset();
+            ++locationRequest;
             latEl.value = '';
             lngEl.value = '';
             locationEl.value = '';

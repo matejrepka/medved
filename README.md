@@ -103,6 +103,12 @@ v Supabase SQL Editore. Pred nasadením vytvorte prvý výsledok cez `npm run pr
 postup je v [`docs/precomputed-data.md`](docs/precomputed-data.md). Pri existujúcej databáze ich po migráciách 001-005 spustite
 v tomto poradí.
 
+Pred nasadením aktuálneho backendu aj Node importu navyše spustite celý súbor
+[`supabase/migrations/20261106205315_atomic_news_warning_locations.sql`](supabase/migrations/20261106205315_atomic_news_warning_locations.sql).
+Pridáva súkromnú funkciu na transakčnú výmenu lokalít správ, aby zlyhanie nového
+zápisu nevymazalo pôvodné lokality. Migrácia nemení existujúce údaje a môže byť
+aplikovaná ešte pri bežiacom pôvodnom backende. Nový kód ju vyžaduje pri ukladaní lokalít.
+
 V SQL Editore spustite celý obsah migrácií bez označeného čiastkového výberu.
 Editor pri označenom texte vykoná iba výber; telo PL/pgSQL funkcie by tak mohlo zostať
 bez koncového oddeľovača. Migráciu možno po takomto prerušení bezpečne spustiť znova.

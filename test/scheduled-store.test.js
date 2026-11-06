@@ -119,3 +119,53 @@ test("public data reloads after TTL so moderation by another instance becomes vi
   rows = [];
   assert.deepEqual(await store.get(), []);
 });
+
+test("a cold database failure rejects instead of publishing an empty successful feed", async () => {
+  let fail = true;
+  const store = new ScheduledDataStore({ name: "news", loadStored: async () => {
+    if (fail) throw new Error("database unavailable");
+    return [];
+  } });
+  await assert.rejects(store.get(), /database unavailable/);
+  assert.equal(store.value, null);
+  fail = false;
+  assert.deepEqual(await store.get(), [], "A successful empty query is still a valid feed");
+});
+
+test("refresh reloads after saving even when an older database read is in flight", async () => {
+  let release, saved;
+  const blocked = new Promise(resolve => { release = resolve; });
+  const persisted = new Promise(resolve => { saved = resolve; });
+  let reads = 0;
+  const store = new ScheduledDataStore({ name: "news",
+    loadStored: async () => {
+      if (++reads === 1) { await blocked; return [{ id: "old" }]; }
+      return [{ id: "new" }];
+    },
+    fetcher: async () => [{ id: "new" }], saveFresh: async () => { saved(); },
+  });
+  const initialRead = store.loadFromDatabase();
+  const refresh = store.refresh();
+  await persisted;
+  release();
+  await initialRead;
+  assert.deepEqual(await refresh, [{ id: "new" }]);
+  assert.deepEqual(await store.get(), [{ id: "new" }]);
+});
+
+test("invalidating during a read prevents its late result from replacing newer data", async () => {
+  let release;
+  const blocked = new Promise(resolve => { release = resolve; });
+  let reads = 0;
+  const store = new ScheduledDataStore({ name: "news", loadStored: async () => {
+    if (++reads === 1) { await blocked; return [{ id: "old" }]; }
+    return [{ id: "new" }];
+  } });
+  const oldRead = store.loadFromDatabase();
+  store.invalidate();
+  assert.deepEqual(await store.get(), [{ id: "new" }]);
+  release();
+  await oldRead;
+  assert.deepEqual(await store.get(), [{ id: "new" }]);
+  assert.equal(reads, 2);
+});

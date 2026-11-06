@@ -22,6 +22,7 @@
     "build:geo": "node src/geo/build-gazetteer.mjs",
     "build:images": "node scripts/optimize-images.mjs",
     "check:browser": "node scripts/check-browser.mjs",
+    "check:resilience": "node scripts/check-resilience.mjs",
     "check:startup": "node scripts/check-map-startup.mjs"
   },
   "engines": {
@@ -39,7 +40,7 @@
     "express": "^4.22.3",
     "leaflet": "^1.9.4",
     "linkedom": "^0.18.12",
-    "nodemailer": "^10.0.13",
+    "nodemailer": "^10.3.1",
     "playwright": "^1.61.1",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",

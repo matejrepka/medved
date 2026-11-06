@@ -11,6 +11,7 @@ import { newsLocations, normalizeNewsLocations } from "../news-locations.js";
 import { isSlovakCoordinate } from "../geo/coordinates.js";
 
 const WRITE_CHUNK_SIZE = 200;
+const READ_PAGE_SIZE = 500;
 const SIGHTINGS_LIMIT = 1000;
 const NEWS_LIMIT = 200;
 const NEWS_MAP_LIMIT = 500;
@@ -189,13 +190,13 @@ async function loadNewsWarningLocations(newsIds) {
 
   try {
     for (let i = 0; i < unique.length; i += WRITE_CHUNK_SIZE) {
-      const { data, error } = await supabase
+      const chunk = unique.slice(i, i + WRITE_CHUNK_SIZE);
+      const data = await loadRows(() => supabase
         .from("news_warning_locations")
         .select("news_id,position,place,lat,lng")
-        .in("news_id", unique.slice(i, i + WRITE_CHUNK_SIZE))
-        .order("position", { ascending: true });
-      if (error) throw error;
-      for (const row of data || []) {
+        .in("news_id", chunk)
+        .order("news_id").order("position"), chunk.length * 12);
+      for (const row of data) {
         if (!byNewsId.has(row.news_id)) byNewsId.set(row.news_id, []);
         byNewsId.get(row.news_id).push(row);
       }
@@ -211,39 +212,30 @@ async function replaceNewsWarningLocations(newsId, value) {
   if (!supabase) return false;
   const locations = normalizeNewsLocations(value);
 
-  const { error: deleteError } = await supabase
-    .from("news_warning_locations")
-    .delete()
-    .eq("news_id", newsId);
-  if (deleteError) {
-    if (isMissingRelation(deleteError)) return false;
-    throw deleteError;
+  const { error } = await supabase.rpc("replace_news_warning_locations", {
+    p_news_id: newsId, p_locations: locations,
+  });
+  if (error?.code === "PGRST202" || error?.code === "42883") {
+    throw new Error("Najprv spustite migráciu atomic_news_warning_locations.", { cause: error });
   }
-  if (!locations.length) return true;
-
-  const { error } = await supabase.from("news_warning_locations").insert(
-    locations.map((location, position) => ({
-      news_id: newsId,
-      position,
-      place: location.place,
-      lat: location.lat,
-      lng: location.lng,
-    }))
-  );
   if (error) throw error;
   return true;
 }
 
 async function upsertChunks(table, rows, options) {
-  if (!rows.length) return;
+  const inserted = new Set();
+  if (!rows.length) return inserted;
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase) return inserted;
 
   for (let i = 0; i < rows.length; i += WRITE_CHUNK_SIZE) {
     const chunk = rows.slice(i, i + WRITE_CHUNK_SIZE);
-    const { error } = await supabase.from(table).upsert(chunk, options);
+    const query = supabase.from(table).upsert(chunk, options);
+    const { data, error } = await (options.ignoreDuplicates ? query.select("id") : query);
     if (error) throw error;
+    for (const row of data || []) inserted.add(row.id);
   }
+  return inserted;
 }
 
 // Vráti množinu id hlásení, ktoré admin ručne upravil. Odolné voči chýbajúcemu
@@ -267,6 +259,7 @@ async function loadManuallyEditedSightingIds(ids) {
       for (const row of data || []) edited.add(row.id);
     }
   } catch (err) {
+    if (!isMissingColumn(err)) throw err;
     console.warn(`[tumedved] manually_edited check skipped: ${err.message}`);
     return new Set();
   }
@@ -294,6 +287,7 @@ async function loadSightingStatuses(ids) {
       for (const row of data || []) map.set(row.id, row.status);
     }
   } catch (err) {
+    if (!isMissingColumn(err)) throw err;
     console.warn(`[tumedved] status column check skipped: ${err.message}`);
     return null;
   }
@@ -408,6 +402,7 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
       hasNewClassification && known.status === "pending"
     );
     const sourceSummary = sourceSummaryForNews(item);
+    if (!item.aiSummary && sourceSummary === payload.sourceSummary) continue;
     const updatedPayload = {
       ...payload,
       sourceSummary,
@@ -475,19 +470,33 @@ export async function saveNewsLogs(items, scrapedAt = new Date().toISOString(), 
 
   // ignoreDuplicates je poistka proti súbehu — keby ten istý článok medzitým
   // pribudol, nech zápis nespadne na konflikte primárneho kľúča.
-  await upsertChunks("news_logs", rows, { onConflict: "id", ignoreDuplicates: true });
+  const inserted = await upsertChunks("news_logs", rows, { onConflict: "id", ignoreDuplicates: true });
 
   for (const item of freshItems) {
+    if (!inserted.has(item.id)) continue;
     const locations = newsLocations(item);
     if (locations.length) await replaceNewsWarningLocations(item.id, locations);
   }
 
-  console.log(`[news] saved ${freshItems.length} new, ${knownRows.size} already known`);
+  console.log(`[news] saved ${inserted.size} new, ${knownRows.size} already known`);
 }
 
 // Chyba PostgREST pre neexistujúci stĺpec (napr. status pred migráciou 004).
 function isMissingColumn(error) {
-  return error?.code === "42703" || /does not exist/i.test(error?.message || "");
+  return error?.code === "42703" || error?.code === "PGRST204" ||
+    /column .* does not exist|could not find .* column .* schema cache/i.test(error?.message || "");
+}
+
+async function loadRows(query, limit) {
+  const rows = [];
+  while (rows.length < limit) {
+    const size = Math.min(READ_PAGE_SIZE, limit - rows.length);
+    const { data, error } = await query().range(rows.length, rows.length + size - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < size) break;
+  }
+  return rows;
 }
 
 async function loadIncidentLinksForNews(newsIds, columns) {
@@ -871,14 +880,12 @@ export async function loadAllBearReports({ limit = 2000 } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const data = await loadRows(() => supabase
     .from("bear_reports")
     .select("id,location,description,lat,lng,has_coords,reported_date,status,created_at,reviewed_at")
     .order("reported_date", { ascending: false, nullsFirst: false })
-    .limit(limit);
-
-  if (error) throw error;
-  return (data || []).map(bearReportToAdminSighting);
+    .order("id", { ascending: false }), limit);
+  return data.map(bearReportToAdminSighting);
 }
 
 export async function updateBearReportStatus(id, status) {
@@ -974,6 +981,7 @@ export async function reviewNews(id, fields) {
     status: fields.status,
     updated_at: new Date().toISOString(),
   };
+  let warningLocations = [];
 
   if (fields.status === "approved") {
     const category = fields.category === "warning" ? "warning" : "article";
@@ -985,6 +993,7 @@ export async function reviewNews(id, fields) {
           ? fields.locations
           : { place: fields.place, lat: fields.lat, lng: fields.lng }
       );
+      warningLocations = locations;
       const primary = locations[0] || null;
       const lat = asNullableNumber(primary?.lat);
       const lng = asNullableNumber(primary?.lng);
@@ -1003,10 +1012,7 @@ export async function reviewNews(id, fields) {
   const { error } = await supabase.from("news_logs").update(update).eq("id", id);
   if (error) throw error;
   if (fields.status === "approved") {
-    await replaceNewsWarningLocations(
-      id,
-      fields.category === "warning" ? fields.locations : []
-    );
+    await replaceNewsWarningLocations(id, warningLocations);
   }
   await refreshIncidentPrimaryForNews(id);
 }
@@ -1116,16 +1122,13 @@ export async function loadAllNews({ limit = ADMIN_NEWS_LIMIT } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const rawRows = await loadRows(() => supabase
     .from("news_logs")
     .select(
       "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,status,payload,scraped_at,updated_at"
     )
     .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(limit);
-
-  if (error) throw error;
-  const rawRows = data || [];
+    .order("id", { ascending: false }), limit);
   const locationMap = await loadNewsWarningLocations(rawRows.map((row) => row.id));
   const rows = rawRows.map((row) => {
     const { payload, ...publicRow } = row;
@@ -1166,23 +1169,16 @@ export async function loadAllSightings({ limit = ADMIN_SIGHTINGS_LIMIT } = {}) {
 
   const withStatus =
     "id,source,location,note,lat,lng,has_coords,reported_at,url,status,scraped_at,updated_at";
-  let { data, error } = await supabase
-    .from("tumedved_logs")
-    .select(withStatus)
+  const query = columns => () => supabase.from("tumedved_logs").select(columns)
     .order("reported_at", { ascending: false, nullsFirst: false })
-    .limit(limit);
-
-  // Migrácia 004 (stĺpec status) ešte nebežala — načítaj bez neho.
-  if (error && isMissingColumn(error)) {
-    ({ data, error } = await supabase
-      .from("tumedved_logs")
-      .select("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at,updated_at")
-      .order("reported_at", { ascending: false, nullsFirst: false })
-      .limit(limit));
+    .order("id", { ascending: false });
+  try {
+    return await loadRows(query(withStatus), limit);
+  } catch (error) {
+    if (!isMissingColumn(error)) throw error;
+    // Migration 004 may not have installed the status column yet.
+    return loadRows(query("id,source,location,note,lat,lng,has_coords,reported_at,url,scraped_at,updated_at"), limit);
   }
-
-  if (error) throw error;
-  return data || [];
 }
 
 // Editácia správy adminom — prepíše len povolené polia. Súradnice posielame z

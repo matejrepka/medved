@@ -33,6 +33,12 @@ const FEED_URL = (q) =>
 
 const MAX_ITEMS = 60;
 
+function isoDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 function stripTrailingSource(text) {
   return (text || "")
     .replace(/\s+[\p{L}\p{N}.-]+\.(?:sk|cz|com|eu|net|org)\s*$/iu, "")
@@ -105,10 +111,11 @@ async function fetchPozormedvedPosts() {
     });
 
     if (res.status === 400) break;
-    if (!res.ok) break;
+    if (!res.ok) throw new Error(`pozormedved.sk vrátil HTTP ${res.status}`);
 
     const batch = await res.json();
-    if (!Array.isArray(batch) || batch.length === 0) break;
+    if (!Array.isArray(batch)) throw new Error("pozormedved.sk vrátil neplatný zoznam článkov");
+    if (batch.length === 0) break;
 
     for (const post of batch) {
       const title = htmlToText(post.title?.rendered);
@@ -116,7 +123,7 @@ async function fetchPozormedvedPosts() {
 
       const body = htmlToText(post.content?.rendered || "");
       const snippet = htmlToText(post.excerpt?.rendered || "").slice(0, 500) || body.slice(0, 500);
-      const dateGmt = post.date_gmt ? new Date(post.date_gmt + "Z").toISOString() : null;
+      const dateGmt = isoDate(post.date_gmt ? post.date_gmt + "Z" : null);
 
       items.push({
         id: `news-pm${post.id}`,
@@ -163,8 +170,7 @@ export async function fetchNews() {
       if (!isBearRelated(title, snippet)) continue;
 
       const key = dedupeKey(title);
-      const date = item.isoDate || item.pubDate || null;
-      const rssDate = date ? new Date(date).toISOString() : null;
+      const rssDate = isoDate(item.isoDate) || isoDate(item.pubDate);
 
       const existing = byKey.get(key);
       if (existing && new Date(existing.rssDate || 0) >= new Date(rssDate || 0)) {
@@ -204,10 +210,15 @@ export async function fetchNews() {
 
   // 3. pozormedved.sk — príspevky už majú telo z WP API, sťahovať netreba
   let pmItems = [];
+  let pmError = null;
   try {
     pmItems = await fetchPozormedvedPosts();
   } catch (err) {
+    pmError = err;
     console.warn(`[pozormedved] fetch failed: ${err.message}`);
+  }
+  if (pmError && settled.every(result => result.status === "rejected")) {
+    throw new Error("Nepodarilo sa načítať žiadny zdroj správ", { cause: pmError });
   }
 
   // 4. Zlúčenie a geokódovanie
