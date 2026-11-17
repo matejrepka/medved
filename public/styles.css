@@ -925,9 +925,11 @@ main {
 .pin:hover {
   transform: scale(1.35);
 }
-/* Značka schváleného varovania zo správ — hranatá a odlíšená farbou */
-.pin.pin-news {
-  background: var(--bark);
+/* Žltá hranatá značka varovania zo správ na mape aj v legende. */
+.pin.pin-news,
+.map-legend .lg-dot.news,
+.map-legend-list .lg-dot.news {
+  background: #b18400;
   border-radius: 3px;
 }
 
@@ -953,10 +955,6 @@ main {
   border: 2px solid var(--surface);
   box-shadow: 0 0 0 1px var(--line-strong);
 }
-.map-legend .lg-dot.news {
-  background: var(--bark);
-  border-radius: 3px;
-}
 
 .leaflet-container {
   font-family: var(--font-sans);
@@ -973,17 +971,9 @@ main {
 .map-country-mask {
   fill: var(--surface-2);
 }
-.map-marker-count {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin: 4px;
-  border: 2px solid var(--surface);
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font: 700 14px/1 var(--font-sans);
+.map-marker-group {
+  display: flex;
+  gap: 5px;
 }
 .map-group-record + .map-group-record {
   margin-top: 16px;
@@ -5159,11 +5149,6 @@ html.dialog-open body {
   background: var(--accent);
   border: 2px solid var(--surface);
   box-shadow: 0 0 0 1px var(--line-strong);
-}
-
-.map-legend-list .lg-dot.news {
-  background: var(--bark);
-  border-radius: 3px;
 }
 
 .map-legend-note {

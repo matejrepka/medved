@@ -56,8 +56,11 @@ try {
       await page.locator("#mapStartup").waitFor({ state: "hidden" });
       assert.ok(tiles.length > 0 && tiles.every(url => /\/9\/\d+\/\d+@2x\.png$/.test(url)), "Only final-view retina tiles are fetched");
       assert.equal(await page.locator("#sightingsList .card").count(), 1);
-      assert.equal(await page.locator(".map-marker-count").count(), 1, "Overlapping records share one usable target");
-      await page.locator(".map-marker-count").click();
+      const group = page.getByRole("button", { name: "Zobraziť 2 záznamov v tejto oblasti" });
+      assert.equal(await group.count(), 1, "Overlapping records share one usable target");
+      assert.equal(await group.locator(".pin:not(.pin-news)").count(), 1, "The report circle is visible in the group");
+      assert.equal(await group.locator(".pin-news").count(), 1, "The news square is visible in the group");
+      await group.click();
       assert.match(await page.locator(".leaflet-popup-content").textContent(), /Varovanie v Brusne/);
       await page.locator(".leaflet-popup-close-button").click();
       if (process.env.BOOTSTRAP_SCREENSHOT_DIR) {

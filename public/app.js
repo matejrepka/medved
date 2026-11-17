@@ -306,9 +306,10 @@ function groupMapMarkers() {
     let visible = markers[0];
     if (markers.length > 1) {
       const label = `Zobraziť ${markers.length} záznamov v tejto oblasti`;
+      const pins = new Set(markers.map(marker => marker.options.icon.options.html));
       const icon = L.divIcon({
         className: "map-marker-hitbox",
-        html: `<span class="map-marker-count">${markers.length}</span>`,
+        html: `<div class="map-marker-group" aria-hidden="true">${[...pins].join("")}</div>`,
         iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -12],
       });
       visible = accessibleMarker(visible.getLatLng(), icon, label).bindPopup(

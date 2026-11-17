@@ -137,7 +137,7 @@ try {
       assert.match(await page.locator("#newsList").textContent(), /Kláštorskej ceste/);
       assert.ok(await page.locator("#newsList .coverage-details").count());
       assert.ok(await page.locator(".leaflet-marker-icon").count());
-      await page.locator(".map-marker-count").click();
+      await page.getByRole("button", { name: "Zobraziť 2 záznamov v tejto oblasti" }).click();
       assert.match(await page.locator(".leaflet-popup-content").textContent(), /Liptovský Mikuláš/);
       assert.match(await page.locator(".leaflet-popup-content").textContent(), /Kláštorská cesta/);
       assert.deepEqual(errors, [], "No startup JavaScript errors");
