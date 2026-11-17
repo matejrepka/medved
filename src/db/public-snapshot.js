@@ -1,4 +1,5 @@
 import { getSupabase } from "./supabase.js";
+import { getInFlightState } from "#platform";
 import { buildRecordDocuments } from "../record-documents.js";
 
 const STATE_TTL_MS = 15_000;
@@ -18,19 +19,20 @@ export function invalidatePublicSnapshotCache() {
 export async function getPublicSnapshotVersion(client = getSupabase()) {
   if (!client) return null;
   const cache = cacheFor(client);
+  const work = getInFlightState(cache);
   if (cache.expiresAt <= Date.now()) {
-    if (!cache.pending) cache.pending = loadSnapshotState(client).then(state => {
+    if (!work.pending) work.pending = loadSnapshotState(client).then(state => {
       const version = state && state.revision === state.built_revision && state.updated_at
         ? `${state.built_revision}:${state.updated_at}` : null;
       if (version !== cache.version) {
         cache.documents.clear();
-        cache.loads.clear();
+        work.loads?.clear();
       }
       cache.version = version;
       cache.state = state;
       cache.expiresAt = Date.now() + STATE_TTL_MS;
-    }).finally(() => { cache.pending = null; });
-    await cache.pending;
+    }).finally(() => { work.pending = null; });
+    await work.pending;
   }
   return cache.version;
 }
@@ -52,6 +54,8 @@ export async function loadPublicSnapshot({ kind = "overview", slug = null, clien
   const version = await getPublicSnapshotVersion(client);
   if (!version) return null;
   const cache = cacheFor(client);
+  const work = getInFlightState(cache);
+  const loads = work.loads ??= new Map();
   const key = JSON.stringify([kind, slug]);
   if (cache.documents.has(key)) {
     const document = cache.documents.get(key);
@@ -59,7 +63,7 @@ export async function loadPublicSnapshot({ kind = "overview", slug = null, clien
     cache.documents.set(key, document);
     return document;
   }
-  if (!cache.loads.has(key)) {
+  if (!loads.has(key)) {
     const pending = (async () => {
       // The database independently checks revision again, covering edits that
       // happen between the small metadata query and the document read.
@@ -71,12 +75,12 @@ export async function loadPublicSnapshot({ kind = "overview", slug = null, clien
       }
       return data;
     })();
-    cache.loads.set(key, pending);
+    loads.set(key, pending);
     pending.finally(() => {
-      if (cache.loads.get(key) === pending) cache.loads.delete(key);
+      if (loads.get(key) === pending) loads.delete(key);
     }).catch(() => {});
   }
-  return cache.loads.get(key);
+  return loads.get(key);
 }
 
 export async function publishPublicSnapshot(revision, day, payload, client = getSupabase()) {

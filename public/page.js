@@ -56,7 +56,7 @@
   }
   document.querySelectorAll(".footer-identity").forEach((identity) => {
     identity.href = "/domov";
-    identity.setAttribute("aria-label", "Kde je Medveď, domov");
+    identity.removeAttribute("aria-label");
   });
 
   const main = document.querySelector("main");

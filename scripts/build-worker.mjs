@@ -1,4 +1,4 @@
-import { build } from "esbuild";
+import { build, transform } from "esbuild";
 import { cp, mkdir, rm, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,14 @@ await mkdir(assets, { recursive: true });
 // Remove the retired analytics assets left by builds before the migration.
 await rm(path.join(assets, "vendor", "analytics"), { recursive: true, force: true });
 await cp(path.join(root, "public"), assets, { recursive: true });
+for (const filename of await readdir(assets)) {
+  const extension = path.extname(filename).slice(1);
+  if (!["js", "css"].includes(extension)) continue;
+  const result = await transform(await readFile(path.join(assets, filename), "utf8"), {
+    loader: extension, minify: true, target: "es2022",
+  });
+  await writeFile(path.join(assets, filename), result.code);
+}
 
 // Copy only browser packages to the public assets binding. No environment,
 // database credentials or backend source files are included.

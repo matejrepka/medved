@@ -1,3 +1,5 @@
+import { getInFlightState } from "#platform";
+
 export class ScheduledDataStore {
   constructor({ name, fetcher, loadStored, saveFresh, recordRun, maxAgeMs = 60_000 }) {
     this.name = name;
@@ -10,13 +12,16 @@ export class ScheduledDataStore {
     this.value = null;
     this.fetchedAt = 0;
     this.loadedAt = 0;
-    this.inFlight = null;
-    this.loadInFlight = null;
     this.loadGeneration = 0;
     this.lastError = null;
     this.lastErrorStage = null;
     this.lastRun = null;
   }
+
+  get inFlight() { return getInFlightState(this).refreshPromise ?? null; }
+  set inFlight(value) { getInFlightState(this).refreshPromise = value; }
+  get loadInFlight() { return getInFlightState(this).loadPromise ?? null; }
+  set loadInFlight(value) { getInFlightState(this).loadPromise = value; }
 
   async start() {
     await this.loadFromDatabase().catch((err) => {

@@ -9,7 +9,7 @@ import express from "express";
 import compression from "compression";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { projectDirectory, isWorker, readText, serveAssets, defer, getEnvironment } from "#platform";
+import { projectDirectory, isWorker, readText, serveAssets, defer, getEnvironment, getInFlightState } from "#platform";
 
 import { fetchSightings } from "./src/scrapers/sightings.js";
 import { fetchNews } from "./src/scrapers/news.js";
@@ -682,7 +682,7 @@ function renderSsrWarnings(items, emptyMessage = "Hlásenia sa načítavajú…"
       <div class="record-signals"><span class="record-kind kind-${escapeHtml(kind.key)}">${escapeHtml(kind.label)}</span><span class="record-freshness freshness-${escapeHtml(freshness.key)}"><span class="sr-only">Aktuálnosť: </span>${escapeHtml(freshness.label)}</span></div>
       <h4 class="card-title"><a class="card-title-link" href="${escapeHtml(detail)}" aria-label="${escapeHtml(`${item.location || "Lokalita neuvedená"}, varovanie z ${formatSlovakDate(item.reportedAt, withTime)}`)}">${escapeHtml(item.location || "Lokalita neuvedená")}</a></h4>
       <div class="card-meta">${renderListingSourceMeta(source, sourceLinks)}<time datetime="${escapeHtml(item.reportedAt || "")}"><span class="meta-label">${withTime ? "Hlásené:" : "Dátum:"}</span>${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}</time></div>
-      ${note}${sourceAttributionHtml(item)}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
+      ${note}${sourceAttributionHtml(item)}<div class="card-actions"><div class="card-primary-actions"><a class="card-detail-action" href="${escapeHtml(detail)}" aria-label="Detail záznamu: ${escapeHtml(item.location || "Lokalita neuvedená")}, ${escapeHtml(formatSlovakDate(item.reportedAt, withTime))}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a></div><a class="card-correction" href="${escapeHtml(correction)}" aria-label="Nahlásiť chybu v zázname ${escapeHtml(item.location || "Lokalita neuvedená")}">Nahlásiť chybu</a>${links ? `<div class="card-source-row mobile-source-duplicate"><span class="card-source-label">Overiť v zdroji</span>${links}</div>` : ""}</div>
     </article>`;
   }).join("\n");
 }
@@ -923,11 +923,12 @@ async function loadLocationOverviewForRender({ includeLocations = true } = {}) {
 
 async function loadLocationOverview({ force = false } = {}) {
   const cache = locationOverviewCache;
+  const work = getInFlightState(cache);
   if (!force && cache.value && cache.expiresAt > Date.now()) {
     return cache.value;
   }
-  if (cache.inFlight) return cache.inFlight;
-  cache.inFlight = (async () => {
+  if (work.inFlight) return work.inFlight;
+  work.inFlight = (async () => {
     if (force) {
       warningsCache.expiresAt = 0;
       await Promise.all([sightingsStore.loadFromDatabase({ force: true }), newsStore.loadFromDatabase({ force: true })]);
@@ -946,9 +947,9 @@ async function loadLocationOverview({ force = false } = {}) {
     return overview;
   })();
   try {
-    return await cache.inFlight;
+    return await work.inFlight;
   } finally {
-    cache.inFlight = null;
+    work.inFlight = null;
   }
 }
 
@@ -982,6 +983,25 @@ function renderHomeStats(overview) {
       </div>`
     )
     .join("\n");
+}
+
+function renderInitialMapData(overview) {
+  if (!overview || (!overview.warnings.length && !overview.news.length)) return "";
+  // Include a timezone margin around the default seven-day view. History is
+  // fetched only when requested, instead of transferring it on every map visit.
+  const since = Date.now() - 9 * 24 * 60 * 60 * 1000;
+  const dates = [...overview.warnings.map(item => item.reportedAt), ...overview.news.map(item => item.date)]
+    .map(value => new Date(value).getTime()).filter(Number.isFinite);
+  const data = {
+    since,
+    oldestAt: dates.length ? new Date(Math.min(...dates)).toISOString() : null,
+    updatedAt: overview.updatedAt || latestContentDate(),
+    warnings: overview.warnings.filter(item => new Date(item.reportedAt).getTime() >= since)
+      .map(item => ({ ...item, sourceLinks: sightingSourceLinks(item), detailUrl: warningPath(item) })),
+    news: overview.news.filter(item => new Date(item.date).getTime() >= since)
+      .map(item => ({ ...item, detailUrl: newsPath(item) })),
+  };
+  return `<script type="application/json" id="mapInitialData">${JSON.stringify(data).replaceAll("<", "\\u003c")}</script>`;
 }
 
 function renderLocationSummary(location) {
@@ -1151,9 +1171,10 @@ app.use((req, res, next) => {
 const CARTO_RASTER_STYLES = new Set(["light_all", "dark_all"]);
 app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
   const { style, z, x, y } = req.params;
+  const tileY = y.replace(/@2x$/, "");
   const zoom = Number(z);
-  if (!CARTO_RASTER_STYLES.has(style) || ![z, x, y].every((value) => /^\d{1,8}$/.test(value)) ||
-      zoom > 20 || Number(x) >= 2 ** zoom || Number(y) >= 2 ** zoom) {
+  if (!CARTO_RASTER_STYLES.has(style) || ![z, x, tileY].every((value) => /^\d{1,8}$/.test(value)) ||
+      zoom > 20 || Number(x) >= 2 ** zoom || Number(tileY) >= 2 ** zoom) {
     return res.status(400).send("Invalid map tile request");
   }
   const mapKey = String(getEnvironment().CARTO_BASEMAPS_API_KEY || "").trim();
@@ -1164,6 +1185,8 @@ app.get("/api/map-tiles/:style/:z/:x/:y.png", async (req, res) => {
   try {
     const tileUrl = new URL(`https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}.png`);
     tileUrl.searchParams.set("key", mapKey);
+    // Refresh provider/CDN caches too, so old and current CARTO styles cannot mix.
+    tileUrl.searchParams.set("v", "20261113-2");
     const response = await fetch(tileUrl, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`CARTO returned HTTP ${response.status}`);
 
@@ -1194,6 +1217,7 @@ app.get("/api/sightings", async (_req, res) => {
 // zostávajú oddelené v /api/news a nikdy sa nepripájajú k sourceLinks hlásenia.
 async function loadWarnings() {
   const cache = warningsCache;
+  const work = getInFlightState(cache);
   const version = sightingsStore.meta.fetchedAt || "unloaded";
   if (
     cache.value &&
@@ -1202,9 +1226,9 @@ async function loadWarnings() {
   ) {
     return cache.value;
   }
-  if (cache.inFlight) return cache.inFlight;
+  if (work.inFlight) return work.inFlight;
 
-  cache.inFlight = (async () => {
+  work.inFlight = (async () => {
     if (isWorker) {
       const snapshot = await loadPublicSnapshot({ kind: "warnings" });
       if (snapshot) {
@@ -1227,9 +1251,9 @@ async function loadWarnings() {
   })();
 
   try {
-    return await cache.inFlight;
+    return await work.inFlight;
   } finally {
-    cache.inFlight = null;
+    work.inFlight = null;
   }
 }
 
@@ -1725,18 +1749,18 @@ async function renderPublicPage(req, res, pathname, page) {
     const origin = siteOrigin(req);
     let seoPage = { ...page };
     let html = await getPageTemplate(page.file);
+    let awaitingSnapshot = false;
 
     // Mapa a redakčný domov dostanú aj serverom vykreslené aktuálne dáta.
     if (pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania") {
       const loadedOverview = await loadLocationOverviewForRender({ includeLocations: pathname === "/domov" });
-      if (isWorker && !loadedOverview?.snapshotReady) {
-        return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
-          .type("text").send("Prehľad sa aktualizuje. Skúste to o chvíľu.");
-      }
+      // Approved feeds remain available while the background report is rebuilt.
+      awaitingSnapshot = isWorker && !loadedOverview?.snapshotReady;
       const overview = loadedOverview || emptyLocationOverview();
       seoPage.dateModified = overview.updatedAt || latestContentDate() || CONTENT_UPDATED;
       if (pathname === "/") {
         html = html
+          .replace("<!-- SSR_MAP_DATA -->", renderInitialMapData(loadedOverview))
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_WARNING_COUNT -->", escapeHtml(overview.warnings.length))
@@ -1745,7 +1769,7 @@ async function renderPublicPage(req, res, pathname, page) {
           .replace("<!-- SSR_UPDATED -->", renderSsrUpdated(seoPage.dateModified));
       } else if (pathname === "/domov") {
         html = html
-          .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(loadedOverview))
+          .replace("<!-- SSR_HOME_STATS -->", renderHomeStats(awaitingSnapshot ? null : loadedOverview))
           .replace("<!-- SSR_WARNINGS -->", renderSsrWarnings(overview.warnings, undefined, 6))
           .replace("<!-- SSR_NEWS -->", renderSsrNews(overview.news, undefined, 6))
           .replace("<!-- SSR_TOP_LOCATIONS -->", renderLocationLinks(overview.topLocations))
@@ -1787,7 +1811,8 @@ async function renderPublicPage(req, res, pathname, page) {
         `<meta name="description" content="${escapeHtml(seoPage.description)}" />`);
     const canonical = absoluteUrl(origin, seoPage.canonicalPath || pathname);
     res.set({
-      "Cache-Control": pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania"
+      "Cache-Control": awaitingSnapshot ? "no-store"
+        : pathname === "/" || pathname === "/domov" || pathname === "/spravy" || pathname === "/varovania"
         ? "public, max-age=60, stale-while-revalidate=300"
         : "public, max-age=300, stale-while-revalidate=3600",
       "Content-Language": "sk",

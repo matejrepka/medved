@@ -8,6 +8,7 @@ import { buildPublicOverview } from "../src/public-overview.js";
 import { loadPlaces } from "../src/geo/geocode.js";
 import { buildRecordDocuments, recordToken } from "../src/record-documents.js";
 import { publicCacheUrl } from "../workers/public-cache.js";
+import "./check-request-scope.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const config = JSON.parse(await readFile(path.join(root, "wrangler.jsonc"), "utf8"));
@@ -208,9 +209,24 @@ try {
   await runtime.dispose();
 }
 
-const pendingSnapshot = createRuntime(fixtures, false, { public_snapshot: null });
+const pendingSnapshot = createRuntime(fixtures, false, { public_snapshot: null,
+  tumedved_logs: [sighting], news_logs: [{ id: "pending-news", title: "Medveď pri Brezne",
+    published_at: sighting.reported_at, scraped_at: sighting.scraped_at, status: "approved",
+    category: "article", article_url: "https://example.com/pending-news", payload: {} }] });
 try {
-  for (const route of ["/", "/domov", "/spravy", "/varovania", "/sitemap.xml", "/api/stats", "/vyskyt-medveda/brezno", `/varovania/brezno-${recordToken("snapshot-1")}`]) {
+  for (const route of ["/", "/domov", "/spravy", "/varovania"]) {
+    const response = await pendingSnapshot.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+    assert.equal(response.status, 200, `${route} stays available during background computation`);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(response.headers.get("x-medved-cache"), null);
+    const html = await response.text();
+    assert.match(html, route === "/spravy" ? /Medveď pri Brezne/ : /Integration test sighting/);
+    assert.doesNotMatch(html, /Saved fixture|<!-- (?:SSR_|ARCHIVE_)/, "Fallback renders current feeds without retired snapshot content");
+    if (route === "/domov") {
+      assert.match(html, /data-home-stat="todaySightings">—<\/span>/, "Pending counts are unavailable, not zero");
+    }
+  }
+  for (const route of ["/sitemap.xml", "/api/stats", "/vyskyt-medveda/brezno", `/varovania/brezno-${recordToken("snapshot-1")}`]) {
     const response = await pendingSnapshot.dispatchFetch(`https://www.kdejemedved.sk${route}`);
     assert.equal(response.status, 503, "Pending background computation never produces a false 404 or a visitor computation");
     assert.equal(response.headers.get("cache-control"), "no-store");

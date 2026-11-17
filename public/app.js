@@ -2,11 +2,23 @@
 // Načíta dáta z vlastného API (/api/warnings, /api/news), vykreslí mapu
 // (Leaflet) a zoznamy varovaní a správ. Podporuje svetlý/tmavý režim.
 
-(function () {
-if (!window.L) {
+(async function () {
+if (!window.L || !window.SLOVAKIA_BOUNDARY) {
   window.mapStartup?.fail("Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite hlásenia a správy pod mapou.");
   return;
 }
+
+// Leaflet must measure the styled container, including on cold, throttled visits.
+await new Promise(resolve => {
+  const check = () => {
+    if (!document.documentElement.hasAttribute("data-map-styles-ready") ||
+        !document.documentElement.hasAttribute("data-leaflet-styles-ready")) return;
+    window.removeEventListener("mapstylesready", check);
+    resolve();
+  };
+  window.addEventListener("mapstylesready", check);
+  check();
+});
 
 const SK_CENTER = [48.7, 19.5]; // približný stred Slovenska
 const API_VERSION = "news-map-v9";
@@ -14,6 +26,11 @@ const MAP_LAYER_IDS = ["standard", "classic", "tourist", "satellite"];
 const renderedUpdatedAt = document
   .querySelector("#updated time[datetime]")
   ?.getAttribute("datetime") || null;
+let initialMapData = null;
+try {
+  const data = JSON.parse(document.getElementById("mapInitialData")?.textContent || "null");
+  if (Array.isArray(data?.warnings) && Array.isArray(data?.news)) initialMapData = data;
+} catch { /* A failed bootstrap falls back to the public feeds. */ }
 const state = {
   sightings: [],
   news: [],
@@ -23,6 +40,7 @@ const state = {
   // neobnovenej serverovej inštancie. Klient ho preto zachová a iba posúva vpred.
   updatedAt: renderedUpdatedAt,
   dataLoading: false,
+  fullHistory: false,
   dataFailures: [],
   tileError: false,
   markers: new Map(), // id -> Leaflet marker
@@ -74,7 +92,7 @@ function loadMoreButtonHtml(listName, shownCount, totalCount) {
       type="button"
       data-load-more="${listName}"
       aria-controls="${listId}"
-      aria-label="Načítať ďalšie ${listLabel}"
+      aria-label="Načítať ďalšie ${totalCount - shownCount} ${listLabel}"
     >
       <span>Načítať ďalšie</span>
       <span class="list-load-more-count">${totalCount - shownCount}</span>
@@ -83,10 +101,35 @@ function loadMoreButtonHtml(listName, shownCount, totalCount) {
 }
 
 // --- Mapa ---
-const map = L.map("map", { scrollWheelZoom: false, zoomControl: false }).setView(
+const slovakiaBounds = L.latLngBounds(window.SLOVAKIA_BOUNDARY);
+const map = L.map("map", {
+  scrollWheelZoom: false,
+  zoomControl: false,
+  minZoom: 6,
+  maxBounds: slovakiaBounds.pad(0.3),
+  maxBoundsViscosity: 1,
+}).setView(
   SK_CENTER,
   7
 );
+// One opaque polygon with a Slovakia-shaped hole hides every neighboring country.
+const countryPane = map.createPane("countryMaskPane");
+countryPane.classList.add("map-country-pane");
+countryPane.style.zIndex = 250;
+countryPane.style.pointerEvents = "none";
+L.polygon([
+  [[-85, -180], [-85, 180], [85, 180], [85, -180]],
+  window.SLOVAKIA_BOUNDARY,
+], {
+  pane: "countryMaskPane",
+  className: "map-country-mask",
+  fillOpacity: 1,
+  stroke: false,
+  interactive: false,
+  noClip: true,
+  smoothFactor: 1,
+}).addTo(map);
+map.attributionControl.addAttribution('Hranice: <a href="https://www.openstreetmap.org/copyright">OSM</a> / <a href="https://www.geoboundaries.org/">geoBoundaries</a>');
 L.control.zoom({ position: "topright" }).addTo(map);
 let mapFitFrame = null;
 
@@ -117,7 +160,7 @@ function fitMapToPoints(points, { animate = false } = {}) {
     if (animate) {
       map.flyToBounds(points, options);
     } else {
-      map.fitBounds(points, options);
+      map.fitBounds(points, { ...options, animate: false });
     }
   };
 
@@ -137,8 +180,8 @@ function refitMapOnVisibleMarkers() {
 const TILES = {
   standard: {
     urls: {
-      light: "/api/map-tiles/light_all/{z}/{x}/{y}.png?v=20260928-1",
-      dark: "/api/map-tiles/dark_all/{z}/{x}/{y}.png?v=20260928-1",
+      light: "/api/map-tiles/light_all/{z}/{x}/{y}{r}.png?v=20261117-1",
+      dark: "/api/map-tiles/dark_all/{z}/{x}/{y}{r}.png?v=20261117-1",
     },
     options: {
       maxZoom: 19,
@@ -180,13 +223,19 @@ function setTiles(layerId) {
   const url = layer.urls ? layer.urls[currentTheme()] || layer.urls.light : layer.url;
 
   if (tileLayer) map.removeLayer(tileLayer);
-  const nextLayer = L.tileLayer(url, layer.options);
+  const nextLayer = L.tileLayer(url, { ...layer.options, bounds: slovakiaBounds, noWrap: true, keepBuffer: 0 });
   tileLayer = nextLayer;
   state.tileError = false;
   let loadedTiles = 0;
   nextLayer.on("tileload", () => {
     if (tileLayer !== nextLayer) return;
     loadedTiles++;
+    // The map is usable as soon as its first tile arrives; the rest fill in progressively.
+    window.mapStartup?.ready("tiles");
+  });
+  nextLayer.on("tileloadstart", ({ tile, coords }) => {
+    const center = map.project(map.getCenter(), coords.z).divideBy(256).floor();
+    tile.fetchPriority = coords.x === center.x && coords.y === center.y ? "high" : "low";
   });
   nextLayer.on("tileerror", () => {
     if (tileLayer !== nextLayer) return;
@@ -236,8 +285,43 @@ function accessibleMarker(position, icon, label) {
     element?.setAttribute("aria-label", label);
     element?.setAttribute("title", label);
   });
-  return marker.addTo(map);
+  return marker;
 }
+
+const visibleMarkers = L.layerGroup().addTo(map);
+const markerGroups = new Map();
+
+// Nearby hit areas share one keyboard-accessible button; every record stays in its popup.
+function groupMapMarkers() {
+  visibleMarkers.clearLayers();
+  markerGroups.clear();
+  const groups = [];
+  for (const marker of state.markers.values()) {
+    const pixel = map.latLngToLayerPoint(marker.getLatLng());
+    const group = groups.find(group => Math.abs(group.pixel.x - pixel.x) < 48 && Math.abs(group.pixel.y - pixel.y) < 48);
+    if (group) group.markers.push(marker);
+    else groups.push({ pixel, markers: [marker] });
+  }
+  for (const { markers } of groups) {
+    let visible = markers[0];
+    if (markers.length > 1) {
+      const label = `Zobraziť ${markers.length} záznamov v tejto oblasti`;
+      const icon = L.divIcon({
+        className: "map-marker-hitbox",
+        html: `<span class="map-marker-count">${markers.length}</span>`,
+        iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -12],
+      });
+      visible = accessibleMarker(visible.getLatLng(), icon, label).bindPopup(
+        markers.map(marker => `<div class="map-group-record">${marker.getPopup().getContent()}</div>`).join(""),
+        { maxHeight: Math.max(120, Math.min(320, map.getSize().y - 220)),
+          autoPanPaddingTopLeft: [16, 96], autoPanPaddingBottomRight: [56, 96] }
+      );
+    }
+    visibleMarkers.addLayer(visible);
+    for (const marker of markers) markerGroups.set(marker, visible);
+  }
+}
+map.on("zoomend", groupMapMarkers);
 
 // --- Poloha používateľa ---
 // Súradnice sa používajú iba lokálne v prehliadači na vycentrovanie mapy.
@@ -719,14 +803,18 @@ function newsMarkerId(newsId, index) {
 
 function focusMapMarker(id, lat, lng) {
   const marker = state.markers.get(id);
+  const open = () => (markerGroups.get(marker) || marker)?.openPopup();
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.getElementById("mapViewport").scrollIntoView({
     behavior: reduceMotion ? "auto" : "smooth",
     block: "start",
   });
-  if (reduceMotion) map.setView([lat, lng], 12);
-  else map.flyTo([lat, lng], 12, { duration: 0.45 });
-  marker?.openPopup();
+  if (map.getZoom() === 12 && map.getCenter().equals([lat, lng])) open();
+  else {
+    map.once("moveend", open);
+    if (reduceMotion) map.setView([lat, lng], 12);
+    else map.flyTo([lat, lng], 12, { duration: 0.45 });
+  }
 }
 
 elNews.addEventListener("click", (event) => {
@@ -910,6 +998,7 @@ function filteredNews() {
 
 function syncDateFilterLimits() {
   const datedItems = [
+    initialMapData?.oldestAt,
     ...state.sightings.map((s) => s.reportedAt),
     ...state.news.map((n) => n.date),
   ]
@@ -1004,7 +1093,7 @@ resetFiltersBtn.addEventListener("click", () => {
   const standardLayer = layerInputs.find((input) => input.value === "standard");
   if (standardLayer) standardLayer.checked = true;
 });
-filterForm.addEventListener("submit", (event) => {
+filterForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (filterStart.value && filterEnd.value && filterStart.value > filterEnd.value) {
     filterEnd.value = filterStart.value;
@@ -1013,11 +1102,13 @@ filterForm.addEventListener("submit", (event) => {
   state.filters.startDate = filterStart.value;
   state.filters.endDate = filterEnd.value;
   const selectedLayer = layerInputs.find((input) => input.checked)?.value || "standard";
-  setTiles(selectedLayer);
+  if (selectedLayer !== state.mapLayer) setTiles(selectedLayer);
   syncDateFilterLimits();
   syncFilterButton();
   closeFilterDialog();
-  renderFilteredViews();
+  if (!state.fullHistory && (!state.filters.startDate ||
+      dateInputToTime(state.filters.startDate) < initialMapData?.since)) await loadData();
+  else renderFilteredViews();
 });
 filterDialog.addEventListener("close", () => {
   document.documentElement.classList.remove("dialog-open");
@@ -1178,7 +1269,7 @@ function renderSightings() {
         <div class="card-actions card-actions-sighting">
           <div class="card-primary-actions">
             ${mapAction}
-            <a class="card-detail-action" href="${esc(detailUrl)}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a>
+            <a class="card-detail-action" href="${esc(detailUrl)}" aria-label="Detail záznamu: ${esc(s.location)}, ${esc(fmtDate(s.reportedAt, withTime))}"><i class="ph ph-article" aria-hidden="true"></i>Detail záznamu</a>
           </div>
           <a class="card-correction" href="${esc(correction)}" aria-label="Nahlásiť chybu v zázname ${esc(s.location)}">Nahlásiť chybu</a>
           ${sourceRow}
@@ -1206,7 +1297,7 @@ function renderSightings() {
 
 // --- Značky na mape ---
 function renderMarkers({ fit = true } = {}) {
-  state.markers.forEach((m) => map.removeLayer(m));
+  visibleMarkers.clearLayers();
   state.markers.clear();
 
   const bounds = [];
@@ -1270,6 +1361,7 @@ function renderMarkers({ fit = true } = {}) {
     setText("mapMetaCompact", compactLabel);
   }
 
+  groupMapMarkers();
   if (fit && bounds.length > 0) {
     fitMapToPoints(bounds);
   } else if (fit && (hasDateFilter() || hasSearchFilter())) {
@@ -1533,7 +1625,7 @@ function showSourceLoadError(source) {
   error.dataset.sourceLoadError = source;
   error.setAttribute("role", "alert");
   error.innerHTML = `<p>${label} sa nepodarilo načítať. Skúste to znova.</p><button type="button" class="list-load-more" data-retry-source>Skúsiť znova</button>`;
-  error.querySelector("button").addEventListener("click", loadData);
+  error.querySelector("button").addEventListener("click", () => loadData());
   if (!list.querySelector(".card")) {
     list.replaceChildren(error);
     setText(source === "news" ? "newsCount" : "sightingsCount", "—");
@@ -1548,7 +1640,7 @@ $("mapStartupRetry").addEventListener("click", (event) => {
   loadData();
 });
 
-async function loadData() {
+async function loadData(initial = null) {
   if (state.dataLoading) return;
   state.dataLoading = true;
   window.mapStartup?.pending("data");
@@ -1566,7 +1658,9 @@ async function loadData() {
   // lists and the complete marker set have rendered successfully.
   const sourceFailed = { sightings: false, news: false };
 
-  const sightingsRequest = fetchMapData(`/api/warnings?v=${API_VERSION}`)
+  const sightingsRequest = (initial
+    ? Promise.resolve({ items: initial.warnings, updatedAt: initial.updatedAt })
+    : fetchMapData(`/api/warnings?v=${API_VERSION}`))
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta hlásení");
       state.sightings = payload.items;
@@ -1580,7 +1674,9 @@ async function loadData() {
     })
     .finally(() => elSightings.setAttribute("aria-busy", "false"));
 
-  const newsRequest = fetchMapData(`/api/news?v=${API_VERSION}`)
+  const newsRequest = (initial
+    ? Promise.resolve({ items: initial.news, updatedAt: initial.updatedAt })
+    : fetchMapData(`/api/news?v=${API_VERSION}`))
     .then((payload) => {
       if (!Array.isArray(payload.items)) throw new Error("Neplatné dáta správ");
       state.news = payload.items;
@@ -1602,6 +1698,7 @@ async function loadData() {
 
   try {
     // Build and fit the complete marker set once, after both responses settle.
+    if (!initial && !failures.length) state.fullHistory = true;
     renderMarkers();
     state.updatedAt = latestIso(state.updatedAt, state.sightingsUpdatedAt, state.newsUpdatedAt);
     setUpdated(state.updatedAt);
@@ -1618,6 +1715,8 @@ async function loadData() {
       window.mapStartup?.fail(`Nepodarilo sa načítať: ${failures.join(" a ")}. Skúste to znova. Dostupné zoznamy nájdete pod mapou.`, "data");
     }
     syncLoadStatus();
+    // Fit once before requesting tiles, avoiding an unused first batch at zoom 7.
+    if (!tileLayer) requestAnimationFrame(() => setTiles(state.mapLayer));
   }
 }
 
@@ -1662,9 +1761,8 @@ window.addEventListener("resize", handleMapContainerResize);
 // --- Štart ---
 addLocationControl();
 addCenterMapControl();
-// Tiles and feeds load in parallel behind the shared startup screen.
-setTiles(state.mapLayer);
-loadData();
+// Use the small server-rendered current feed; cold SSR falls back to the APIs.
+loadData(initialMapData);
 // Automatická obnova zobrazenia každých 15 minút (dáta sa scrapujú cez externý cron job).
 setInterval(loadData, 15 * 60 * 1000);
 })();

@@ -111,11 +111,15 @@ načítajú iba uložený adresár a dokument danej lokality, bez plných feedov
 Databázové triggre iba zvýšia revíziu. Ak sa dáta zmenia počas výpočtu, uloženie sa
 odmietne a proces výpočet zopakuje. Starý JSON s už zamietnutými položkami sa po
 zneplatnení nečíta. Do ďalšieho úspešného predpočítania vrátia štatistiky a stránky
-lokalít dočasnú odpoveď 503 s Retry-After; mapa, zoznamy a detaily samostatných
-záznamov naďalej čítajú schválené dáta. Pamäťová a HTTP cache môžu držať predchádzajúcu
+lokalít dočasnú odpoveď 503 s Retry-After; mapa a zoznamy
+naďalej čítajú schválené dáta. Pamäťová a HTTP cache môžu držať predchádzajúcu
 odpoveď ešte 60 sekúnd. Prvý výsledok preto vytvorte pred nasadením.
-Počas zneplatnenia používajú zoznamy správ/varovaní priamo schválené zdrojové
-tabuľky ako dočasný fallback, aby moderácia nevyprázdnila mapu.
+Počas zneplatnenia používajú mapa, domov a archívy správ/varovaní priamo schválené
+zdrojové tabuľky ako dočasný fallback, aby moderácia nezablokovala celý web.
+Tieto HTML odpovede majú `Cache-Control: no-store`; domov namiesto nedostupných
+štatistík zobrazí „—“ a vynechá adresár lokalít. Návšteva nepočíta report ani
+nečíta zneplatnený JSON. Štatistiky, lokality a predpočítané detaily naďalej
+vracajú 503, kým background proces nepublikuje aktuálnu revíziu.
 
 Zapisovanie návštev do `website_logs` je predvolene vypnuté. Na výslovné zapnutie
 nastavte `ENABLE_WEBSITE_LOGS=true` a nepoužívajte `DISABLE_WEBSITE_LOGS=true`.

@@ -28,7 +28,7 @@ const newsItem = {
   title: "Stret medveďa s bežcom na Kláštorskej ceste", category: "warning",
   date: fixtureDate, source: "ŠOP SR", articleUrl: "https://www.pozormedved.sk/test",
   detailUrl: "/varovania/test", summary: "Zásahový tím monitoruje Kláštorskú cestu.",
-  locations: [{ place: "Kláštorská cesta", lat: 48.9526744, lng: 20.3988546 }],
+  locations: [{ place: "Kláštorská cesta", lat: warning.lat, lng: warning.lng }],
   verificationStatus: "official_notice", sourceCount: 2,
   coverage: [
     { id: "official", source: "ŠOP SR", sourceTypeLabel: "Úradné oznámenie", url: "https://www.pozormedved.sk/test", publishedAt: fixtureDate },
@@ -115,21 +115,20 @@ try {
       assert.notEqual(await page.locator(".map-startup-ring-arc").evaluate(el => getComputedStyle(el).animationName), "none");
 
       assets.release();
-      await page.locator(".leaflet-tile").first().waitFor({ state: "attached" });
-      assert.ok(await page.locator("#mapStartup").isVisible(), "Loader stays visible while tiles are pending");
+      await page.locator("#map.leaflet-container").waitFor({ state: "attached" });
+      assert.equal(await page.locator(".leaflet-tile").count(), 0, "No tiles are requested for the temporary initial view");
       const newsFirst = name === "mobile";
       (newsFirst ? news : sightings).release();
       await page.locator(newsFirst ? "#newsList .card" : "#sightingsList .card").first().waitFor({ state: "attached" });
       assert.ok(await page.locator("#mapStartup").isVisible(), "Data alone cannot dismiss the tile loader");
-      tiles.release();
-      await page.locator(".leaflet-tile-loaded").first().waitFor({ state: "attached" });
-      // Advance past the introduction: the remaining feed, rather than the
-      // minimum display time, must now be what keeps the map covered.
-      await page.waitForTimeout(2100);
-      assert.ok(await page.locator("#mapStartup").isVisible(), "Tiles cannot dismiss the loader while either feed is pending");
+      assert.ok(await page.locator("#mapStartup").isVisible(), "The loader remains while either feed is pending");
       assert.equal(await page.locator("#map").getAttribute("aria-busy"), "true");
       assert.equal(await page.locator(newsFirst ? "#sightingsList" : "#newsList").getAttribute("aria-busy"), "true");
       (newsFirst ? sightings : news).release();
+      await page.locator(".leaflet-tile").first().waitFor({ state: "attached" });
+      assert.ok(await page.locator("#mapStartup").isVisible(), "The final view waits for its tiles");
+      assert.ok(await page.locator(".leaflet-tile").evaluateAll(tiles => tiles.every(tile => /\/9\//.test(tile.src))), "Only the final zoom level is requested");
+      tiles.release();
       await page.locator("#mapStartup").waitFor({ state: "hidden" });
       await page.locator("#mapLoadStatus").waitFor({ state: "hidden" });
       assert.equal(await page.locator("#map").getAttribute("aria-busy"), "false");
@@ -138,6 +137,9 @@ try {
       assert.match(await page.locator("#newsList").textContent(), /Kláštorskej ceste/);
       assert.ok(await page.locator("#newsList .coverage-details").count());
       assert.ok(await page.locator(".leaflet-marker-icon").count());
+      await page.locator(".map-marker-count").click();
+      assert.match(await page.locator(".leaflet-popup-content").textContent(), /Liptovský Mikuláš/);
+      assert.match(await page.locator(".leaflet-popup-content").textContent(), /Kláštorská cesta/);
       assert.deepEqual(errors, [], "No startup JavaScript errors");
       console.log(`Startup OK: ${name}; first paint ${firstPaint}ms; map waits for tiles, warnings and populated news`);
     } finally {
@@ -165,17 +167,16 @@ try {
         }
       }).observe(document, { attributes: true, subtree: true, attributeFilter: ["hidden"] });
     });
-    // Repeated visits in one context prove this is not a first-visit-only delay.
+    // Repeated visits must reveal ready content without a fixed introduction.
     for (const visit of [1, 2]) {
       await page.goto(origin, { waitUntil: "domcontentloaded" });
       await page.locator(".leaflet-marker-icon").first().waitFor({ state: "attached" });
       await page.locator(".leaflet-tile-loaded").first().waitFor({ state: "attached" });
-      assert.ok(await page.locator("#mapStartup").isVisible(), "Map and data load behind the visible introduction");
       await page.waitForFunction(() => window.startupHiddenAt !== null);
       const visibleMs = await page.evaluate(() =>
         window.startupHiddenAt - performance.getEntriesByName("first-contentful-paint")[0].startTime
       );
-      assert.ok(visibleMs >= 2000, `Fast visit ${visit} must show the introduction for at least 2 seconds (${visibleMs}ms)`);
+      assert.ok(visibleMs < 2000, `Fast visit ${visit} must not add a two-second delay (${visibleMs}ms)`);
       assert.ok(await page.locator(".leaflet-marker-icon").count());
       console.log(`Startup OK: fast visit ${visit}; visible ${Math.round(visibleMs)}ms; map and markers loaded in background`);
     }

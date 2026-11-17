@@ -24,12 +24,6 @@
     </script>
 
     <link
-      rel="preload"
-      as="fetch"
-      href="/api/warnings?v=news-map-v9"
-      crossorigin="anonymous"
-    />
-    <link
       href="/fonts.css?v=20260928-1"
       rel="preload"
       as="style"
@@ -37,7 +31,7 @@
     />
     <link
       rel="stylesheet"
-      href="/vendor/phosphor/regular/style.css?v=2.1.1-display1"
+      href="/map-icons.css?v=20261117-1"
       media="print"
       onload="this.media='all'"
     />
@@ -46,7 +40,7 @@
         rel="stylesheet"
         href="/fonts.css?v=20260928-1"
       />
-      <link rel="stylesheet" href="/vendor/phosphor/regular/style.css?v=2.1.1-display1" />
+      <link rel="stylesheet" href="/map-icons.css?v=20261117-1" />
     </noscript>
     <link
       rel="preload"
@@ -54,7 +48,7 @@
       href="/vendor/leaflet/leaflet.css?v=1.9.4"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
-      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-leaflet-styles-ready','');window.mapStartup?.ready('leaflet')"
+      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-leaflet-styles-ready','');window.mapStartup?.ready('leaflet');window.dispatchEvent(new Event('mapstylesready'))"
     />
     <noscript>
       <link
@@ -69,7 +63,7 @@
       :root { --site-header-height: 68px; --bottom-nav-space: 0px; }
       * { box-sizing: border-box; }
       body { margin: 0; }
-      .map-first-page { background: #f6f6f3; color: #1a1a17; font-family: system-ui, sans-serif; }
+      .map-first-page { background: #f6f6f3; color: #1a1a17; font-family: system-ui, sans-serif; line-height: 1.55; }
       [data-theme="dark"] .map-first-page { background: #121310; color: #f1f0e8; }
       .site-header { position: sticky; top: 0; z-index: 100; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; height: 68px; padding: 0 clamp(16px, 4vw, 36px); background: #fff; border-bottom: 1px solid #e7e7e1; }
       [data-theme="dark"] .site-header { background: #1a1b17; border-color: #2b2c26; }
@@ -81,9 +75,12 @@
       .main-nav { display: flex; gap: 20px; }
       .main-nav a { padding: 4px 8px; color: inherit; font-size: .95rem; text-decoration: none; }
       .header-actions { display: flex; align-items: center; justify-self: end; gap: 10px; }
+      .site-shell-ready .header-actions > #themeBtn { display: none; }
       .updated { font-size: .78rem; }
       .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; color: inherit; background: transparent; border: 0; }
       .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      .skip-link { position: fixed; top: 8px; left: 12px; z-index: 10001; padding: 10px 14px; transform: translateY(-140%); }
+      .skip-link:focus { transform: translateY(0); }
       .map-first-page .map-page-shell { width: 100%; max-width: none; margin: 0; padding: 0; }
       .map-viewport { position: relative; isolation: isolate; width: 100%; height: calc(100vh - var(--site-header-height) - var(--bottom-nav-space)); height: calc(100dvh - var(--site-header-height) - var(--bottom-nav-space)); min-height: 420px; overflow: hidden; }
       .map-first-page #map { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -98,7 +95,7 @@
       .map-startup { transition: opacity 260ms ease; }
       .map-startup.is-leaving { opacity: 0; pointer-events: none; }
       .map-startup[hidden] { display: none; }
-      .map-startup-art { display: block; flex: 0 1 auto; width: min(calc(100% + 32px), 520px); height: auto; max-height: 280px; overflow: visible; }
+      .map-startup-art { display: block; flex: 0 1 auto; width: min(100%, 520px); max-width: 100%; height: auto; max-height: 280px; overflow: visible; }
       .map-startup-land { fill: var(--startup-land); stroke: var(--startup-line); stroke-width: 2; stroke-linejoin: round; }
       .map-startup-logo { transform-box: fill-box; transform-origin: center; }
       .map-startup-ring { fill: none; stroke-width: 4; }
@@ -107,7 +104,7 @@
       .map-startup-logo-dark { display: none; }
       [data-theme="dark"] .map-startup-logo-light { display: none; }
       [data-theme="dark"] .map-startup-logo-dark { display: block; }
-      .map-startup-title { margin: 14px 0 0; font: 600 clamp(1.45rem, 4.8vw, 2rem)/1.2 var(--font-serif, Georgia, serif); letter-spacing: -.02em; text-wrap: balance; }
+      .map-startup-title { margin: 14px 0 0; font: 600 clamp(1.45rem, 4.8vw, 2rem)/1.2 Georgia, serif; letter-spacing: -.02em; text-wrap: balance; }
       .map-startup-detail { max-width: 36ch; margin: 12px auto 0; color: var(--startup-muted); font-size: .9rem; line-height: 1.6; text-wrap: pretty; }
       .map-startup-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; margin-top: 22px; }
       .map-startup-actions a { display: inline-flex; align-items: center; min-height: 44px; color: var(--startup-accent); font-size: .85rem; text-underline-offset: 4px; }
@@ -120,11 +117,12 @@
       @keyframes startup-ring-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
       @media (max-width: 760px) {
         :root { --site-header-height: calc(56px + env(safe-area-inset-top)); --bottom-nav-space: calc(60px + env(safe-area-inset-bottom)); }
-        .site-header { display: flex; justify-content: space-between; height: var(--site-header-height); padding: env(safe-area-inset-top) 12px 0; }
+        .map-first-page .site-header { display: flex; justify-content: space-between; height: var(--site-header-height); min-height: var(--site-header-height); padding: env(safe-area-inset-top) 12px 0; }
         .main-nav { position: fixed; right: 0; bottom: 0; left: 0; height: var(--bottom-nav-space); align-items: center; justify-content: space-around; gap: 0; background: #fff; }
         [data-theme="dark"] .main-nav { background: #1a1b17; }
         .updated { display: none; }
         .map-startup { padding: 68px 24px; }
+        .map-viewport { min-height: 0; }
       }
       @media (max-height: 540px) {
         .map-startup-art { max-height: 120px; }
@@ -134,9 +132,9 @@
         .map-startup-actions { margin-top: 12px; }
       }
     </style>
-    <link rel="preload" as="style" href="/styles.css?v=20261019-source-attribution1"
-      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-map-styles-ready','');window.mapStartup?.ready('styles')" />
-    <noscript><link rel="stylesheet" href="/styles.css?v=20261019-source-attribution1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
+    <link rel="preload" as="style" href="/styles.css?v=20261117-performance1"
+      onload="this.onload=null;this.rel='stylesheet';document.documentElement.setAttribute('data-map-styles-ready','');window.mapStartup?.ready('styles');window.dispatchEvent(new Event('mapstylesready'))" />
+    <noscript><link rel="stylesheet" href="/styles.css?v=20261117-performance1" /><style>.map-startup { display: none; } html:not([data-map-styles-ready]) .map-first-page .site-footer { visibility: visible; }</style></noscript>
     <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png?v=20260713-1" />
   </head>
   <body class="map-first-page">
@@ -203,49 +201,20 @@
             var retry = document.getElementById("mapStartupRetry");
             retry.href = location.pathname + location.search;
             var ready = { styles: document.documentElement.hasAttribute("data-map-styles-ready"), tiles: false, data: false, leaflet: document.documentElement.hasAttribute("data-leaflet-styles-ready") };
-            var minimumVisibleMs = 2000;
-            var visibleSince = null;
-            var dismissTimer = null;
             var fadeTimer = null;
             var failures = {};
 
             function maybeDismiss() {
               if (Object.keys(failures).length || loader.hidden || loader.classList.contains("is-leaving")) return;
-              if (visibleSince === null || !ready.styles || !ready.tiles || !ready.leaflet || !ready.data) return;
-              clearTimeout(dismissTimer);
-              dismissTimer = setTimeout(function () {
-                loader.classList.add("is-leaving");
-                clearTimeout(slowTimer);
-                var fadeMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260;
-                fadeTimer = setTimeout(function () {
-                  loader.hidden = true;
-                  document.getElementById("map").setAttribute("aria-busy", "false");
-                  window.dispatchEvent(new Event("mapstartupready"));
-                }, fadeMs);
-              }, Math.max(0, minimumVisibleMs - (performance.now() - visibleSince)));
-            }
-
-            function startVisibilityTimer(paintedAt) {
-              if (visibleSince !== null) return;
-              visibleSince = paintedAt;
-              maybeDismiss();
-            }
-
-            // Count from first visible content, rather than navigation or an
-            // asset request. Every visit gets the same readable introduction.
-            if (window.PerformanceObserver && PerformanceObserver.supportedEntryTypes?.includes("paint")) {
-              var paintObserver = new PerformanceObserver(function (entries) {
-                entries.getEntries().forEach(function (entry) {
-                  if (entry.name !== "first-contentful-paint") return;
-                  startVisibilityTimer(entry.startTime);
-                  paintObserver.disconnect();
-                });
-              });
-              paintObserver.observe({ type: "paint", buffered: true });
-            } else {
-              requestAnimationFrame(function () {
-                requestAnimationFrame(function () { startVisibilityTimer(performance.now()); });
-              });
+              if (!ready.styles || !ready.tiles || !ready.leaflet || !ready.data) return;
+              loader.classList.add("is-leaving");
+              clearTimeout(slowTimer);
+              var fadeMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 260;
+              fadeTimer = setTimeout(function () {
+                loader.hidden = true;
+                document.getElementById("map").setAttribute("aria-busy", "false");
+                window.dispatchEvent(new Event("mapstartupready"));
+              }, fadeMs);
             }
             var slowTimer = setTimeout(function () {
               if (loader.hidden) return;
@@ -258,7 +227,6 @@
                 ready[part] = false;
                 delete failures[part];
                 if (loader.hidden) return;
-                clearTimeout(dismissTimer);
                 clearTimeout(fadeTimer);
                 loader.classList.remove("is-leaving");
                 if (!Object.keys(failures).length) {
@@ -278,7 +246,6 @@
               fail: function (message, part) {
                 if (loader.hidden) return;
                 failures[part || "map"] = true;
-                clearTimeout(dismissTimer);
                 clearTimeout(fadeTimer);
                 clearTimeout(slowTimer);
                 loader.classList.remove("is-leaving");
@@ -583,7 +550,8 @@
       </div>
     </footer>
 
-    <script src="/page.js?v=20261005-scroll-cue1" defer></script>
+    <!-- SSR_MAP_DATA -->
+    <script src="/page.js?v=20261117-performance1" defer></script>
     <script
       src="/vendor/leaflet/leaflet.js?v=1.9.4"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -591,7 +559,8 @@
       defer
       onerror="window.mapStartup?.fail('Mapové podklady nie sú dostupné. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"
     ></script>
-    <script src="/app.js?v=20261019-source-attribution2" defer
+    <script src="/slovakia-boundary.js?v=20261113-1" defer></script>
+    <script src="/app.js?v=20261117-performance1" defer
       onerror="window.mapStartup?.fail('Načítanie stránky prerušilo pripojenie. Skúste stránku obnoviť alebo si pozrite záznamy pod mapou.')"></script>
     <script src="/consent.js?v=20261018-cloudflare1" defer></script>
   </body>

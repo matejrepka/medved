@@ -15,6 +15,9 @@ export function getSupabase() {
   if (!supabaseUrl || !supabaseServiceKey) return null;
   if (!client || clientUrl !== supabaseUrl || clientKey !== supabaseServiceKey) {
     client = createClient(supabaseUrl, supabaseServiceKey, {
+      // Server queries use this key directly, without a request-owned Auth
+      // initialization/session promise surviving in the shared client.
+      accessToken: async () => supabaseServiceKey,
       auth: {
         persistSession: false,
         autoRefreshToken: false,

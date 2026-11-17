@@ -23,7 +23,8 @@
     "build:images": "node scripts/optimize-images.mjs",
     "check:browser": "node scripts/check-browser.mjs",
     "check:resilience": "node scripts/check-resilience.mjs",
-    "check:startup": "node scripts/check-map-startup.mjs"
+    "check:startup": "node scripts/check-map-startup.mjs && node scripts/check-map-bootstrap.mjs",
+    "check:map": "node scripts/check-map-boundary.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

@@ -92,10 +92,11 @@ test("HTTP security and validation regressions", async (t) => {
     assert.equal((await fetch(origin + "/api/admin/content", { headers })).status, 429);
   });
   await t.test("tile bounds reject invalid requests before contacting CARTO", async () => {
-    for (const tile of ["light_all/21/0/0.png", "light_all/1/2/0.png", "bad/1/0/0.png"]) {
+    for (const tile of ["light_all/21/0/0.png", "light_all/1/2/0.png", "bad/1/0/0.png", "light_all/1/0/0@3x.png", "light_all/1/0/2@2x.png"]) {
       assert.equal((await fetch(origin + "/api/map-tiles/" + tile)).status, 400);
     }
     assert.equal((await fetch(origin + "/api/map-tiles/light_all/1/0/0.png")).status, 503);
+    assert.equal((await fetch(origin + "/api/map-tiles/light_all/1/0/0@2x.png")).status, 503);
   });
   await t.test("admin aliases and token pages prevent caching, framing and referrer leaks", async () => {
     for (const route of ["/admin", "/admin.html", "/api/subscriptions/confirm?token=invalid"]) {

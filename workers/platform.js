@@ -10,6 +10,16 @@ export const isWorker = true;
 // current handler's env rather than a process.env snapshot captured at startup.
 export const getEnvironment = () => requestContext.getStore()?.env ?? workerEnvironment;
 
+// Only completed data may be shared between Worker requests. A pending promise
+// stops being usable once the request that created it has ended.
+export function getInFlightState(owner) {
+  const context = requestContext.getStore();
+  if (!context) throw new Error("Pending work requires a Worker request context");
+  const states = context.inFlightStates ??= new WeakMap();
+  if (!states.has(owner)) states.set(owner, {});
+  return states.get(owner);
+}
+
 export async function readText(filename) {
   if (!Object.hasOwn(resources, filename)) throw new Error(`Missing bundled resource: ${filename}`);
   return resources[filename];
