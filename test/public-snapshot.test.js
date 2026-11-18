@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { publishPublicSnapshot, loadPublicSnapshot, snapshotDay } from "../src/db/public-snapshot.js";
+import { recordToken, newsPath, warningPath } from "../src/record-documents.js";
 
 const stateClient = (readState, rpc) => ({ rpc, from: () => ({ select: () => ({
   eq: () => ({ maybeSingle: async () => ({ data: readState() }) }),
@@ -12,15 +13,21 @@ test("snapshot publishing stores small per-route documents and explicit feeds", 
   let stored;
   const client = stateClient(() => ({ revision: 4, built_revision: 4, updated_at: "today" }),
     async (name, args) => { stored = { name, args }; return { data: true }; });
+  const olderNews = { id: "past", title: "Older approved incident", isIncident: true,
+    coverage: [{ id: "former-article" }], date: "2025-01-20" };
   assert.equal(await publishPublicSnapshot(4, "2026-10-18", {
     report: { totals: { sightings: 1 }, allLocations: [location] }, locations: [location],
-    warnings: [warning], news: [], updatedAt: "2026-10-18T08:00:00Z",
+    warnings: [warning], news: [], history: { warnings: [warning], news: [olderNews] }, updatedAt: "2026-10-18T08:00:00Z",
   }, client), true);
   const payload = stored.args.p_payload;
   assert.equal(payload.stats.report.allLocations, undefined);
   assert.equal(payload.overview.locations[0].warningItems, undefined);
   assert.deepEqual(payload.locations.brezno.warningItems, [warning]);
   assert.deepEqual(payload.warnings.items, [warning]);
+  assert.deepEqual(payload.news.items, []);
+  assert.equal(payload.records[`news:${recordToken("past")}`].record.id, "past");
+  assert.deepEqual(payload.records[`warning:${recordToken("former-article")}`], { redirect: newsPath(olderNews) });
+  assert.deepEqual(payload.records.sitemap.map(([pathname]) => pathname), [newsPath(olderNews), warningPath(warning)]);
   await loadPublicSnapshot({ kind: "location", slug: "brezno", client });
   assert.deepEqual(stored.args, { p_kind: "location", p_slug: "brezno" });
 });

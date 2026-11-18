@@ -270,6 +270,9 @@ const seo = createRuntime(fixtures, false, { forbidRawReads: true, snapshotDelay
 } });
 try {
   const get = route => seo.dispatchFetch(`https://www.kdejemedved.sk${route}`);
+  const alternateHost = await seo.dispatchFetch("https://kdejemedved.sk/spravy?strana=2", { redirect: "manual" });
+  assert.equal(alternateHost.status, 301);
+  assert.equal(alternateHost.headers.get("location"), "https://www.kdejemedved.sk/spravy?strana=2");
   // Cold responses must wait beyond the old 180 ms race and still expose data.
   for (const route of ["/", "/domov", "/spravy", "/varovania", "/stats"]) {
     const response = await get(route);
@@ -313,9 +316,16 @@ try {
 const detailNews = { id: "small-detail-news", title: "Medveď pri Brezne", category: "article",
   date: sighting.reported_at, summary: "Saved news detail", source: "Test", place: "Brezno" };
 const detailData = { ...storedSnapshot, news: [detailNews] };
+const formerArticleToken = recordToken("grouped-source");
+const groupedNews = { ...detailNews, isIncident: true, coverage: [{ id: "grouped-source" }] };
 const details = createRuntime(fixtures, false, { forbidRawReads: true, recordsOnly: true, measureDateFormatters: true,
-  record_documents: buildRecordDocuments(detailData) });
+  record_documents: buildRecordDocuments({ ...detailData, news: [groupedNews] }) });
 try {
+  for (const section of ["spravy", "varovania"]) {
+    const alias = await details.dispatchFetch(`https://www.kdejemedved.sk/${section}/stary-clanok-${formerArticleToken}`, { redirect: "manual" });
+    assert.equal(alias.status, 301);
+    assert.equal(alias.headers.get("location"), `/spravy/medved-pri-brezne-${recordToken(detailNews.id)}`);
+  }
   for (const route of [`/varovania/brezno-${recordToken("snapshot-1")}`,
     `/spravy/medved-pri-brezne-${recordToken(detailNews.id)}`]) {
     const response = await details.dispatchFetch(`https://www.kdejemedved.sk${route}`);

@@ -32,7 +32,7 @@ import {
 import { loadPlaces, lookupPlaceByName } from "./src/geo/geocode.js";
 import { isSlovakCoordinate, searchSlovakLocations, resolveSlovakLocation } from "./src/geo/search.js";
 import { loadPublicSnapshot, getPublicSnapshotVersion, invalidatePublicSnapshotCache } from "./src/db/public-snapshot.js";
-import { recordToken } from "./src/record-documents.js";
+import { newsPath, recordToken, warningPath } from "./src/record-documents.js";
 import { loadSightingBuckets } from "./src/db/sighting-buckets.js";
 import { normalizeNewsLocations } from "./src/news-locations.js";
 import { isSupabaseConfigured } from "./src/db/supabase.js";
@@ -221,6 +221,15 @@ const PUBLIC_PAGES = {
 
 const pageTemplateCache = new Map();
 
+export function canonicalHostRedirect(url) {
+  if (url.hostname !== "kdejemedved.sk") return null;
+  const pathname = url.pathname.replace(/\/$/, "") || "/";
+  const publicPage = Object.hasOwn(PUBLIC_PAGES, pathname) ||
+    [LOCATION_ROUTE_PREFIX, NEWS_ROUTE_PREFIX, WARNING_ROUTE_PREFIX].some(prefix => pathname.startsWith(prefix));
+  return publicPage || pathname === "/sitemap.xml" || pathname === "/robots.txt"
+    ? CANONICAL_SITE_ORIGIN + url.pathname + url.search : null;
+}
+
 function siteOrigin() {
   // Verejné SEO URL nesmú závisieť od preview hostu ani Host hlavičky požiadavky.
   return CANONICAL_SITE_ORIGIN;
@@ -257,19 +266,6 @@ function locationSlug(value) {
 
 function locationPath(value) {
   return `${LOCATION_ROUTE_PREFIX}${encodeURIComponent(locationSlug(value))}`;
-}
-
-function recordSlug(value, fallback = "zaznam") {
-  return locationSlug(value).slice(0, 72) || fallback;
-}
-
-function newsPath(item) {
-  const prefix = item?.category === "warning" ? WARNING_ROUTE_PREFIX : NEWS_ROUTE_PREFIX;
-  return `${prefix}${recordSlug(item?.title, "sprava-o-medvedovi")}-${recordToken(item?.id)}`;
-}
-
-function warningPath(item) {
-  return `${WARNING_ROUTE_PREFIX}${recordSlug(item?.location || item?.title, "varovanie-pred-medvedom")}-${recordToken(item?.id)}`;
 }
 
 function detailPath(item, type) {
@@ -1965,6 +1961,14 @@ function detailSource(record, recordType) {
     };
   }
   const url = safeHttpUrl(record.articleUrl || record.link || record.googleNewsUrl || "");
+  if (record.isIncident && record.coverage?.length) {
+    const links = new Map();
+    for (const article of record.coverage) {
+      const href = safeHttpUrl(article.url);
+      if (href) links.set(href, { label: article.source || article.title || "Otvoriť článok", url: href });
+    }
+    if (links.size) return { label: record.source || "Verejný zdroj", links: [...links.values()] };
+  }
   return {
     label: record.source || "Verejný zdroj",
     links: url ? [{ label: "Otvoriť pôvodný článok", url }] : [],
@@ -1986,12 +1990,14 @@ async function renderRecordPage(req, res, requestedKind) {
     if (!token) return res.status(404).set("X-Robots-Tag", "noindex, follow").type("text")
       .send("Tento záznam sa nenašiel alebo už nie je verejne dostupný.");
     let overview, record, recordType, savedRelated;
-    if (isWorker) {
-      if (!await getPublicSnapshotVersion()) {
-        return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
-          .type("text").send("Podrobnosti sa aktualizujú. Skúste to o chvíľu.");
-      }
-      const saved = token ? await loadPublicSnapshot({ kind: "record", slug: `${requestedKind}:${token}` }) : null;
+    const version = await getPublicSnapshotVersion();
+    if (isWorker && !version) {
+      return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
+        .type("text").send("Podrobnosti sa aktualizujú. Skúste to o chvíľu.");
+    }
+    const saved = version && await loadPublicSnapshot({ kind: "record", slug: `${requestedKind}:${token}` });
+    if (saved?.redirect) return res.redirect(301, saved.redirect);
+    if (isWorker || saved) {
       overview = { ...emptyLocationOverview(), locations: saved?.locations || [] };
       record = saved?.record || null;
       recordType = saved?.recordType || requestedKind;
@@ -2029,10 +2035,11 @@ async function renderRecordPage(req, res, requestedKind) {
       ? `Správa sa venuje téme „${title}“. Podrobnosti sú dostupné v pôvodnom článku.`
       : "Záznam obsahuje dostupnú lokalitu, dátum a pôvod informácie.")).trim();
     const date = record.date || record.reportedAt || record._scrapedAt || CONTENT_UPDATED;
+    const dateLabel = formatSlovakDate(date, Boolean(record.reportedAt && record.datePrecision !== "date"));
     const source = detailSource(record, recordType);
     const page = {
-      title: `${title.slice(0, 72)} | Kde je Medveď`,
-      description: summary.slice(0, 158),
+      title: isNewsArticle ? `${title} | Kde je Medveď` : `Hlásenie medveďa – ${title}, ${dateLabel} | Kde je Medveď`,
+      description: (isNewsArticle ? summary : `${title}, ${dateLabel}. ${summary}`).slice(0, 158),
       schemaType: isNewsArticle ? "NewsArticle" : "Article",
       breadcrumbName: isWarningPage ? "Varovania pred medveďmi" : "Správy o medveďoch",
       dateModified: record._scrapedAt || date,
@@ -2044,11 +2051,13 @@ async function renderRecordPage(req, res, requestedKind) {
     let html = await getPageTemplate("zaznam.html");
     html = html
       .replace("<!-- SEO_HEAD -->", buildSeoHead(canonicalPath, page, siteOrigin(req)))
-      .replaceAll("{{RECORD_TITLE}}", escapeHtml(title))
+      .replace("{{PAGE_TITLE}}", () => escapeHtml(page.title))
+      .replace("{{PAGE_DESCRIPTION}}", () => escapeHtml(page.description))
+      .replaceAll("{{RECORD_TITLE}}", () => escapeHtml(title))
       .replaceAll("<!-- RECORD_TYPE -->", isWarningPage ? "Varovanie pred medveďom" : "Správa o medveďoch")
       .replace("<!-- RECORD_SUMMARY_HEADING -->", isNewsArticle ? "Súhrn článku" : "Súhrn záznamu")
       .replace("<!-- RECORD_SUMMARY -->", escapeHtml(summary))
-      .replace("<!-- RECORD_DATE -->", escapeHtml(formatSlovakDate(date, Boolean(record.reportedAt && record.datePrecision !== "date"))))
+      .replace("<!-- RECORD_DATE -->", escapeHtml(dateLabel))
       .replace("<!-- RECORD_DATE_ISO -->", escapeHtml(date))
       .replace("<!-- RECORD_SOURCE -->", escapeHtml(source.label))
       .replace("<!-- RECORD_LOCATIONS -->", renderDetailLocations(record, recordType, overview))
@@ -2121,10 +2130,21 @@ app.get("/robots.txt", (req, res) => {
 
 app.get("/sitemap.xml", async (req, res) => {
   const origin = siteOrigin(req);
-  let overview;
+  let overview, detailRows;
   try {
-    overview = await loadLocationOverview();
-    if (isWorker && !overview.snapshotReady) throw new Error("Public snapshot is pending");
+    const index = await loadPublicSnapshot({ kind: "record", slug: "sitemap" });
+    if (index) {
+      overview = await loadPublicSnapshot();
+      if (!overview) throw new Error("Public snapshot is pending");
+      detailRows = new Map(index);
+    } else {
+      // Snapshots published before the archive index have only the current feeds.
+      overview = await loadLocationOverview();
+      if (isWorker && !overview.snapshotReady) throw new Error("Public snapshot is pending");
+      detailRows = new Map();
+      for (const item of overview.news) detailRows.set(newsPath(item), item.date || item._scrapedAt);
+      for (const item of overview.warnings) detailRows.set(warningPath(item), item.reportedAt || item._scrapedAt);
+    }
   } catch (err) {
     console.error("[seo] sitemap data unavailable:", err.message);
     return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" })
@@ -2147,9 +2167,6 @@ app.get("/sitemap.xml", async (req, res) => {
         `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, location.path))}</loc>\n    <lastmod>${escapeHtml(location.latest)}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.7</priority>\n  </url>`
       );
     }
-    const detailRows = new Map();
-    for (const item of overview.news) detailRows.set(newsPath(item), item.date || item._scrapedAt);
-    for (const item of overview.warnings) detailRows.set(warningPath(item), item.reportedAt || item._scrapedAt);
     for (const [pathname, lastmod] of detailRows) {
       rows.push(
         `  <url>\n    <loc>${escapeHtml(absoluteUrl(origin, pathname))}</loc>\n    <lastmod>${escapeHtml(lastmod || latestContentDate() || CONTENT_UPDATED)}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
@@ -2157,6 +2174,7 @@ app.get("/sitemap.xml", async (req, res) => {
     }
   } catch (err) {
     console.error("[seo] location sitemap generation failed:", err.message);
+    return res.status(503).set({ "Cache-Control": "no-store", "Retry-After": "60" }).end();
   }
 
   res

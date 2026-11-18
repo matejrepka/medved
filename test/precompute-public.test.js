@@ -11,6 +11,7 @@ function fixture(t, overrides = {}) {
     loadSnapshotState: async () => ({ revision: ++reads, built_revision: 0 }),
     loadTumedvedLogs: async () => { loads++; return []; },
     loadApprovedBearReports: async () => [], loadNewsLogs: async () => [], loadSightingBuckets: async () => [],
+    loadRecordHistory: async () => ({ news: [], warnings: [] }),
     publishPublicSnapshot: async revision => { published.push(revision); return true; },
     wait: async delay => { delays.push(delay); },
     ...overrides,

@@ -1,5 +1,5 @@
 import { httpServerHandler } from "cloudflare:node";
-import app, { invalidatePublicCaches } from "../server.js";
+import app, { canonicalHostRedirect, invalidatePublicCaches } from "../server.js";
 import { withWorkerContext } from "./platform.js";
 import { getPublicSnapshotVersion } from "../src/db/public-snapshot.js";
 import { publicCacheUrl, publicCacheTtl, clientCacheResponse, canStorePublicResponse } from "./public-cache.js";
@@ -10,11 +10,16 @@ let lastVersion;
 
 export default {
   fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (request.method === "GET" || request.method === "HEAD") {
+      const canonical = canonicalHostRedirect(url);
+      if (canonical) return Response.redirect(canonical, 301);
+    }
     // Only Cloudflare's verified client IP reaches Express's one-hop proxy
     // handling. Discard any client-supplied forwarding chain.
     const headers = new Headers(request.headers);
     headers.set("x-forwarded-for", request.headers.get("cf-connecting-ip") || "127.0.0.1");
-    headers.set("x-forwarded-proto", new URL(request.url).protocol.slice(0, -1));
+    headers.set("x-forwarded-proto", url.protocol.slice(0, -1));
     const forwarded = new Request(request, { headers });
     return withWorkerContext({ request: forwarded, env, ctx }, async () => {
       let cacheRequest;

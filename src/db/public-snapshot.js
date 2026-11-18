@@ -1,6 +1,6 @@
 import { getSupabase } from "./supabase.js";
 import { getInFlightState } from "#platform";
-import { buildRecordDocuments } from "../record-documents.js";
+import { buildRecordDocuments, newsPath, warningPath } from "../record-documents.js";
 
 const STATE_TTL_MS = 15_000;
 const MAX_DOCUMENTS = 128;
@@ -88,6 +88,14 @@ export async function publishPublicSnapshot(revision, day, payload, client = get
   const started = performance.now();
   const { allLocations, ...report } = payload.report;
   const directory = payload.locations.map(({ warningItems, newsItems, ...location }) => location);
+  const history = payload.history || payload;
+  const records = buildRecordDocuments({ ...history, locations: directory });
+  // Only sitemap requests need the complete list. Keep it out of the map,
+  // statistics and location documents read by regular visitors.
+  records.sitemap = [
+    ...history.news.map(item => [newsPath(item), item._scrapedAt || item.date]),
+    ...history.warnings.map(item => [warningPath(item), item._scrapedAt || item.reportedAt]),
+  ];
   // Prepare small documents once. Each visitor downloads just their report or
   // location, never the complete directory with repeated article/report text.
   const documents = {
@@ -96,7 +104,7 @@ export async function publishPublicSnapshot(revision, day, payload, client = get
     locations: Object.fromEntries(payload.locations.map(location => [location.slug, location])),
     warnings: { items: payload.warnings, updatedAt: payload.updatedAt },
     news: { items: payload.news, updatedAt: payload.updatedAt },
-    records: buildRecordDocuments(payload),
+    records,
   };
   console.log(`[snapshot] prepare-documents completed in ${Math.round(performance.now() - started)} ms (${Object.keys(documents.records).length} records)`);
   const { data, error } = await client.rpc("publish_public_snapshot", {

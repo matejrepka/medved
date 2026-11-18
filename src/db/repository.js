@@ -573,11 +573,16 @@ async function refreshIncidentPrimaryForNews(newsId) {
   }
 }
 
-export async function loadTumedvedLogs() {
+export async function loadTumedvedLogs({ allApproved = false } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
   const columns = "id,source,location,note,lat,lng,has_coords,reported_at,url,payload,scraped_at";
+  if (allApproved) {
+    const rows = await loadRows(() => supabase.from("tumedved_logs").select(columns)
+      .eq("status", "approved").order("id"), Infinity);
+    return rows.map(rowToSighting);
+  }
   // Na mape/API zobrazujeme len schválené hlásenia.
   let { data, error } = await supabase
     .from("tumedved_logs")
@@ -604,13 +609,18 @@ export async function loadTumedvedLogs() {
   return items;
 }
 
-export async function loadNewsLogs() {
+export async function loadNewsLogs({ allApproved = false } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
   const columns =
     "id,source,title,link,google_news_url,article_url,snippet,published_at,place,lat,lng,has_coords,category,payload,scraped_at";
 
+  if (allApproved) {
+    const rows = await loadRows(() => supabase.from("news_logs").select(columns)
+      .eq("status", "approved").order("id"), Infinity);
+    return groupPublicNews(rows, columns, { complete: true });
+  }
   const [approvedResult, warningResult, mapCandidateResult] = await Promise.all([
     supabase
       .from("news_logs")
@@ -641,15 +651,16 @@ export async function loadNewsLogs() {
   // API potrebuje posledné správy pre zoznam a zároveň všetky mapové varovania.
   // Legacy riadky spred kategórie majú často len has_coords=true, preto ich
   // primiešame tiež a pri mapovaní nižšie normalizujeme na "warning".
-  const rowsById = new Map();
-  for (const row of [
+  return groupPublicNews([
     ...(approvedResult.data || []),
     ...(warningResult.data || []),
     ...(mapCandidateResult.data || []),
-  ]) {
-    rowsById.set(row.id, row);
-  }
+  ], columns);
+}
 
+async function groupPublicNews(rows, columns, { complete = false } = {}) {
+  const supabase = getSupabase();
+  const rowsById = new Map(rows.map(row => [row.id, row]));
   let locationMap = await loadNewsWarningLocations([...rowsById.keys()]);
   const articles = [...rowsById.values()].map((row) => rowToNews(row, locationMap.get(row.id)));
   if (!articles.length) return [];
@@ -668,8 +679,8 @@ export async function loadNewsLogs() {
   }
 
   const incidentIds = [...new Set(links.map((link) => link.incident_id).filter(Boolean))];
-  let incidents = [];
-  if (incidentIds.length) {
+  const incidents = [];
+  if (incidentIds.length && !complete) {
     // Once one member of an incident reaches the public window, include every
     // approved attached article so the source count and coverage list are exact.
     links = await loadIncidentLinksForIncidents(
@@ -689,13 +700,13 @@ export async function loadNewsLogs() {
         ...[...rowsById.values()].map((row) => rowToNews(row, locationMap.get(row.id)))
       );
     }
-
-    const { data, error } = await supabase
-      .from("news_incidents")
+  }
+  for (let i = 0; i < incidentIds.length; i += WRITE_CHUNK_SIZE) {
+    const { data, error } = await supabase.from("news_incidents")
       .select("id,event_date,event_date_precision,locality,lat,lng,title,summary,status,verification_status,primary_news_id,created_at,updated_at")
-      .in("id", incidentIds);
+      .in("id", incidentIds.slice(i, i + WRITE_CHUNK_SIZE));
     if (error) throw error;
-    incidents = data || [];
+    incidents.push(...(data || []));
   }
 
   return groupNewsByIncidents({ articles, incidents, links });
@@ -748,18 +759,16 @@ export async function saveBearReport(report) {
 
 // Schválené hlásenia od používateľov (a manuálne pridané varovania) v rovnakom
 // tvare ako hlásenia z tumedved_logs, nech sa dajú zlúčiť do jedného zoznamu.
-export async function loadApprovedBearReports() {
+export async function loadApprovedBearReports({ allApproved = false } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const query = () => supabase
     .from("bear_reports")
     .select("id,location,description,lat,lng,has_coords,reported_date,created_at")
     .eq("status", "approved")
-    .order("reported_date", { ascending: false, nullsFirst: false })
-    .limit(500);
-
-  if (error) throw error;
+    .order("reported_date", { ascending: false, nullsFirst: false }).order("id");
+  const data = await loadRows(query, allApproved ? Infinity : 500);
 
   return (data || []).map((row) => {
     const lat = asNullableNumber(row.lat);
